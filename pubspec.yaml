@@ -1,0 +1,30 @@
+name: sistema_academico
+description: Sistema de Gestión Académica Integral para Colegios
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  go_router: ^14.8.1
+  provider: ^6.1.5
+  fl_chart: ^0.68.0
+  intl: ^0.19.0
+  google_fonts: ^6.2.1
+  data_table_2: ^2.5.12
+  uuid: ^4.4.2
+  shared_preferences: ^2.3.3
+  flutter_animate: ^4.5.0
+  percent_indicator: ^4.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
