@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
-import '../providers/academic_provider.dart';
+import 'user_avatar.dart';
 
 class AppSidebar extends StatelessWidget {
   const AppSidebar({super.key});
@@ -38,20 +38,12 @@ class AppSidebar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: roleColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: roleColor.withOpacity(0.4)),
-                ),
-                child: Center(
-                  child: Text(
-                    user.name.substring(0, 1).toUpperCase(),
-                    style: TextStyle(color: roleColor, fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                ),
+              UserAvatar(
+                userId: user.id,
+                name: user.name,
+                radius: 21,
+                backgroundColor: roleColor.withValues(alpha: 0.2),
+                textColor: roleColor,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -60,19 +52,30 @@ class AppSidebar extends StatelessWidget {
                   children: [
                     Text(
                       user.name.split(' ').take(2).join(' '),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: roleColor.withOpacity(0.15),
+                        color: roleColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         _roleLabel(user.role),
-                        style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: roleColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -102,8 +105,18 @@ class AppSidebar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Colegio San José', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                Text('Año lectivo 2026', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                Text(
+                  'Colegio San José',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Año lectivo 2026',
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                ),
               ],
             ),
           ),
@@ -140,16 +153,26 @@ class AppSidebar extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFF1E293B))),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: const Icon(Icons.logout_rounded, color: Color(0xFF64748B), size: 20),
-        title: const Text('Cerrar Sesión', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-        onTap: () {
-          auth.logout();
-          context.go('/login');
-        },
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        hoverColor: const Color(0xFF1E293B),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: const Icon(
+            Icons.logout_rounded,
+            color: Color(0xFF64748B),
+            size: 20,
+          ),
+          title: const Text(
+            'Cerrar Sesión',
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+          ),
+          onTap: () {
+            auth.logout();
+            context.go('/login');
+          },
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          hoverColor: const Color(0xFF1E293B),
+        ),
       ),
     );
   }
@@ -184,17 +207,37 @@ class AppSidebar extends StatelessWidget {
     switch (role) {
       case UserRole.coordinator:
         return [
-          _NavItem('Dashboard', Icons.dashboard_rounded, '/coordinator/dashboard'),
+          _NavItem(
+            'Dashboard',
+            Icons.dashboard_rounded,
+            '/coordinator/dashboard',
+          ),
           null,
           _NavItem('Usuarios', Icons.people_rounded, '/coordinator/users'),
           _NavItem('Docentes', Icons.person_rounded, '/coordinator/users'),
           null,
-          _NavItem('Config. Académica', Icons.calendar_month_rounded, '/coordinator/academic-config'),
+          _NavItem(
+            'Config. Académica',
+            Icons.calendar_month_rounded,
+            '/coordinator/academic-config',
+          ),
           _NavItem('Asignaturas', Icons.book_rounded, '/coordinator/subjects'),
-          _NavItem('Cursos / Grupos', Icons.class_rounded, '/coordinator/courses'),
-          _NavItem('Config. Evaluación', Icons.assessment_rounded, '/coordinator/grades-config'),
+          _NavItem(
+            'Cursos / Grupos',
+            Icons.class_rounded,
+            '/coordinator/courses',
+          ),
+          _NavItem(
+            'Config. Evaluación',
+            Icons.assessment_rounded,
+            '/coordinator/grades-config',
+          ),
           null,
-          _NavItem('Reportes y Boletines', Icons.summarize_rounded, '/coordinator/reports'),
+          _NavItem(
+            'Reportes y Boletines',
+            Icons.summarize_rounded,
+            '/coordinator/reports',
+          ),
         ];
       case UserRole.teacher:
         return [
@@ -202,21 +245,41 @@ class AppSidebar extends StatelessWidget {
           null,
           _NavItem('Mis Cursos', Icons.class_rounded, '/teacher/courses'),
           _NavItem('Calificaciones', Icons.grade_rounded, '/teacher/grades'),
-          _NavItem('Asistencia', Icons.fact_check_rounded, '/teacher/attendance'),
-          _NavItem('Observaciones', Icons.edit_note_rounded, '/teacher/observations'),
+          _NavItem(
+            'Asistencia',
+            Icons.fact_check_rounded,
+            '/teacher/attendance',
+          ),
+          _NavItem(
+            'Observaciones',
+            Icons.edit_note_rounded,
+            '/teacher/observations',
+          ),
         ];
       case UserRole.student:
         return [
-          _NavItem('Mi Dashboard', Icons.dashboard_rounded, '/student/dashboard'),
+          _NavItem(
+            'Mi Dashboard',
+            Icons.dashboard_rounded,
+            '/student/dashboard',
+          ),
           null,
           _NavItem('Calificaciones', Icons.grade_rounded, '/student/grades'),
-          _NavItem('Asistencia', Icons.fact_check_rounded, '/student/attendance'),
+          _NavItem(
+            'Asistencia',
+            Icons.fact_check_rounded,
+            '/student/attendance',
+          ),
         ];
       case UserRole.parent:
         return [
           _NavItem('Dashboard', Icons.dashboard_rounded, '/parent/dashboard'),
           null,
-          _NavItem('Mis Hijos', Icons.family_restroom_rounded, '/parent/children'),
+          _NavItem(
+            'Mis Hijos',
+            Icons.family_restroom_rounded,
+            '/parent/children',
+          ),
         ];
     }
   }
@@ -256,12 +319,14 @@ class _NavTileState extends State<_NavTile> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: active
-                ? AppColors.primary.withOpacity(0.15)
+                ? AppColors.primary.withValues(alpha: 0.15)
                 : _hovering
-                    ? const Color(0xFF1E293B)
-                    : Colors.transparent,
+                ? const Color(0xFF1E293B)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: active ? Border.all(color: AppColors.primary.withOpacity(0.3)) : null,
+            border: active
+                ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
+                : null,
           ),
           child: Row(
             children: [

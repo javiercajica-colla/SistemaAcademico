@@ -1,10 +1,14 @@
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
+import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/academic_provider.dart';
 import 'app_sidebar.dart';
+import 'user_avatar.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -21,9 +25,7 @@ class MainLayout extends StatelessWidget {
             child: Column(
               children: [
                 _AppHeader(),
-                Expanded(
-                  child: child,
-                ),
+                Expanded(child: child),
               ],
             ),
           ),
@@ -58,7 +60,7 @@ class _AppHeader extends StatelessWidget {
           const SizedBox(width: 16),
           _buildNotifButton(context, unread, user.id, academic),
           const SizedBox(width: 8),
-          _buildProfileChip(context, user.name, auth),
+          _buildProfileChip(context, user, auth),
         ],
       ),
     );
@@ -77,20 +79,45 @@ class _AppHeader extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppColors.secondary, shape: BoxShape.circle)),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: AppColors.secondary,
+              shape: BoxShape.circle,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text(period.name, style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w600)),
-          const Text(' • Abierto', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
+          Text(
+            period.name,
+            style: const TextStyle(
+              color: AppColors.secondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Text(
+            ' • Abierto',
+            style: TextStyle(color: AppColors.secondary, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNotifButton(BuildContext context, int unread, String userId, AcademicProvider academic) {
+  Widget _buildNotifButton(
+    BuildContext context,
+    int unread,
+    String userId,
+    AcademicProvider academic,
+  ) {
     return Stack(
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.textSecondary,
+          ),
           onPressed: () => _showNotifications(context, userId, academic),
           tooltip: 'Notificaciones',
         ),
@@ -101,9 +128,19 @@ class _AppHeader extends StatelessWidget {
             child: Container(
               width: 18,
               height: 18,
-              decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
               child: Center(
-                child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(
+                  '$unread',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -111,9 +148,51 @@ class _AppHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileChip(BuildContext context, String name, AuthProvider auth) {
-    return GestureDetector(
-      onTap: () {},
+  Widget _buildProfileChip(
+    BuildContext context,
+    AppUser user,
+    AuthProvider auth,
+  ) {
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 52),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onSelected: (value) {
+        switch (value) {
+          case 'perfil':
+            _showProfileDialog(context, user, auth);
+          case 'configuracion':
+            _navigateToConfig(context, user);
+          case 'logout':
+            auth.logout();
+        }
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: 'perfil',
+          child: Row(children: [
+            Icon(Icons.person_outline, size: 18),
+            SizedBox(width: 10),
+            Text('Mi Perfil'),
+          ]),
+        ),
+        const PopupMenuItem(
+          value: 'configuracion',
+          child: Row(children: [
+            Icon(Icons.settings_outlined, size: 18),
+            SizedBox(width: 10),
+            Text('Configuración'),
+          ]),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: 'logout',
+          child: Row(children: [
+            Icon(Icons.logout, size: 18, color: Colors.red),
+            SizedBox(width: 10),
+            Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
+          ]),
+        ),
+      ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -124,28 +203,185 @@ class _AppHeader extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            UserAvatar(
+              userId: user.id,
+              name: user.name,
               radius: 14,
               backgroundColor: AppColors.primary,
-              child: Text(
-                name.substring(0, 1).toUpperCase(),
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-              ),
             ),
             const SizedBox(width: 8),
             Text(
-              name.split(' ').take(2).join(' '),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+              user.name.split(' ').take(2).join(' '),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary, size: 18),
+            const Icon(
+              Icons.arrow_drop_down,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _showNotifications(BuildContext context, String userId, AcademicProvider academic) {
+  void _showProfileDialog(
+    BuildContext context,
+    AppUser user,
+    AuthProvider auth,
+  ) {
+    final nameCtrl = TextEditingController(text: user.name);
+    final emailCtrl = TextEditingController(text: user.email);
+    Uint8List? previewBytes = auth.getAvatarBytes(user.id);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.person_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Mi Perfil'),
+          ]),
+          content: SizedBox(
+            width: 380,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.image,
+                      withData: true,
+                    );
+                    if (result?.files.single.bytes != null) {
+                      setDialogState(
+                        () => previewBytes = result!.files.single.bytes,
+                      );
+                    }
+                  },
+                  child: Tooltip(
+                    message: 'Cambiar foto',
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.primary,
+                          backgroundImage: previewBytes != null
+                              ? MemoryImage(previewBytes!)
+                              : null,
+                          child: previewBytes == null
+                              ? Text(
+                                  user.name.substring(0, 1).toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Toca para cambiar foto',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  auth.roleDisplayName,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre completo',
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo electrónico',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (previewBytes != null) {
+                  auth.updateAvatar(user.id, previewBytes!);
+                }
+                auth.updateProfile(
+                  name: nameCtrl.text.trim(),
+                  email: emailCtrl.text.trim(),
+                );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToConfig(BuildContext context, AppUser user) {
+    switch (user.role) {
+      case UserRole.coordinator:
+        context.go('/coordinator/academic-config');
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Configuración no disponible para su rol'),
+          ),
+        );
+    }
+  }
+
+  void _showNotifications(
+    BuildContext context,
+    String userId,
+    AcademicProvider academic,
+  ) {
     final notifs = academic.notificationsForUser(userId);
     showDialog(
       context: context,
@@ -158,7 +394,9 @@ class _AppHeader extends StatelessWidget {
             const Spacer(),
             TextButton(
               onPressed: () {
-                for (final n in notifs) academic.markNotificationRead(n.id);
+                for (final n in notifs) {
+                  academic.markNotificationRead(n.id);
+                }
                 Navigator.pop(ctx);
               },
               child: const Text('Marcar todas leídas'),
@@ -172,18 +410,44 @@ class _AppHeader extends StatelessWidget {
               : ListView.separated(
                   shrinkWrap: true,
                   itemCount: notifs.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final n = notifs[i];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: _notifColor(n.type).withValues(alpha: 0.15),
-                        child: Icon(_notifIcon(n.type), color: _notifColor(n.type), size: 18),
+                        backgroundColor: _notifColor(
+                          n.type,
+                        ).withValues(alpha: 0.15),
+                        child: Icon(
+                          _notifIcon(n.type),
+                          color: _notifColor(n.type),
+                          size: 18,
+                        ),
                       ),
-                      title: Text(n.title, style: TextStyle(fontWeight: n.isRead ? FontWeight.w400 : FontWeight.w600, fontSize: 13)),
-                      subtitle: Text(n.message, style: const TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      title: Text(
+                        n.title,
+                        style: TextStyle(
+                          fontWeight: n.isRead
+                              ? FontWeight.w400
+                              : FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      subtitle: Text(
+                        n.message,
+                        style: const TextStyle(fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       trailing: !n.isRead
-                          ? Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle))
+                          ? Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            )
                           : null,
                       onTap: () => academic.markNotificationRead(n.id),
                     );
@@ -196,21 +460,31 @@ class _AppHeader extends StatelessWidget {
 
   Color _notifColor(dynamic type) {
     switch (type.toString()) {
-      case 'NotificationType.grade': return AppColors.primary;
-      case 'NotificationType.attendance': return AppColors.warning;
-      case 'NotificationType.observation': return AppColors.purple;
-      case 'NotificationType.report': return AppColors.secondary;
-      default: return AppColors.info;
+      case 'NotificationType.grade':
+        return AppColors.primary;
+      case 'NotificationType.attendance':
+        return AppColors.warning;
+      case 'NotificationType.observation':
+        return AppColors.purple;
+      case 'NotificationType.report':
+        return AppColors.secondary;
+      default:
+        return AppColors.info;
     }
   }
 
   IconData _notifIcon(dynamic type) {
     switch (type.toString()) {
-      case 'NotificationType.grade': return Icons.grade_rounded;
-      case 'NotificationType.attendance': return Icons.event_busy_rounded;
-      case 'NotificationType.observation': return Icons.edit_note_rounded;
-      case 'NotificationType.report': return Icons.summarize_rounded;
-      default: return Icons.notifications_rounded;
+      case 'NotificationType.grade':
+        return Icons.grade_rounded;
+      case 'NotificationType.attendance':
+        return Icons.event_busy_rounded;
+      case 'NotificationType.observation':
+        return Icons.edit_note_rounded;
+      case 'NotificationType.report':
+        return Icons.summarize_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
