@@ -244,7 +244,7 @@ class _AcademicConfigScreenState extends State<AcademicConfigScreen> with Single
         title: const Text('Nuevo Período Académico'),
         content: SizedBox(
           width: 400,
-          child: Column(
+          child: SingleChildScrollView(child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const TextField(decoration: InputDecoration(labelText: 'Nombre del período')),
@@ -255,7 +255,7 @@ class _AcademicConfigScreenState extends State<AcademicConfigScreen> with Single
               const SizedBox(height: 12),
               const TextField(decoration: InputDecoration(labelText: 'Porcentaje (%)', suffixText: '%')),
             ],
-          ),
+          )),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),

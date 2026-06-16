@@ -26,27 +26,45 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
     final teacher = academic.teacherByUserId(auth.currentUser!.id);
-    if (teacher == null) return const Center(child: Text('Perfil no encontrado'));
+    if (teacher == null) {
+      return const Center(child: Text('Perfil no encontrado'));
+    }
 
     final myAssignments = academic.assignmentsForTeacher(teacher.id);
     final myCourseIds = myAssignments.map((a) => a.courseId).toSet();
-    final myCourses = academic.courses.where((c) => myCourseIds.contains(c.id)).toList();
+    final myCourses = academic.courses
+        .where((c) => myCourseIds.contains(c.id))
+        .toList();
     final subjectIds = _selectedCourse != null
-        ? myAssignments.where((a) => a.courseId == _selectedCourse).map((a) => a.subjectId).toList()
+        ? myAssignments
+              .where((a) => a.courseId == _selectedCourse)
+              .map((a) => a.subjectId)
+              .toList()
         : <String>[];
-    final students = _selectedCourse != null ? academic.studentsInCourse(_selectedCourse!) : <Student>[];
+    final students = _selectedCourse != null
+        ? academic.studentsInCourse(_selectedCourse!)
+        : <Student>[];
 
     final fmt = DateFormat('dd/MM/yyyy');
-    final present = _statuses.values.where((s) => s == AttendanceStatus.present).length;
-    final absent = _statuses.values.where((s) => s == AttendanceStatus.absent).length;
-    final late = _statuses.values.where((s) => s == AttendanceStatus.late).length;
+    final present = _statuses.values
+        .where((s) => s == AttendanceStatus.present)
+        .length;
+    final absent = _statuses.values
+        .where((s) => s == AttendanceStatus.absent)
+        .length;
+    final late = _statuses.values
+        .where((s) => s == AttendanceStatus.late)
+        .length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(title: 'Control de Asistencia', subtitle: 'Registra la asistencia de los estudiantes'),
+          SectionHeader(
+            title: 'Control de Asistencia',
+            subtitle: 'Registra la asistencia de los estudiantes',
+          ),
           const SizedBox(height: 20),
           _buildFilters(myCourses, academic, subjectIds, fmt),
           if (_selectedCourse != null && _selectedSubject != null) ...[
@@ -60,27 +78,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildFilters(List myCourses, AcademicProvider academic, List<String> subjectIds, DateFormat fmt) {
+  Widget _buildFilters(
+    List myCourses,
+    AcademicProvider academic,
+    List<String> subjectIds,
+    DateFormat fmt,
+  ) {
     return Row(
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedCourse,
+            initialValue: _selectedCourse,
             decoration: const InputDecoration(labelText: 'Curso'),
-            items: myCourses.map((c) => DropdownMenuItem<String>(value: c.id, child: Text(c.name))).toList(),
-            onChanged: (v) => setState(() { _selectedCourse = v; _selectedSubject = null; _statuses.clear(); }),
+            items: myCourses
+                .map(
+                  (c) => DropdownMenuItem<String>(
+                    value: c.id,
+                    child: Text(c.name),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) => setState(() {
+              _selectedCourse = v;
+              _selectedSubject = null;
+              _statuses.clear();
+            }),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedSubject,
+            initialValue: _selectedSubject,
             decoration: const InputDecoration(labelText: 'Asignatura'),
             items: subjectIds.map((sid) {
               final sub = academic.subjectById(sid);
-              return DropdownMenuItem<String>(value: sid, child: Text(sub?.name ?? sid));
+              return DropdownMenuItem<String>(
+                value: sid,
+                child: Text(sub?.name ?? sid),
+              );
             }).toList(),
-            onChanged: _selectedCourse == null ? null : (v) => setState(() => _selectedSubject = v),
+            onChanged: _selectedCourse == null
+                ? null
+                : (v) => setState(() => _selectedSubject = v),
           ),
         ),
         const SizedBox(width: 12),
@@ -96,8 +135,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               if (date != null) setState(() => _selectedDate = date);
             },
             child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Fecha', suffixIcon: Icon(Icons.calendar_today_rounded)),
-              child: Text(fmt.format(_selectedDate), style: const TextStyle(fontSize: 14)),
+              decoration: const InputDecoration(
+                labelText: 'Fecha',
+                suffixIcon: Icon(Icons.calendar_today_rounded),
+              ),
+              child: Text(
+                fmt.format(_selectedDate),
+                style: const TextStyle(fontSize: 14),
+              ),
             ),
           ),
         ),
@@ -128,17 +173,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _summaryChip(String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
       child: Column(
         children: [
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 18)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
           Text(label, style: TextStyle(color: color, fontSize: 11)),
         ],
       ),
     );
   }
 
-  Widget _buildStudentList(BuildContext context, List<Student> students, AcademicProvider academic) {
+  Widget _buildStudentList(
+    BuildContext context,
+    List<Student> students,
+    AcademicProvider academic,
+  ) {
     return AppCard(
       title: 'Lista de Estudiantes',
       child: Column(
@@ -153,22 +213,45 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               decoration: BoxDecoration(
                 color: _statusBgColor(status),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _statusColor(status).withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: _statusColor(status).withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundColor: _statusColor(status).withValues(alpha: 0.15),
-                    child: Text(s.firstName.substring(0, 1), style: TextStyle(color: _statusColor(status), fontWeight: FontWeight.bold, fontSize: 13)),
+                    backgroundColor: _statusColor(
+                      status,
+                    ).withValues(alpha: 0.15),
+                    child: Text(
+                      s.firstName.substring(0, 1),
+                      style: TextStyle(
+                        color: _statusColor(status),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(s.fullName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-                        Text('Doc: ${s.documentId}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        Text(
+                          s.fullName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          'Doc: ${s.documentId}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -199,9 +282,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _legendItem(String label, Color color) {
     return Row(
       children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -213,10 +303,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         minimumSize: const Size(0, 32),
       ),
       segments: const [
-        ButtonSegment(value: AttendanceStatus.present, icon: Icon(Icons.check_rounded, size: 16), tooltip: 'Presente'),
-        ButtonSegment(value: AttendanceStatus.absent, icon: Icon(Icons.close_rounded, size: 16), tooltip: 'Ausente'),
-        ButtonSegment(value: AttendanceStatus.late, icon: Icon(Icons.schedule_rounded, size: 16), tooltip: 'Tardanza'),
-        ButtonSegment(value: AttendanceStatus.excused, icon: Icon(Icons.medical_services_rounded, size: 16), tooltip: 'Excusado'),
+        ButtonSegment(
+          value: AttendanceStatus.present,
+          icon: Icon(Icons.check_rounded, size: 16),
+          tooltip: 'Presente',
+        ),
+        ButtonSegment(
+          value: AttendanceStatus.absent,
+          icon: Icon(Icons.close_rounded, size: 16),
+          tooltip: 'Ausente',
+        ),
+        ButtonSegment(
+          value: AttendanceStatus.late,
+          icon: Icon(Icons.schedule_rounded, size: 16),
+          tooltip: 'Tardanza',
+        ),
+        ButtonSegment(
+          value: AttendanceStatus.excused,
+          icon: Icon(Icons.medical_services_rounded, size: 16),
+          tooltip: 'Excusado',
+        ),
       ],
       selected: {current},
       onSelectionChanged: (s) => setState(() => _statuses[studentId] = s.first),
@@ -225,10 +331,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Color _statusColor(AttendanceStatus s) {
     switch (s) {
-      case AttendanceStatus.present: return AppColors.secondary;
-      case AttendanceStatus.absent: return AppColors.error;
-      case AttendanceStatus.late: return AppColors.warning;
-      case AttendanceStatus.excused: return AppColors.primary;
+      case AttendanceStatus.present:
+        return AppColors.secondary;
+      case AttendanceStatus.absent:
+        return AppColors.error;
+      case AttendanceStatus.late:
+        return AppColors.warning;
+      case AttendanceStatus.excused:
+        return AppColors.primary;
     }
   }
 
@@ -241,15 +351,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     const uuid = Uuid();
     int saved = 0;
     for (final entry in _statuses.entries) {
-      academic.addAttendance(AttendanceRecord(
-        id: uuid.v4(), studentId: entry.key, subjectId: _selectedSubject!,
-        periodId: academic.currentOpenPeriod?.id ?? 'ap2',
-        date: _selectedDate, status: entry.value,
-      ));
+      academic.addAttendance(
+        AttendanceRecord(
+          id: uuid.v4(),
+          studentId: entry.key,
+          subjectId: _selectedSubject!,
+          periodId: academic.currentOpenPeriod?.id ?? 'ap2',
+          date: _selectedDate,
+          status: entry.value,
+        ),
+      );
       saved++;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Asistencia guardada para $saved estudiantes'), backgroundColor: AppColors.secondary),
+      SnackBar(
+        content: Text('Asistencia guardada para $saved estudiantes'),
+        backgroundColor: AppColors.secondary,
+      ),
     );
   }
 }

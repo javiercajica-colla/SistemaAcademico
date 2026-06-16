@@ -69,6 +69,7 @@ class Subject {
 class Standard {
   final String id;
   final String subjectId;
+  final String? periodId;
   final String name;
   final String description;
   final double weight;
@@ -76,9 +77,46 @@ class Standard {
   const Standard({
     required this.id,
     required this.subjectId,
+    this.periodId,
     required this.name,
     required this.description,
     required this.weight,
+  });
+}
+
+class Indicator {
+  final String id;
+  final String standardId;
+  final String name;
+  final String description;
+  final int order;
+
+  const Indicator({
+    required this.id,
+    required this.standardId,
+    required this.name,
+    required this.description,
+    required this.order,
+  });
+}
+
+class Activity {
+  final String id;
+  final String indicatorId;
+  final String name;
+  final String description;
+  final int order;
+  bool isProgrammed;
+  double? gradeValue;
+
+  Activity({
+    required this.id,
+    required this.indicatorId,
+    required this.name,
+    required this.description,
+    required this.order,
+    this.isProgrammed = false,
+    this.gradeValue,
   });
 }
 
@@ -290,4 +328,113 @@ class EvaluationConfig {
     required this.standardsWeight,
     required this.finalExamWeight,
   });
+}
+
+// ─── Hoja de Vida ──────────────────────────────────────────────────────────
+
+class AcademicRecord {
+  final String id;
+  String nombreColegio;
+  String grado;
+  String anio;
+  bool esColegioActual;
+
+  AcademicRecord({
+    required this.id,
+    required this.nombreColegio,
+    required this.grado,
+    required this.anio,
+    this.esColegioActual = false,
+  });
+}
+
+class ExtendedProfile {
+  // Personal
+  String tipoDocumento;
+  String? ciudadExpedicion;
+  String? segundoNombre;
+  String? segundoApellido;
+  String? ciudadNacimiento;
+  String? fechaNacimiento;
+  String? tipoSangre;
+  String? sexo;
+  String? estadoCivil;
+  String? numHijos;
+
+  // Ubicación
+  String? direccion;
+  String? barrio;
+  String? telefono;
+  String? celular;
+  String? email;
+  String? ciudadUbicacion;
+
+  // Salud
+  String? sistemaSalud;
+  String? regimen;
+  String? epsArs;
+
+  // Emergencia
+  String? emergenciaNombre;
+  String? emergenciaParentesco;
+  String? emergenciaTelefono;
+  String? emergenciaCelular;
+
+  // Docente — Datos Institucionales
+  String? fechaVinculacionMagisterio;
+  String? decretoVinculacionMagisterio;
+  String? claseFuncionario;
+  String? escalafon;
+  String? estadoDocente;
+  String? maxCargaHoraria;
+  String? fechaVinculacionColegio;
+  String? fechaRetiroColegio;
+  String? decretoVinculacionColegio;
+  String? areaEnsenanza;
+  String? tipoNombramiento;
+  String? horarioLaboral;
+  String? anosFormacionSuperior;
+
+  // Estudiante — Historial Académico
+  List<AcademicRecord> historialAcademico;
+
+  ExtendedProfile({
+    this.tipoDocumento = 'CC',
+    this.ciudadExpedicion,
+    this.segundoNombre,
+    this.segundoApellido,
+    this.ciudadNacimiento,
+    this.fechaNacimiento,
+    this.tipoSangre,
+    this.sexo,
+    this.estadoCivil,
+    this.numHijos,
+    this.direccion,
+    this.barrio,
+    this.telefono,
+    this.celular,
+    this.email,
+    this.ciudadUbicacion,
+    this.sistemaSalud,
+    this.regimen,
+    this.epsArs,
+    this.emergenciaNombre,
+    this.emergenciaParentesco,
+    this.emergenciaTelefono,
+    this.emergenciaCelular,
+    this.fechaVinculacionMagisterio,
+    this.decretoVinculacionMagisterio,
+    this.claseFuncionario,
+    this.escalafon,
+    this.estadoDocente,
+    this.maxCargaHoraria,
+    this.fechaVinculacionColegio,
+    this.fechaRetiroColegio,
+    this.decretoVinculacionColegio,
+    this.areaEnsenanza,
+    this.tipoNombramiento,
+    this.horarioLaboral,
+    this.anosFormacionSuperior,
+    List<AcademicRecord>? historialAcademico,
+  }) : historialAcademico = historialAcademico ?? [];
 }

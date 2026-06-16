@@ -22,10 +22,9 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _demoAccounts = [
     _DemoAccount(
       email: 'coordinador@colegio.edu.co',
-      label: 'Coordinador Académico',
+      label: 'Coordinador',
       name: 'Dra. Patricia Morales',
       role: UserRole.coordinator,
-      description: 'Acceso total al sistema, configuración y reportes',
       icon: Icons.admin_panel_settings_rounded,
     ),
     _DemoAccount(
@@ -33,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
       label: 'Docente',
       name: 'Prof. Carlos Rodríguez',
       role: UserRole.teacher,
-      description: 'Calificaciones, asistencia y observaciones',
       icon: Icons.school_rounded,
     ),
     _DemoAccount(
@@ -41,15 +39,13 @@ class _LoginScreenState extends State<LoginScreen> {
       label: 'Estudiante',
       name: 'Juan Pérez García',
       role: UserRole.student,
-      description: 'Notas, asistencia y evolución académica',
       icon: Icons.person_rounded,
     ),
     _DemoAccount(
       email: 'padre@colegio.edu.co',
-      label: 'Padre de Familia',
+      label: 'Padre',
       name: 'Roberto Pérez',
       role: UserRole.parent,
-      description: 'Seguimiento de hijos y notificaciones',
       icon: Icons.family_restroom_rounded,
     ),
   ];
@@ -66,71 +62,99 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.read<AuthProvider>();
     final ok = await auth.login(_emailCtrl.text.trim(), _passCtrl.text);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error ?? 'Error al iniciar sesión'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(auth.error ?? 'Correo o contraseña incorrectos'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ));
     }
   }
 
   Future<void> _quickLogin(_DemoAccount acc) async {
-    setState(() { _selectedDemo = acc.email; _loggingInAs = true; });
+    setState(() {
+      _selectedDemo = acc.email;
+      _loggingInAs = true;
+    });
     _emailCtrl.text = acc.email;
     _passCtrl.text = '123456';
-    final auth = context.read<AuthProvider>();
-    await auth.login(acc.email, '123456');
+    await context.read<AuthProvider>().login(acc.email, '123456');
     if (mounted) setState(() => _loggingInAs = false);
   }
 
   Color _roleColor(UserRole role) {
     switch (role) {
-      case UserRole.coordinator: return AppColors.coordinator;
-      case UserRole.teacher:     return AppColors.teacher;
-      case UserRole.student:     return AppColors.student;
-      case UserRole.parent:      return AppColors.parent;
+      case UserRole.coordinator:
+        return AppColors.coordinator;
+      case UserRole.teacher:
+        return AppColors.teacher;
+      case UserRole.student:
+        return AppColors.student;
+      case UserRole.parent:
+        return AppColors.parent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final isWide = MediaQuery.of(context).size.width >= 720;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Row(
-        children: [
-          _buildLeftPanel(),
-          Expanded(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(40),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 28),
-                      _buildForm(auth),
-                      const SizedBox(height: 28),
-                      _buildDivider(),
-                      const SizedBox(height: 20),
-                      _buildQuickAccessCards(auth),
-                    ],
-                  ),
-                ),
+      body: isWide ? _wideLayout(auth) : _narrowLayout(auth),
+    );
+  }
+
+  // ─── Layouts ──────────────────────────────────────────────────────────────
+
+  Widget _wideLayout(AuthProvider auth) {
+    return Row(
+      children: [
+        _leftPanel(),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: _formCard(auth, compact: false),
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _narrowLayout(AuthProvider auth) {
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.fromLTRB(
+          20, MediaQuery.of(context).padding.top + 20, 20, 32),
+      child: Column(
+        children: [
+          // Logo en la parte superior del scroll, compacto
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Image.asset(
+              'assets/images/logo.png',
+              height: 72,
+              fit: BoxFit.contain,
+            ),
+          ),
+          _formCard(auth, compact: true),
         ],
       ),
     );
   }
 
-  Widget _buildLeftPanel() {
+  // ─── Left panel (desktop only) ────────────────────────────────────────────
+
+  Widget _leftPanel() {
     return Container(
-      width: 460,
+      width: 420,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF0F172A), Color(0xFF1E3A5F)],
@@ -138,145 +162,227 @@ class _LoginScreenState extends State<LoginScreen> {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(48),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildBrand(),
-            const Spacer(),
-            _buildHeroText(),
+            // Logo
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 52,
+                fit: BoxFit.contain,
+              ),
+            ),
             const SizedBox(height: 32),
-            ..._buildFeatureList(),
-            const Spacer(),
-            _buildFooterBadge(),
+            const Text('Gestión\nAcadémica\nIntegral',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15)),
+            const SizedBox(height: 12),
+            const Text(
+              'Plataforma completa para la administración de colegios con evaluación por competencias.',
+              style: TextStyle(
+                  color: Color(0xFF94A3B8), fontSize: 13, height: 1.55),
+            ),
+            const SizedBox(height: 24),
+            ..._features(),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_rounded,
+                      color: AppColors.secondary, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Multi-institución · Seguro · Escalable',
+                        style: TextStyle(
+                            color: Color(0xFFCBD5E1), fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBrand() {
-    return Row(
-      children: [
-        Container(
-          width: 44, height: 44,
-          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
-        ),
-        const SizedBox(width: 12),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('EduGestión Pro', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-            Text('Sistema Académico Integral', style: TextStyle(color: AppColors.primaryLight, fontSize: 11)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeroText() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Gestión Académica\nIntegral', style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w700, height: 1.2)),
-        SizedBox(height: 14),
-        Text(
-          'Plataforma completa para la administración de colegios. Evaluación por competencias, seguimiento estudiantil y boletines automáticos.',
-          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, height: 1.6),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildFeatureList() {
-    final features = [
-      (Icons.assessment_rounded, 'Evaluación por competencias y estándares'),
+  List<Widget> _features() {
+    const items = [
+      (Icons.assessment_rounded, 'Evaluación por estándares y competencias'),
       (Icons.bar_chart_rounded, 'Dashboards analíticos por rol'),
       (Icons.picture_as_pdf_rounded, 'Boletines automáticos en PDF'),
-      (Icons.notifications_rounded, 'Notificaciones a padres en tiempo real'),
+      (Icons.chat_rounded, 'Mensajería interna entre perfiles'),
       (Icons.security_rounded, 'Acceso seguro con roles diferenciados'),
     ];
-    return features.map((f) => Padding(
-      padding: const EdgeInsets.only(bottom: 11),
-      child: Row(
-        children: [
-          Icon(f.$1, color: AppColors.primaryLight, size: 18),
-          const SizedBox(width: 10),
-          Text(f.$2, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13)),
-        ],
-      ),
-    )).toList();
+    return items
+        .map((f) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(f.$1, color: AppColors.primaryLight, size: 16),
+                  const SizedBox(width: 10),
+                  Text(f.$2,
+                      style: const TextStyle(
+                          color: Color(0xFFCBD5E1), fontSize: 13)),
+                ],
+              ),
+            ))
+        .toList();
   }
 
-  Widget _buildFooterBadge() {
+  // ─── Form card ────────────────────────────────────────────────────────────
+
+  Widget _formCard(AuthProvider auth, {required bool compact}) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: const Row(
+      padding: EdgeInsets.all(compact ? 24 : 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.verified_rounded, color: AppColors.secondary, size: 18),
-          SizedBox(width: 10),
-          Expanded(child: Text('Multi-institución SaaS • Seguro • Escalable', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12))),
+          // ── Encabezado compacto ──
+          _compactHeader(compact),
+          SizedBox(height: compact ? 24 : 28),
+
+          // ── Formulario ──
+          _buildForm(auth),
+          SizedBox(height: compact ? 20 : 24),
+
+          // ── Divisor ──
+          _buildDivider(),
+          SizedBox(height: compact ? 16 : 20),
+
+          // ── Acceso rápido ──
+          _buildQuickAccess(auth, compact),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _compactHeader(bool compact) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Iniciar Sesión', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text(
+          'Bienvenido',
+          style: TextStyle(
+              fontSize: compact ? 22 : 26,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary),
+        ),
         const SizedBox(height: 4),
-        const Text('Ingresa tus credenciales o elige un perfil de prueba', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        const Text(
+          'Ingresa tus credenciales para acceder',
+          style:
+              TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
       ],
     );
   }
+
+  // ─── Form ─────────────────────────────────────────────────────────────────
 
   Widget _buildForm(AuthProvider auth) {
     return Form(
       key: _formKey,
       child: Column(
         children: [
+          // Email
           TextFormField(
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Correo electrónico',
-              prefixIcon: Icon(Icons.email_outlined),
+            style: const TextStyle(fontSize: 14),
+            decoration: _fieldDecoration(
+              label: 'Correo electrónico',
+              icon: Icons.email_outlined,
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu correo' : null,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? 'Ingresa tu correo' : null,
           ),
           const SizedBox(height: 14),
+
+          // Contraseña
           TextFormField(
             controller: _passCtrl,
             obscureText: _obscure,
-            decoration: InputDecoration(
-              labelText: 'Contraseña',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+            style: const TextStyle(fontSize: 14),
+            decoration: _fieldDecoration(
+              label: 'Contraseña',
+              icon: Icons.lock_outline,
+              suffix: IconButton(
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
             onFieldSubmitted: (_) => _login(),
           ),
           const SizedBox(height: 20),
+
+          // Botón ingresar
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 52,
             child: ElevatedButton(
               onPressed: auth.isLoading ? null : _login,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
               child: auth.isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Iniciar Sesión', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2.5))
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Ingresar',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.3)),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward_rounded, size: 18),
+                      ],
+                    ),
             ),
           ),
         ],
@@ -284,48 +390,107 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  InputDecoration _fieldDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle:
+          const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+      prefixIcon: Icon(icon, size: 20, color: AppColors.textSecondary),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide:
+            const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+      ),
+    );
+  }
+
+  // ─── Divider ──────────────────────────────────────────────────────────────
+
   Widget _buildDivider() {
-    return const Row(
+    return Row(
       children: [
-        Expanded(child: Divider()),
+        Expanded(child: Divider(color: Colors.grey.shade200)),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14),
-          child: Text('Acceso rápido — Usuarios de prueba', style: TextStyle(color: AppColors.textTertiary, fontSize: 12, fontWeight: FontWeight.w500)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'Acceso rápido',
+            style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade400,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5),
+          ),
         ),
-        Expanded(child: Divider()),
+        Expanded(child: Divider(color: Colors.grey.shade200)),
       ],
     );
   }
 
-  Widget _buildQuickAccessCards(AuthProvider auth) {
+  // ─── Quick access ─────────────────────────────────────────────────────────
+
+  Widget _buildQuickAccess(AuthProvider auth, bool compact) {
     return Column(
       children: [
-        GridView(
+        GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 100,
-          ),
-          children: _demoAccounts.map((acc) => _buildRoleCard(acc, auth)).toList(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: compact ? 2.6 : 2.3,
+          children: _demoAccounts
+              .map((acc) => _roleChip(acc, auth))
+              .toList(),
         ),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.info_outline_rounded, size: 15, color: AppColors.textTertiary),
+              Icon(Icons.info_outline_rounded,
+                  size: 14, color: AppColors.textSecondary),
               SizedBox(width: 6),
-              Text('Contraseña para todos los perfiles: ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              Text('123456', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary, letterSpacing: 2)),
+              Text('Contraseña de prueba: ',
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary)),
+              Text('123456',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 2)),
             ],
           ),
         ),
@@ -333,51 +498,66 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRoleCard(_DemoAccount acc, AuthProvider auth) {
+  Widget _roleChip(_DemoAccount acc, AuthProvider auth) {
     final isSelected = _selectedDemo == acc.email;
     final color = _roleColor(acc.role);
-    final isLoading = isSelected && (auth.isLoading || _loggingInAs);
+    final isLoading =
+        isSelected && (auth.isLoading || _loggingInAs);
 
     return GestureDetector(
       onTap: isLoading ? null : () => _quickLogin(acc),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
+        duration: const Duration(milliseconds: 180),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.07) : AppColors.surface,
+          color: isSelected
+              ? color.withValues(alpha: 0.08)
+              : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? color : AppColors.border,
+            color: isSelected ? color : const Color(0xFFE2E8F0),
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))]
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 1))],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 30, height: 30,
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(7)),
-                  child: isLoading
-                      ? Padding(padding: const EdgeInsets.all(6), child: CircularProgressIndicator(color: color, strokeWidth: 2))
-                      : Icon(acc.icon, color: color, size: 17),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                  child: Text('Demo', style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                ),
-              ],
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: isLoading
+                  ? Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: CircularProgressIndicator(
+                          color: color, strokeWidth: 2))
+                  : Icon(acc.icon, color: color, size: 15),
             ),
-            const SizedBox(height: 6),
-            Text(acc.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isSelected ? color : AppColors.textPrimary)),
-            Text(acc.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(acc.label,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? color
+                              : AppColors.textPrimary),
+                      overflow: TextOverflow.ellipsis),
+                  Text(acc.name,
+                      style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textSecondary),
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -385,12 +565,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// ─── Data class ───────────────────────────────────────────────────────────────
+
 class _DemoAccount {
   final String email;
   final String label;
   final String name;
   final UserRole role;
-  final String description;
   final IconData icon;
 
   const _DemoAccount({
@@ -398,7 +579,6 @@ class _DemoAccount {
     required this.label,
     required this.name,
     required this.role,
-    required this.description,
     required this.icon,
   });
 }

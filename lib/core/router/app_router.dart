@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/auth/login_screen.dart';
@@ -16,15 +15,23 @@ import '../../screens/teacher/my_courses_screen.dart';
 import '../../screens/teacher/grade_entry_screen.dart';
 import '../../screens/teacher/attendance_screen.dart';
 import '../../screens/teacher/observations_screen.dart';
+import '../../screens/teacher/standards_screen.dart';
+import '../../screens/teacher/grade_format_screen.dart';
+import '../../screens/teacher/hoja_de_vida_teacher_screen.dart';
+import '../../screens/student/hoja_de_vida_student_screen.dart';
+import '../../screens/shared/grade_sheet_screen.dart';
 import '../../screens/student/student_dashboard.dart';
 import '../../screens/student/student_grades_screen.dart';
 import '../../screens/student/student_attendance_screen.dart';
 import '../../screens/parent/parent_dashboard.dart';
 import '../../screens/parent/children_screen.dart';
+import '../../screens/parent/bulletin_screen.dart';
+import '../../screens/email/email_screen.dart';
 import '../../widgets/main_layout.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 final _shellKey = GlobalKey<NavigatorState>();
+
 
 GoRouter createRouter(AuthProvider auth) {
   return GoRouter(
@@ -53,29 +60,142 @@ GoRouter createRouter(AuthProvider auth) {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       ShellRoute(
         navigatorKey: _shellKey,
+        redirect: (context, state) {
+          if (!auth.isAuthenticated) return '/login';
+          final roleStr = switch (auth.currentUser!.role) {
+            UserRole.coordinator => 'coordinator',
+            UserRole.teacher    => 'teacher',
+            UserRole.student    => 'student',
+            UserRole.parent     => 'parent',
+          };
+          final path = state.matchedLocation;
+          const roles = ['coordinator', 'teacher', 'student', 'parent'];
+          for (final r in roles) {
+            if (r != roleStr && path.startsWith('/$r/')) {
+              return '/$roleStr/dashboard';
+            }
+          }
+          return null;
+        },
         builder: (context, state, child) => MainLayout(child: child),
         routes: [
           // Coordinator routes
-          GoRoute(path: '/coordinator/dashboard', builder: (_, __) => const CoordinatorDashboard()),
-          GoRoute(path: '/coordinator/users', builder: (_, __) => const UsersScreen()),
-          GoRoute(path: '/coordinator/academic-config', builder: (_, __) => const AcademicConfigScreen()),
-          GoRoute(path: '/coordinator/subjects', builder: (_, __) => const SubjectsScreen()),
-          GoRoute(path: '/coordinator/courses', builder: (_, __) => const CoursesScreen()),
-          GoRoute(path: '/coordinator/grades-config', builder: (_, __) => const GradesConfigScreen()),
-          GoRoute(path: '/coordinator/reports', builder: (_, __) => const ReportsScreen()),
+          GoRoute(
+            path: '/coordinator/dashboard',
+            builder: (_, _) => const CoordinatorDashboard(),
+          ),
+          GoRoute(
+            path: '/coordinator/users',
+            builder: (_, _) => const UsersScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/academic-config',
+            builder: (_, _) => const AcademicConfigScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/subjects',
+            builder: (_, _) => const SubjectsScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/courses',
+            builder: (_, _) => const CoursesScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/grades-config',
+            builder: (_, _) => const GradesConfigScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/reports',
+            builder: (_, _) => const ReportsScreen(),
+          ),
           // Teacher routes
-          GoRoute(path: '/teacher/dashboard', builder: (_, __) => const TeacherDashboard()),
-          GoRoute(path: '/teacher/courses', builder: (_, __) => const MyCoursesScreen()),
-          GoRoute(path: '/teacher/grades', builder: (_, __) => const GradeEntryScreen()),
-          GoRoute(path: '/teacher/attendance', builder: (_, __) => const AttendanceScreen()),
-          GoRoute(path: '/teacher/observations', builder: (_, __) => const ObservationsScreen()),
+          GoRoute(
+            path: '/teacher/dashboard',
+            builder: (_, _) => const TeacherDashboard(),
+          ),
+          GoRoute(
+            path: '/teacher/courses',
+            builder: (_, _) => const MyCoursesScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/grades',
+            builder: (_, _) => const GradeEntryScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/attendance',
+            builder: (_, _) => const AttendanceScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/observations',
+            builder: (_, _) => const ObservationsScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/standards',
+            builder: (_, _) => const StandardsScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/grade-sheet',
+            builder: (_, _) => const GradeSheetScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/grade-format',
+            builder: (_, _) => const GradeFormatScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/hoja-de-vida',
+            builder: (_, _) => const HojaDeVidaTeacherScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/grade-sheet',
+            builder: (_, _) => const GradeSheetScreen(),
+          ),
           // Student routes
-          GoRoute(path: '/student/dashboard', builder: (_, __) => const StudentDashboard()),
-          GoRoute(path: '/student/grades', builder: (_, __) => const StudentGradesScreen()),
-          GoRoute(path: '/student/attendance', builder: (_, __) => const StudentAttendanceScreen()),
+          GoRoute(
+            path: '/student/dashboard',
+            builder: (_, _) => const StudentDashboard(),
+          ),
+          GoRoute(
+            path: '/student/grades',
+            builder: (_, _) => const StudentGradesScreen(),
+          ),
+          GoRoute(
+            path: '/student/attendance',
+            builder: (_, _) => const StudentAttendanceScreen(),
+          ),
+          GoRoute(
+            path: '/student/hoja-de-vida',
+            builder: (_, _) => const HojaDeVidaStudentScreen(),
+          ),
           // Parent routes
-          GoRoute(path: '/parent/dashboard', builder: (_, __) => const ParentDashboard()),
-          GoRoute(path: '/parent/children', builder: (_, __) => const ChildrenScreen()),
+          GoRoute(
+            path: '/parent/dashboard',
+            builder: (_, _) => const ParentDashboard(),
+          ),
+          GoRoute(
+            path: '/parent/bulletin',
+            builder: (_, _) => const BulletinScreen(),
+          ),
+          GoRoute(
+            path: '/parent/children',
+            builder: (_, _) => const ChildrenScreen(),
+          ),
+          // Email routes (all roles)
+          GoRoute(
+            path: '/coordinator/email',
+            builder: (_, _) => const EmailScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/email',
+            builder: (_, _) => const EmailScreen(),
+          ),
+          GoRoute(
+            path: '/student/email',
+            builder: (_, _) => const EmailScreen(),
+          ),
+          GoRoute(
+            path: '/parent/email',
+            builder: (_, _) => const EmailScreen(),
+          ),
         ],
       ),
     ],

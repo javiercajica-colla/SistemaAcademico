@@ -25,7 +25,8 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
         children: [
           SectionHeader(
             title: 'Configuración de Evaluación',
-            subtitle: 'Define los porcentajes de evaluación por asignatura y período',
+            subtitle:
+                'Define los porcentajes de evaluación por asignatura y período',
           ),
           const SizedBox(height: 20),
           _buildFilters(academic),
@@ -43,20 +44,27 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedPeriod,
+            initialValue: _selectedPeriod,
             decoration: const InputDecoration(labelText: 'Período Académico'),
-            items: academic.activePeriods.map((p) => DropdownMenuItem(value: p.id, child: Text(p.name))).toList(),
+            items: academic.activePeriods
+                .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name)))
+                .toList(),
             onChanged: (v) => setState(() => _selectedPeriod = v),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedSubject,
+            initialValue: _selectedSubject,
             decoration: const InputDecoration(labelText: 'Asignatura'),
             items: [
-              const DropdownMenuItem(value: null, child: Text('Todas las asignaturas')),
-              ...academic.subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+              const DropdownMenuItem(
+                value: null,
+                child: Text('Todas las asignaturas'),
+              ),
+              ...academic.subjects.map(
+                (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+              ),
             ],
             onChanged: (v) => setState(() => _selectedSubject = v),
           ),
@@ -77,7 +85,10 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
         icon: const Icon(Icons.save_rounded, size: 16),
         label: const Text('Guardar cambios'),
         onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Configuración guardada'), backgroundColor: AppColors.secondary),
+          const SnackBar(
+            content: Text('Configuración guardada'),
+            backgroundColor: AppColors.secondary,
+          ),
         ),
       ),
       child: Column(
@@ -103,10 +114,49 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
       ),
       child: const Row(
         children: [
-          Expanded(flex: 3, child: Text('Asignatura', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
-          Expanded(flex: 2, child: Text('Estándares (%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
-          Expanded(flex: 2, child: Text('Evaluación Final (%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
-          Expanded(child: Text('Total', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
+          Expanded(
+            flex: 3,
+            child: Text(
+              'Asignatura',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Estándares (%)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Evaluación Final (%)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'Total',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -117,10 +167,18 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
     final ok = total == 100;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500))),
+          Expanded(
+            flex: 3,
+            child: Text(
+              name,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _SliderInput(value: sw, color: AppColors.primary),
@@ -133,12 +191,17 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: ok ? AppColors.secondary.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
+                color: ok
+                    ? AppColors.secondary.withValues(alpha: 0.1)
+                    : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 '${total.toStringAsFixed(0)}%',
-                style: TextStyle(color: ok ? AppColors.secondary : AppColors.error, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: ok ? AppColors.secondary : AppColors.error,
+                  fontWeight: FontWeight.w700,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -154,7 +217,10 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Define la escala de calificación institucional', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          const Text(
+            'Define la escala de calificación institucional',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -172,12 +238,25 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 SizedBox(width: 8),
-                Text('Escala actual: 1.0 a 5.0 — Aprobación mínima: 3.0', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                Text(
+                  'Escala actual: 1.0 a 5.0 — Aprobación mínima: 3.0',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -224,7 +303,10 @@ class _SliderInputState extends State<_SliderInput> {
         ),
         SizedBox(
           width: 40,
-          child: Text('${_val.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          child: Text(
+            '${_val.toStringAsFixed(0)}%',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
         ),
       ],
     );
@@ -248,9 +330,23 @@ class _ScaleItem extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 22, color: color, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );

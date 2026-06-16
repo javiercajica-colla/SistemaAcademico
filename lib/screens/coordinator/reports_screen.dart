@@ -91,9 +91,14 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           AppCard(
             title: 'Boletines de Estudiantes',
             child: Column(
-              children: academic.students.map((s) {
+              children: academic.students
+                  .where((s) => _selectedCourse == null || s.courseId == _selectedCourse)
+                  .map((s) {
                 final course = academic.courseById(s.courseId ?? '');
-                final avg = academic.calculateOverallAverage(s.id, 'ap1');
+                final avg = academic.calculateOverallAverage(
+                  s.id,
+                  _selectedPeriod ?? 'ap1',
+                );
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),

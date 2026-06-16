@@ -175,7 +175,9 @@ class TeacherDashboard extends StatelessWidget {
               children: [
                 Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 18),
                 SizedBox(width: 8),
-                Text('3 tareas completadas esta semana', style: TextStyle(fontSize: 12, color: AppColors.secondary)),
+                Expanded(
+                  child: Text('3 tareas completadas esta semana', style: TextStyle(fontSize: 12, color: AppColors.secondary)),
+                ),
               ],
             ),
           ),

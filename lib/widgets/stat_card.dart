@@ -56,18 +56,49 @@ class StatCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 2),
-                  Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w700, height: 1.1), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
-                    Text(subtitle!, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ],
               ),
             ),
             if (onTap != null)
-              const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textTertiary, size: 14),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.textTertiary,
+                size: 14,
+              ),
           ],
         ),
       ),
@@ -82,9 +113,16 @@ class GradeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = grade >= 4.0 ? AppColors.secondary : grade >= 3.0 ? AppColors.warning : AppColors.error;
+    final color = grade >= 4.0
+        ? AppColors.secondary
+        : grade >= 3.0
+        ? AppColors.warning
+        : AppColors.error;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12, vertical: compact ? 3 : 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 12,
+        vertical: compact ? 3 : 5,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
@@ -92,7 +130,11 @@ class GradeChip extends StatelessWidget {
       ),
       child: Text(
         grade.toStringAsFixed(1),
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: compact ? 12 : 14),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: compact ? 12 : 14,
+        ),
       ),
     );
   }
@@ -103,7 +145,12 @@ class SectionHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? action;
 
-  const SectionHeader({super.key, required this.title, this.subtitle, this.action});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.action,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +165,15 @@ class SectionHeader extends StatelessWidget {
               if (subtitle != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
             ],
           ),
         ),
-        if (action != null) action!,
+        ?action,
       ],
     );
   }
@@ -135,7 +185,13 @@ class AppCard extends StatelessWidget {
   final String? title;
   final Widget? titleAction;
 
-  const AppCard({super.key, required this.child, this.padding, this.title, this.titleAction});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.title,
+    this.titleAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -153,15 +209,21 @@ class AppCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
               child: Row(
                 children: [
-                  Expanded(child: Text(title!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
-                  if (titleAction != null) titleAction!,
+                  Expanded(
+                    child: Text(
+                      title!,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  ?titleAction,
                 ],
               ),
             ),
-          Padding(
-            padding: padding ?? const EdgeInsets.all(20),
-            child: child,
-          ),
+          Padding(padding: padding ?? const EdgeInsets.all(20), child: child),
         ],
       ),
     );

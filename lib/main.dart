@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'providers/auth_provider.dart';
 import 'providers/academic_provider.dart';
+import 'providers/email_provider.dart';
 
 void main() {
   runApp(const SistemaAcademicoApp());
@@ -19,6 +20,7 @@ class SistemaAcademicoApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AcademicProvider()),
+        ChangeNotifierProvider(create: (_) => EmailProvider()),
       ],
       child: const _AppRouter(),
     );

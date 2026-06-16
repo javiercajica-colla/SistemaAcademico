@@ -72,6 +72,57 @@ class MockData {
       password: '123456',
       role: UserRole.student,
     ),
+    // Estudiantes st5-st10 con usuarios únicos
+    const AppUser(
+      id: 'u11',
+      name: 'Carlos Mora Ruiz',
+      email: 'carlos.mora@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    const AppUser(
+      id: 'u12',
+      name: 'Valentina Cruz Peña',
+      email: 'valentina.cruz@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    const AppUser(
+      id: 'u13',
+      name: 'Diego Herrera Silva',
+      email: 'diego.herrera@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    const AppUser(
+      id: 'u14',
+      name: 'Isabella Ramírez Castro',
+      email: 'isabella.ramirez@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    const AppUser(
+      id: 'u15',
+      name: 'Sebastián López Vargas',
+      email: 'sebastian.lopez@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    const AppUser(
+      id: 'u16',
+      name: 'Camila Jiménez Mora',
+      email: 'camila.jimenez@colegio.edu.co',
+      password: '123456',
+      role: UserRole.student,
+    ),
+    // Padre de familia adicional
+    const AppUser(
+      id: 'u17',
+      name: 'Ana María Torres',
+      email: 'ana.torres@colegio.edu.co',
+      password: '123456',
+      role: UserRole.parent,
+    ),
   ];
 
   static final List<AcademicYear> academicYears = [
@@ -167,12 +218,12 @@ class MockData {
     Student(id: 'st2', userId: 'u5', firstName: 'María', lastName: 'González López', documentId: '1000002', birthDate: DateTime(2012, 7, 22), courseId: 'c1', parentIds: ['p1']),
     Student(id: 'st3', userId: 'u6', firstName: 'Laura', lastName: 'García Torres', documentId: '1000003', birthDate: DateTime(2011, 11, 8), courseId: 'c1', parentIds: []),
     Student(id: 'st4', userId: 'u10', firstName: 'Andrés', lastName: 'Torres', documentId: '1000004', birthDate: DateTime(2012, 5, 3), courseId: 'c1', parentIds: []),
-    Student(id: 'st5', userId: 'u4', firstName: 'Carlos', lastName: 'Mora Ruiz', documentId: '1000005', birthDate: DateTime(2012, 9, 18), courseId: 'c1', parentIds: []),
-    Student(id: 'st6', userId: 'u4', firstName: 'Valentina', lastName: 'Cruz Peña', documentId: '1000006', birthDate: DateTime(2011, 12, 25), courseId: 'c2', parentIds: []),
-    Student(id: 'st7', userId: 'u4', firstName: 'Diego', lastName: 'Herrera Silva', documentId: '1000007', birthDate: DateTime(2010, 4, 14), courseId: 'c3', parentIds: []),
-    Student(id: 'st8', userId: 'u4', firstName: 'Isabella', lastName: 'Ramírez Castro', documentId: '1000008', birthDate: DateTime(2010, 8, 30), courseId: 'c3', parentIds: []),
-    Student(id: 'st9', userId: 'u4', firstName: 'Sebastián', lastName: 'López Vargas', documentId: '1000009', birthDate: DateTime(2009, 2, 11), courseId: 'c4', parentIds: []),
-    Student(id: 'st10', userId: 'u4', firstName: 'Camila', lastName: 'Jiménez Mora', documentId: '1000010', birthDate: DateTime(2009, 6, 7), courseId: 'c4', parentIds: []),
+    Student(id: 'st5', userId: 'u11', firstName: 'Carlos', lastName: 'Mora Ruiz', documentId: '1000005', birthDate: DateTime(2012, 9, 18), courseId: 'c1', parentIds: []),
+    Student(id: 'st6', userId: 'u12', firstName: 'Valentina', lastName: 'Cruz Peña', documentId: '1000006', birthDate: DateTime(2011, 12, 25), courseId: 'c2', parentIds: []),
+    Student(id: 'st7', userId: 'u13', firstName: 'Diego', lastName: 'Herrera Silva', documentId: '1000007', birthDate: DateTime(2010, 4, 14), courseId: 'c3', parentIds: ['p2']),
+    Student(id: 'st8', userId: 'u14', firstName: 'Isabella', lastName: 'Ramírez Castro', documentId: '1000008', birthDate: DateTime(2010, 8, 30), courseId: 'c3', parentIds: ['p2']),
+    Student(id: 'st9', userId: 'u15', firstName: 'Sebastián', lastName: 'López Vargas', documentId: '1000009', birthDate: DateTime(2009, 2, 11), courseId: 'c4', parentIds: []),
+    Student(id: 'st10', userId: 'u16', firstName: 'Camila', lastName: 'Jiménez Mora', documentId: '1000010', birthDate: DateTime(2009, 6, 7), courseId: 'c4', parentIds: []),
   ];
 
   static final List<Parent> parents = [
@@ -185,6 +236,16 @@ class MockData {
       phone: '3001234567',
       relationship: 'Padre',
       studentIds: ['st1', 'st2'],
+    ),
+    const Parent(
+      id: 'p2',
+      userId: 'u17',
+      firstName: 'Ana María',
+      lastName: 'Torres',
+      documentId: '5000002',
+      phone: '3107654321',
+      relationship: 'Madre',
+      studentIds: ['st7', 'st8'],
     ),
   ];
 

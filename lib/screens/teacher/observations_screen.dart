@@ -165,7 +165,13 @@ class _ObservationsScreenState extends State<ObservationsScreen> {
                   child: Text(student.firstName.substring(0, 1), style: const TextStyle(color: AppColors.student, fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
                 const SizedBox(width: 10),
-                Text(student.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                Expanded(
+                  child: Text(
+                    student.fullName,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -192,7 +198,7 @@ class _ObservationsScreenState extends State<ObservationsScreen> {
           title: const Text('Nueva Observación'),
           content: SizedBox(
             width: 480,
-            child: Column(
+            child: SingleChildScrollView(child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
@@ -221,7 +227,7 @@ class _ObservationsScreenState extends State<ObservationsScreen> {
                 const SizedBox(height: 12),
                 TextField(controller: descCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'Descripción detallada')),
               ],
-            ),
+            )),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),

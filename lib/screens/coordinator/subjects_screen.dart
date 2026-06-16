@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../widgets/stat_card.dart';
 
@@ -147,8 +149,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                 children: [
                   const Icon(Icons.school_rounded, color: AppColors.teacher, size: 20),
                   const SizedBox(width: 10),
-                  Text('Docente responsable: ', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                  Text(teacher.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  const Text('Docente responsable: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  Expanded(
+                    child: Text(
+                      teacher.fullName,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -247,56 +255,182 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   }
 
   void _showSubjectDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final codeCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final areaCtrl = TextEditingController();
+    final hoursCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Nueva Asignatura'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const TextField(decoration: InputDecoration(labelText: 'Código')),
-              const SizedBox(height: 12),
-              const TextField(decoration: InputDecoration(labelText: 'Nombre')),
-              const SizedBox(height: 12),
-              const TextField(decoration: InputDecoration(labelText: 'Área')),
-              const SizedBox(height: 12),
-              const TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Horas por semana')),
-            ],
+        content: Form(
+          key: formKey,
+          child: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: codeCtrl,
+                  decoration: const InputDecoration(labelText: 'Código (ej: MAT)'),
+                  textCapitalization: TextCapitalization.characters,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: areaCtrl,
+                  decoration: const InputDecoration(labelText: 'Área (ej: Ciencias Exactas)'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: hoursCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Horas por semana', suffixText: 'h'),
+                  validator: (v) {
+                    final n = int.tryParse(v ?? '');
+                    if (n == null || n < 1) return 'Ingresa un número válido';
+                    return null;
+                  },
+                ),
+              ],
+            )),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Guardar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              final academic = context.read<AcademicProvider>();
+              const uuid = Uuid();
+              final newSubject = Subject(
+                id: uuid.v4(),
+                code: codeCtrl.text.trim().toUpperCase(),
+                name: nameCtrl.text.trim(),
+                area: areaCtrl.text.trim(),
+                hoursPerWeek: int.parse(hoursCtrl.text.trim()),
+              );
+              final subjectName = newSubject.name;
+              final subjectId = newSubject.id;
+              // 1° Cerrar el diálogo ANTES de notifyListeners
+              Navigator.pop(ctx);
+              // 2° Actualizar provider y estado
+              academic.addSubject(newSubject);
+              setState(() => _selectedSubject = subjectId);
+              // 3° Confirmar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Asignatura "$subjectName" creada'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            },
+            child: const Text('Guardar'),
+          ),
         ],
       ),
-    );
+    ).then((_) {
+      codeCtrl.dispose();
+      nameCtrl.dispose();
+      areaCtrl.dispose();
+      hoursCtrl.dispose();
+    });
   }
 
   void _showStandardDialog(BuildContext context, String subjectId) {
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final weightCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Nuevo Estándar Evaluativo'),
-        content: SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const TextField(decoration: InputDecoration(labelText: 'Nombre del estándar')),
-              const SizedBox(height: 12),
-              const TextField(decoration: InputDecoration(labelText: 'Descripción'), maxLines: 2),
-              const SizedBox(height: 12),
-              const TextField(decoration: InputDecoration(labelText: 'Porcentaje (%)', suffixText: '%')),
-            ],
+        content: Form(
+          key: formKey,
+          child: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre del estándar'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción'),
+                  maxLines: 2,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: weightCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Porcentaje (%)', suffixText: '%'),
+                  validator: (v) {
+                    final n = double.tryParse(v ?? '');
+                    if (n == null || n <= 0 || n > 100) return 'Ingresa un valor entre 1 y 100';
+                    return null;
+                  },
+                ),
+              ],
+            )),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Guardar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              final academic = context.read<AcademicProvider>();
+              const uuid = Uuid();
+              final newStandard = Standard(
+                id: uuid.v4(),
+                subjectId: subjectId,
+                name: nameCtrl.text.trim(),
+                description: descCtrl.text.trim(),
+                weight: double.parse(weightCtrl.text.trim()),
+              );
+              final standardName = newStandard.name;
+              // 1° Cerrar ANTES de notifyListeners
+              Navigator.pop(ctx);
+              // 2° Actualizar provider
+              academic.addStandard(newStandard);
+              // 3° Confirmar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Estándar "$standardName" agregado'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            },
+            child: const Text('Guardar'),
+          ),
         ],
       ),
-    );
+    ).then((_) {
+      nameCtrl.dispose();
+      descCtrl.dispose();
+      weightCtrl.dispose();
+    });
   }
 }

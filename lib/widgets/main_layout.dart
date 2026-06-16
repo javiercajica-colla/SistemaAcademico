@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,19 +17,41 @@ class MainLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // En web siempre sidebar permanente; en móvil/APK usar Drawer ocultable
+    final usePermanentSidebar =
+        kIsWeb || MediaQuery.of(context).size.width >= 768;
+
+    if (usePermanentSidebar) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Row(
+          children: [
+            const AppSidebar(),
+            Expanded(
+              child: Column(
+                children: [
+                  _AppHeader(showMenuButton: false),
+                  Expanded(child: child),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Móvil / APK: sidebar como Drawer deslizable
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Row(
+      drawer: Drawer(
+        width: 260,
+        backgroundColor: AppColors.sidebarBg,
+        child: const AppSidebar(),
+      ),
+      body: Column(
         children: [
-          const AppSidebar(),
-          Expanded(
-            child: Column(
-              children: [
-                _AppHeader(),
-                Expanded(child: child),
-              ],
-            ),
-          ),
+          _AppHeader(showMenuButton: true),
+          Expanded(child: child),
         ],
       ),
     );
@@ -36,11 +59,15 @@ class MainLayout extends StatelessWidget {
 }
 
 class _AppHeader extends StatelessWidget {
+  final bool showMenuButton;
+  const _AppHeader({this.showMenuButton = false});
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
-    final user = auth.currentUser!;
+    final user = auth.currentUser;
+    if (user == null) return const SizedBox(height: 64);
     final unread = academic.unreadNotificationsCount(user.id);
     final route = GoRouterState.of(context).matchedLocation;
     final title = _titleForRoute(route);
@@ -54,6 +81,15 @@ class _AppHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (showMenuButton)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded,
+                    color: AppColors.textSecondary),
+                tooltip: 'Menú',
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            ),
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const Spacer(),
           _buildPeriodBadge(academic),
@@ -250,7 +286,7 @@ class _AppHeader extends StatelessWidget {
           ]),
           content: SizedBox(
             width: 380,
-            child: Column(
+            child: SingleChildScrollView(child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
@@ -338,7 +374,7 @@ class _AppHeader extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            )),
           ),
           actions: [
             TextButton(
@@ -496,12 +532,18 @@ class _AppHeader extends StatelessWidget {
     if (route.contains('courses')) return 'Cursos y Grupos';
     if (route.contains('grades-config')) return 'Configuración de Evaluación';
     if (route.contains('reports')) return 'Reportes y Boletines';
+    if (route.contains('teacher/standards')) return 'Estándares e Indicadores';
+    if (route.contains('grade-sheet')) return 'Planilla de Notas';
+    if (route.contains('grade-format')) return 'Formato de Notas';
+    if (route.contains('hoja-de-vida')) return 'Hoja de Vida';
     if (route.contains('teacher/grades')) return 'Registro de Calificaciones';
     if (route.contains('teacher/courses')) return 'Mis Cursos';
     if (route.contains('attendance')) return 'Control de Asistencia';
     if (route.contains('observations')) return 'Observaciones';
     if (route.contains('student/grades')) return 'Mis Calificaciones';
     if (route.contains('parent/children')) return 'Información de Mis Hijos';
+    if (route.contains('parent/bulletin')) return 'Boletín de Notas';
+    if (route.contains('/email')) return 'Correo Interno';
     return 'Sistema Académico';
   }
 }

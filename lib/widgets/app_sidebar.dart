@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
+import '../providers/email_provider.dart';
 import 'user_avatar.dart';
 
 class AppSidebar extends StatelessWidget {
@@ -12,7 +13,9 @@ class AppSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final user = auth.currentUser!;
+    final user = auth.currentUser;
+    if (user == null) return const SizedBox.shrink();
+    final emailUnread = context.watch<EmailProvider>().countUnread(user.id);
     return Container(
       width: 260,
       color: AppColors.sidebarBg,
@@ -20,7 +23,7 @@ class AppSidebar extends StatelessWidget {
         children: [
           _buildHeader(context, user),
           const SizedBox(height: 8),
-          Expanded(child: _buildNavItems(context, user.role)),
+          Expanded(child: _buildNavItems(context, user.role, emailUnread)),
           _buildFooter(context, auth),
         ],
       ),
@@ -125,8 +128,8 @@ class AppSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItems(BuildContext context, UserRole role) {
-    final items = _navItems(role);
+  Widget _buildNavItems(BuildContext context, UserRole role, int emailUnread) {
+    final items = _navItems(role, emailUnread);
     final currentPath = GoRouterState.of(context).matchedLocation;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -203,41 +206,24 @@ class AppSidebar extends StatelessWidget {
     }
   }
 
-  List<_NavItem?> _navItems(UserRole role) {
+  List<_NavItem?> _navItems(UserRole role, int emailUnread) {
     switch (role) {
       case UserRole.coordinator:
         return [
-          _NavItem(
-            'Dashboard',
-            Icons.dashboard_rounded,
-            '/coordinator/dashboard',
-          ),
+          _NavItem('Dashboard', Icons.dashboard_rounded, '/coordinator/dashboard'),
           null,
           _NavItem('Usuarios', Icons.people_rounded, '/coordinator/users'),
           _NavItem('Docentes', Icons.person_rounded, '/coordinator/users'),
           null,
-          _NavItem(
-            'Config. Académica',
-            Icons.calendar_month_rounded,
-            '/coordinator/academic-config',
-          ),
+          _NavItem('Config. Académica', Icons.calendar_month_rounded, '/coordinator/academic-config'),
           _NavItem('Asignaturas', Icons.book_rounded, '/coordinator/subjects'),
-          _NavItem(
-            'Cursos / Grupos',
-            Icons.class_rounded,
-            '/coordinator/courses',
-          ),
-          _NavItem(
-            'Config. Evaluación',
-            Icons.assessment_rounded,
-            '/coordinator/grades-config',
-          ),
+          _NavItem('Cursos / Grupos', Icons.class_rounded, '/coordinator/courses'),
+          _NavItem('Config. Evaluación', Icons.assessment_rounded, '/coordinator/grades-config'),
           null,
-          _NavItem(
-            'Reportes y Boletines',
-            Icons.summarize_rounded,
-            '/coordinator/reports',
-          ),
+          _NavItem('Reportes y Boletines', Icons.summarize_rounded, '/coordinator/reports'),
+          _NavItem('Planilla de Notas', Icons.table_view_rounded, '/coordinator/grade-sheet'),
+          null,
+          _NavItem('Correo Interno', Icons.email_rounded, '/coordinator/email', emailUnread),
         ];
       case UserRole.teacher:
         return [
@@ -245,41 +231,36 @@ class AppSidebar extends StatelessWidget {
           null,
           _NavItem('Mis Cursos', Icons.class_rounded, '/teacher/courses'),
           _NavItem('Calificaciones', Icons.grade_rounded, '/teacher/grades'),
-          _NavItem(
-            'Asistencia',
-            Icons.fact_check_rounded,
-            '/teacher/attendance',
-          ),
-          _NavItem(
-            'Observaciones',
-            Icons.edit_note_rounded,
-            '/teacher/observations',
-          ),
+          _NavItem('Asistencia', Icons.fact_check_rounded, '/teacher/attendance'),
+          _NavItem('Observaciones', Icons.edit_note_rounded, '/teacher/observations'),
+          null,
+          _NavItem('Estándares', Icons.checklist_rounded, '/teacher/standards'),
+          _NavItem('Planilla de Notas', Icons.table_view_rounded, '/teacher/grade-sheet'),
+          _NavItem('Formato de Notas', Icons.print_rounded, '/teacher/grade-format'),
+          null,
+          _NavItem('Hoja de Vida', Icons.badge_rounded, '/teacher/hoja-de-vida'),
+          null,
+          _NavItem('Correo Interno', Icons.email_rounded, '/teacher/email', emailUnread),
         ];
       case UserRole.student:
         return [
-          _NavItem(
-            'Mi Dashboard',
-            Icons.dashboard_rounded,
-            '/student/dashboard',
-          ),
+          _NavItem('Mi Dashboard', Icons.dashboard_rounded, '/student/dashboard'),
           null,
           _NavItem('Calificaciones', Icons.grade_rounded, '/student/grades'),
-          _NavItem(
-            'Asistencia',
-            Icons.fact_check_rounded,
-            '/student/attendance',
-          ),
+          _NavItem('Asistencia', Icons.fact_check_rounded, '/student/attendance'),
+          null,
+          _NavItem('Hoja de Vida', Icons.badge_rounded, '/student/hoja-de-vida'),
+          null,
+          _NavItem('Correo Interno', Icons.email_rounded, '/student/email', emailUnread),
         ];
       case UserRole.parent:
         return [
           _NavItem('Dashboard', Icons.dashboard_rounded, '/parent/dashboard'),
           null,
-          _NavItem(
-            'Mis Hijos',
-            Icons.family_restroom_rounded,
-            '/parent/children',
-          ),
+          _NavItem('Mis Hijos', Icons.family_restroom_rounded, '/parent/children'),
+          _NavItem('Boletín de Notas', Icons.article_rounded, '/parent/bulletin'),
+          null,
+          _NavItem('Correo Interno', Icons.email_rounded, '/parent/email', emailUnread),
         ];
     }
   }
@@ -289,7 +270,8 @@ class _NavItem {
   final String label;
   final IconData icon;
   final String path;
-  const _NavItem(this.label, this.icon, this.path);
+  final int badge;
+  const _NavItem(this.label, this.icon, this.path, [this.badge = 0]);
 }
 
 class _NavTile extends StatefulWidget {
@@ -346,7 +328,23 @@ class _NavTileState extends State<_NavTile> {
                   ),
                 ),
               ),
-              if (active)
+              if (widget.item.badge > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${widget.item.badge}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              else if (active)
                 Container(
                   width: 6,
                   height: 6,
