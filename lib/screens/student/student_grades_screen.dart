@@ -98,7 +98,7 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
   }
 
   Widget _buildSubjectCard(String studentId, String subjectId, String subjectName, AcademicProvider academic) {
-    final standards = academic.standardsForSubject(subjectId);
+    final standards = academic.standardsForSubjectAndPeriod(subjectId, _selectedPeriod);
     final gradesList = academic.gradesForStudentSubjectPeriod(studentId, subjectId, _selectedPeriod);
     final avg = academic.calculateSubjectPeriodGrade(studentId, subjectId, _selectedPeriod);
     final config = academic.evalConfigFor(subjectId, _selectedPeriod);
@@ -140,12 +140,13 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
                   ),
                   const SizedBox(height: 12),
                   ...standards.map((std) {
-                    try {
-                      final g = gradesList.firstWhere((gr) => gr.standardId == std.id);
-                      return _gradeRow(std.name, g.value, '${std.weight.toStringAsFixed(0)}%');
-                    } catch (_) {
-                      return _gradeRow(std.name, null, '${std.weight.toStringAsFixed(0)}%');
-                    }
+                    final score = academic.standardGradeForStudent(
+                      studentId,
+                      subjectId,
+                      _selectedPeriod,
+                      std.id,
+                    );
+                    return _gradeRow(std.name, score, '${std.weight.toStringAsFixed(0)}%');
                   }),
                   const Divider(),
                   Builder(builder: (_) {

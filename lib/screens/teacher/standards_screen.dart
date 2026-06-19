@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
@@ -189,7 +190,12 @@ class _StandardsScreenState extends State<StandardsScreen> {
               child: Text('Peso: ${standard.weight.toStringAsFixed(0)}%',
                   style: const TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600)),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+              onPressed: () => _showEditStandardDialog(academic, standard),
+              tooltip: 'Editar estándar',
+            ),
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
               onPressed: () => _confirmDeleteStandard(academic, standard),
@@ -205,13 +211,19 @@ class _StandardsScreenState extends State<StandardsScreen> {
             TextButton.icon(
               onPressed: () => _showAddIndicatorDialog(academic, standard.id, indicators.length + 1),
               icon: const Icon(Icons.add, size: 16),
-              label: const Text('Agregar Indicador'),
+              label: const Text('Agregar Competencia'),
             ),
           if (indicators.length >= 3)
             const Padding(
               padding: EdgeInsets.only(top: 4),
-              child: Text('Máximo 3 indicadores por estándar.',
+              child: Text('Máximo 3 competencias por estándar.',
                   style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ),
+          if (indicators.length < 2)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text('Debe registrar al menos 2 competencias para poder evaluar este estándar.',
+                  style: TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w500)),
             ),
         ],
       ),
@@ -221,6 +233,8 @@ class _StandardsScreenState extends State<StandardsScreen> {
   Widget _buildIndicatorCard(AcademicProvider academic, Indicator indicator) {
     final activities = academic.activitiesForIndicator(indicator.id);
     final grade = academic.calculateIndicatorGrade(indicator.id);
+    final siblingCount = academic.indicatorsForStandard(indicator.standardId).length;
+    final canDeleteIndicator = siblingCount > 2;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -248,32 +262,41 @@ class _StandardsScreenState extends State<StandardsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('${activities.length}/4 actividades',
+            Text('${activities.length}/3 actividades',
                 style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
             const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
-              onPressed: () => academic.deleteIndicator(indicator.id),
-              tooltip: 'Eliminar indicador',
+              icon: Icon(
+                Icons.delete_outline,
+                size: 16,
+                color: canDeleteIndicator ? AppColors.error : AppColors.textTertiary,
+              ),
+              onPressed: canDeleteIndicator
+                  ? () => academic.deleteIndicator(indicator.id)
+                  : null,
+              tooltip: canDeleteIndicator
+                  ? 'Eliminar competencia'
+                  : 'Debe mantener al menos 2 competencias',
             ),
           ],
         ),
         children: [
           const Divider(height: 1),
           const SizedBox(height: 8),
-          ...activities.map((act) => _buildActivityRow(academic, act)),
-          if (activities.length < 4)
-            TextButton.icon(
-              onPressed: () => _showAddActivityDialog(academic, indicator.id, activities.length + 1),
-              icon: const Icon(Icons.add, size: 14),
-              label: const Text('Agregar Actividad', style: TextStyle(fontSize: 12)),
+          if (activities.isEmpty)
+            const Text(
+              'Aún no hay actividades registradas para esta competencia.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            )
+          else
+            ...activities.map((act) => _buildActivityRow(academic, act)),
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'Las actividades (fecha, nombre y descripción) se registran desde el módulo de Calificaciones al momento de evaluarlas.',
+              style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontStyle: FontStyle.italic),
             ),
-          if (activities.length >= 4)
-            const Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Text('Máximo 4 actividades por indicador.',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-            ),
+          ),
         ],
       ),
     );
@@ -306,6 +329,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(activity.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                if (activity.date != null)
+                  Text(
+                    DateFormat('dd/MM/yyyy').format(activity.date!),
+                    style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                  ),
                 if (activity.description.isNotEmpty)
                   Text(activity.description, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               ],
@@ -426,6 +454,73 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
+  void _showEditStandardDialog(AcademicProvider academic, Standard standard) {
+    final nameCtrl = TextEditingController(text: standard.name);
+    final descCtrl = TextEditingController(text: standard.description);
+    final weightCtrl = TextEditingController(text: standard.weight.toStringAsFixed(0));
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.edit_outlined, color: AppColors.primary),
+          SizedBox(width: 8),
+          Text('Editar Estándar'),
+        ]),
+        content: SizedBox(
+          width: 400,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre del estándar', border: OutlineInputBorder()),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: weightCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Peso (%)', border: OutlineInputBorder(), suffixText: '%'),
+                  validator: (v) {
+                    final d = double.tryParse(v ?? '');
+                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              academic.updateStandard(
+                standard.id,
+                name: nameCtrl.text.trim(),
+                description: descCtrl.text.trim(),
+                weight: double.parse(weightCtrl.text),
+              );
+              Navigator.pop(ctx);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showAddIndicatorDialog(AcademicProvider academic, String standardId, int order) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -441,7 +536,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
             child: Text('$order', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.purple)),
           ),
           const SizedBox(width: 8),
-          Text('Indicador $order'),
+          Text('Competencia $order'),
         ]),
         content: SizedBox(
           width: 400,
@@ -452,7 +547,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
               children: [
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre del indicador', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Nombre de la competencia', border: OutlineInputBorder()),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                 ),
                 const SizedBox(height: 12),
@@ -486,72 +581,12 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddActivityDialog(AcademicProvider academic, String indicatorId, int order) {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(children: [
-          Container(
-            width: 24, height: 24,
-            decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-            child: Center(child: Text('$order', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.info))),
-          ),
-          const SizedBox(width: 8),
-          Text('Actividad $order'),
-        ]),
-        content: SizedBox(
-          width: 400,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre de la actividad', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              academic.addActivity(Activity(
-                id: const Uuid().v4(),
-                indicatorId: indicatorId,
-                name: nameCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                order: order,
-              ));
-              Navigator.pop(ctx);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _confirmDeleteStandard(AcademicProvider academic, Standard standard) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar Estándar'),
-        content: Text('¿Eliminar "${standard.name}"? Se eliminarán también sus indicadores y actividades.'),
+        content: Text('¿Eliminar "${standard.name}"? Se eliminarán también sus competencias y actividades.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           FilledButton(

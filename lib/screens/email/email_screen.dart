@@ -184,7 +184,8 @@ class _EmailScreenState extends State<EmailScreen> {
         ? academic.users
             .where((u) =>
                 u.role == UserRole.teacher ||
-                u.role == UserRole.coordinator)
+                u.role == UserRole.coordinator ||
+                u.role == UserRole.admin)
             .toList()
         : academic.users;
 
@@ -1344,6 +1345,7 @@ class _ComposeDialogState extends State<_ComposeDialog> {
 
   String _roleLabel(UserRole role) => switch (role) {
         UserRole.coordinator => 'Coordinador',
+        UserRole.admin => 'Administrador',
         UserRole.teacher => 'Docente',
         UserRole.student => 'Estudiante',
         UserRole.parent => 'Padre/Madre',

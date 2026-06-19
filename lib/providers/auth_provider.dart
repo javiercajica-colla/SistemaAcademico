@@ -1,13 +1,17 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
-import '../data/mock_data.dart';
+import '../services/firebase_auth_service.dart';
+import '../services/firestore_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
   bool _isLoading = false;
   String? _error;
   final Map<String, Uint8List> _avatarMap = {};
+
+  final FirebaseAuthService _authService = FirebaseAuthService();
+  final FirestoreService _store = FirestoreService();
 
   AppUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -19,29 +23,75 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      final user = MockData.users.firstWhere(
-        (u) => u.email.toLowerCase() == email.toLowerCase() && u.password == password && u.isActive,
-        orElse: () => throw Exception('Credenciales incorrectas'),
-      );
-      _currentUser = user;
+      _currentUser = await _authService.signIn(email, password);
       _isLoading = false;
       notifyListeners();
       return true;
-    } catch (e) {
-      _error = 'Email o contraseña incorrectos';
+    } on AuthException catch (e) {
+      _error = e.message;
       _isLoading = false;
       notifyListeners();
       return false;
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _authService.signOut();
     _currentUser = null;
     _error = null;
     notifyListeners();
+  }
+
+  Future<bool> createUser({
+    required String email,
+    required String password,
+    required String name,
+    required UserRole role,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.createUser(
+        email: email,
+        password: password,
+        name: name,
+        role: role,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> updateProfile({required String name, required String email}) async {
+    if (_currentUser == null) return;
+    _currentUser = AppUser(
+      id: _currentUser!.id,
+      name: name,
+      email: email,
+      password: '',
+      role: _currentUser!.role,
+      avatar: _currentUser!.avatar,
+      isActive: _currentUser!.isActive,
+    );
+    await _store.saveUser(_currentUser!.id, _currentUser!);
+    notifyListeners();
+  }
+
+  Future<void> refreshCurrentUser() async {
+    final refreshed = await _authService.reloadCurrentUser();
+    if (refreshed != null) {
+      _currentUser = refreshed;
+      notifyListeners();
+    }
   }
 
   Uint8List? getAvatarBytes(String userId) => _avatarMap[userId];
@@ -51,24 +101,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile({required String name, required String email}) {
-    if (_currentUser == null) return;
-    _currentUser = AppUser(
-      id: _currentUser!.id,
-      name: name,
-      email: email,
-      password: _currentUser!.password,
-      role: _currentUser!.role,
-      avatar: _currentUser!.avatar,
-      isActive: _currentUser!.isActive,
-    );
-    notifyListeners();
-  }
-
   String get roleDisplayName {
     switch (_currentUser?.role) {
       case UserRole.coordinator:
         return 'Coordinador Académico';
+      case UserRole.admin:
+        return 'Administrador del Sistema';
       case UserRole.teacher:
         return 'Docente';
       case UserRole.student:

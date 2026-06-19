@@ -36,6 +36,7 @@ class _MessagingScreenState extends State<MessagingScreen>
   String _rolePath(UserRole role) {
     switch (role) {
       case UserRole.coordinator:
+      case UserRole.admin:
         return 'coordinator';
       case UserRole.teacher:
         return 'teacher';
@@ -233,6 +234,8 @@ class _MessagingScreenState extends State<MessagingScreen>
     switch (role) {
       case UserRole.coordinator:
         return AppColors.coordinator;
+      case UserRole.admin:
+        return AppColors.purple;
       case UserRole.teacher:
         return AppColors.teacher;
       case UserRole.student:

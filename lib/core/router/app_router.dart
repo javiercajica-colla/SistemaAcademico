@@ -10,6 +10,7 @@ import '../../screens/coordinator/subjects_screen.dart';
 import '../../screens/coordinator/courses_screen.dart';
 import '../../screens/coordinator/reports_screen.dart';
 import '../../screens/coordinator/grades_config_screen.dart';
+import '../../screens/coordinator/password_admin_screen.dart';
 import '../../screens/teacher/teacher_dashboard.dart';
 import '../../screens/teacher/my_courses_screen.dart';
 import '../../screens/teacher/grade_entry_screen.dart';
@@ -44,6 +45,7 @@ GoRouter createRouter(AuthProvider auth) {
       if (isLoggedIn && isLoginPage) {
         switch (auth.currentUser!.role) {
           case UserRole.coordinator:
+          case UserRole.admin:
             return '/coordinator/dashboard';
           case UserRole.teacher:
             return '/teacher/dashboard';
@@ -64,6 +66,7 @@ GoRouter createRouter(AuthProvider auth) {
           if (!auth.isAuthenticated) return '/login';
           final roleStr = switch (auth.currentUser!.role) {
             UserRole.coordinator => 'coordinator',
+            UserRole.admin      => 'coordinator',
             UserRole.teacher    => 'teacher',
             UserRole.student    => 'student',
             UserRole.parent     => 'parent',
@@ -107,6 +110,10 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(
             path: '/coordinator/reports',
             builder: (_, _) => const ReportsScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/password-admin',
+            builder: (_, _) => const PasswordAdminScreen(),
           ),
           // Teacher routes
           GoRoute(

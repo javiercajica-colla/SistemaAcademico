@@ -39,7 +39,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   @override
   Widget build(BuildContext context) {
     final user = widget.currentUser;
-    final isCoordinator = user.role == UserRole.coordinator;
+    final isCoordinator = user.role == UserRole.coordinator || user.role == UserRole.admin;
     final isTeacher = user.role == UserRole.teacher;
     final mq = MediaQuery.of(context);
 
@@ -439,6 +439,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
 
     switch (user.role) {
       case UserRole.coordinator:
+      case UserRole.admin:
         return allUsers.where((u) => u.id != user.id).toList();
 
       case UserRole.teacher:
@@ -465,7 +466,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
           }
         }).where((id) => id.isNotEmpty).toSet();
         final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator).map((u) => u.id).toSet();
+            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
         final teacherIds =
             allUsers.where((u) => u.role == UserRole.teacher && u.id != user.id).map((u) => u.id).toSet();
         final allowed = {...studentIds, ...parentIds, ...coordinatorIds, ...teacherIds};
@@ -488,7 +489,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
             .map((t) => t.userId)
             .toSet();
         final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator).map((u) => u.id).toSet();
+            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
         final allowed = {...teacherUserIds, ...coordinatorIds};
         return allUsers.where((u) => allowed.contains(u.id)).toList();
 
@@ -506,7 +507,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
             .map((t) => t.userId)
             .toSet();
         final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator).map((u) => u.id).toSet();
+            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
         final allowed = {...teacherUserIds, ...coordinatorIds};
         return allUsers.where((u) => allowed.contains(u.id)).toList();
     }
@@ -648,6 +649,8 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
     switch (role) {
       case UserRole.coordinator:
         return AppColors.coordinator;
+      case UserRole.admin:
+        return AppColors.purple;
       case UserRole.teacher:
         return AppColors.teacher;
       case UserRole.student:
@@ -661,6 +664,8 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
     switch (role) {
       case UserRole.coordinator:
         return 'Coordinador';
+      case UserRole.admin:
+        return 'Administrador';
       case UserRole.teacher:
         return 'Docente';
       case UserRole.student:

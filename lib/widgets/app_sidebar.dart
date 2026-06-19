@@ -184,6 +184,8 @@ class AppSidebar extends StatelessWidget {
     switch (role) {
       case UserRole.coordinator:
         return AppColors.coordinator;
+      case UserRole.admin:
+        return AppColors.purple;
       case UserRole.teacher:
         return AppColors.teacher;
       case UserRole.student:
@@ -197,6 +199,8 @@ class AppSidebar extends StatelessWidget {
     switch (role) {
       case UserRole.coordinator:
         return 'COORDINADOR';
+      case UserRole.admin:
+        return 'ADMINISTRADOR';
       case UserRole.teacher:
         return 'DOCENTE';
       case UserRole.student:
@@ -209,6 +213,7 @@ class AppSidebar extends StatelessWidget {
   List<_NavItem?> _navItems(UserRole role, int emailUnread) {
     switch (role) {
       case UserRole.coordinator:
+      case UserRole.admin:
         return [
           _NavItem('Dashboard', Icons.dashboard_rounded, '/coordinator/dashboard'),
           null,
@@ -223,6 +228,9 @@ class AppSidebar extends StatelessWidget {
           _NavItem('Reportes y Boletines', Icons.summarize_rounded, '/coordinator/reports'),
           _NavItem('Planilla de Notas', Icons.table_view_rounded, '/coordinator/grade-sheet'),
           null,
+          if (role == UserRole.admin)
+            _NavItem('Administración de Contraseñas', Icons.password_rounded, '/coordinator/password-admin'),
+          if (role == UserRole.admin) null,
           _NavItem('Correo Interno', Icons.email_rounded, '/coordinator/email', emailUnread),
         ];
       case UserRole.teacher:

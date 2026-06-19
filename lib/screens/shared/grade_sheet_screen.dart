@@ -33,7 +33,7 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
   }
 
   List<Course> _availableCourses(AcademicProvider academic, AuthProvider auth) {
-    if (auth.currentUser?.role == UserRole.coordinator) {
+    if (auth.currentUser?.role == UserRole.coordinator || auth.currentUser?.role == UserRole.admin) {
       return academic.courses;
     }
     final teacher = academic.teacherByUserId(auth.currentUser!.id);
@@ -44,7 +44,7 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
 
   List<Subject> _subjectsForSheet(AcademicProvider academic, AuthProvider auth) {
     if (_selectedCourseId == null) return [];
-    if (auth.currentUser?.role == UserRole.coordinator) {
+    if (auth.currentUser?.role == UserRole.coordinator || auth.currentUser?.role == UserRole.admin) {
       return academic.subjectsForCourse(_selectedCourseId!);
     }
     final teacher = academic.teacherByUserId(auth.currentUser!.id);

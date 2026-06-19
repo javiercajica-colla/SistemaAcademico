@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../widgets/stat_card.dart';
+import '../../widgets/seed_dialog.dart';
 
 class CoordinatorDashboard extends StatelessWidget {
   const CoordinatorDashboard({super.key});
@@ -17,6 +18,18 @@ class CoordinatorDashboard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: () => SeedDialog.show(context),
+              icon: const Icon(Icons.cloud_upload_rounded, size: 16),
+              label: const Text('Inicializar datos Firebase'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.blueGrey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildStats(academic),
           const SizedBox(height: 24),
           Row(

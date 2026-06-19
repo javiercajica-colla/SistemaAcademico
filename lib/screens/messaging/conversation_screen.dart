@@ -91,7 +91,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final messages = msgProv.messagesForConversation(widget.conversationId);
     final title = msgProv.conversationTitle(conv, user.id, allUsers);
     final isInstitutional = conv.type == ConversationType.institutional;
-    final canReply = !isInstitutional || user.role == UserRole.coordinator;
+    final canReply = !isInstitutional || user.role == UserRole.coordinator || user.role == UserRole.admin;
 
     // Auto-scroll when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
@@ -417,6 +417,8 @@ class _MessageBubble extends StatelessWidget {
     switch (role) {
       case UserRole.coordinator:
         return AppColors.coordinator;
+      case UserRole.admin:
+        return AppColors.purple;
       case UserRole.teacher:
         return AppColors.teacher;
       case UserRole.student:

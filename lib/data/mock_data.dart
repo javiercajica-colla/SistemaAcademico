@@ -10,6 +10,13 @@ class MockData {
       role: UserRole.coordinator,
     ),
     const AppUser(
+      id: 'u18',
+      name: 'Ing. Andrés Salazar',
+      email: 'admin@colegio.edu.co',
+      password: '123456',
+      role: UserRole.admin,
+    ),
+    const AppUser(
       id: 'u2',
       name: 'Prof. Carlos Rodríguez',
       email: 'docente@colegio.edu.co',

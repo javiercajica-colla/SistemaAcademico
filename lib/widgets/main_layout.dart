@@ -8,6 +8,8 @@ import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/academic_provider.dart';
+import '../services/firebase_auth_service.dart';
+import '../services/user_credential_generator.dart';
 import 'app_sidebar.dart';
 import 'user_avatar.dart';
 
@@ -68,6 +70,7 @@ class _AppHeader extends StatelessWidget {
     final academic = context.watch<AcademicProvider>();
     final user = auth.currentUser;
     if (user == null) return const SizedBox(height: 64);
+    academic.listenNotificationsFor(user.id);
     final unread = academic.unreadNotificationsCount(user.id);
     final route = GoRouterState.of(context).matchedLocation;
     final title = _titleForRoute(route);
@@ -373,6 +376,15 @@ class _AppHeader extends StatelessWidget {
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                    label: const Text('Cambiar contraseña'),
+                    onPressed: () => _showChangePasswordDialog(context),
+                  ),
+                ),
               ],
             )),
           ),
@@ -400,9 +412,145 @@ class _AppHeader extends StatelessWidget {
     );
   }
 
+  void _showChangePasswordDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool saving = false;
+    String? errorMsg;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Cambiar contraseña'),
+          ]),
+          content: SizedBox(
+            width: 380,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (errorMsg != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: currentCtrl,
+                      obscureText: obscureCurrent,
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña actual',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                          onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
+                        ),
+                      ),
+                      validator: (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: newCtrl,
+                      obscureText: obscureNew,
+                      decoration: InputDecoration(
+                        labelText: 'Nueva contraseña',
+                        prefixIcon: const Icon(Icons.key_rounded),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                          onPressed: () => setDialogState(() => obscureNew = !obscureNew),
+                        ),
+                      ),
+                      validator: (v) => UserCredentialGenerator.validatePasswordStrength(v ?? ''),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Mínimo 10 caracteres, con mayúscula, minúscula, número y carácter especial.',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: confirmCtrl,
+                      obscureText: obscureNew,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirmar nueva contraseña',
+                        prefixIcon: Icon(Icons.key_rounded),
+                      ),
+                      validator: (v) => (v != newCtrl.text) ? 'Las contraseñas no coinciden' : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDialogState(() {
+                        saving = true;
+                        errorMsg = null;
+                      });
+                      try {
+                        await FirebaseAuthService().changePassword(
+                          currentPassword: currentCtrl.text,
+                          newPassword: newCtrl.text,
+                        );
+                        Navigator.pop(ctx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Contraseña actualizada correctamente'),
+                              backgroundColor: AppColors.secondary,
+                            ),
+                          );
+                        }
+                      } on AuthException catch (e) {
+                        setDialogState(() {
+                          saving = false;
+                          errorMsg = e.message;
+                        });
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _navigateToConfig(BuildContext context, AppUser user) {
     switch (user.role) {
       case UserRole.coordinator:
+      case UserRole.admin:
         context.go('/coordinator/academic-config');
       default:
         ScaffoldMessenger.of(context).showSnackBar(
@@ -532,7 +680,7 @@ class _AppHeader extends StatelessWidget {
     if (route.contains('courses')) return 'Cursos y Grupos';
     if (route.contains('grades-config')) return 'Configuración de Evaluación';
     if (route.contains('reports')) return 'Reportes y Boletines';
-    if (route.contains('teacher/standards')) return 'Estándares e Indicadores';
+    if (route.contains('teacher/standards')) return 'Estándares y Competencias';
     if (route.contains('grade-sheet')) return 'Planilla de Notas';
     if (route.contains('grade-format')) return 'Formato de Notas';
     if (route.contains('hoja-de-vida')) return 'Hoja de Vida';

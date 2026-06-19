@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isCoordinator() {
+      return isSignedIn() && userRole() == 'coordinator';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userRole() == 'admin';
+    }
+
+    // El administrador del sistema tiene exactamente los mismos permisos
+    // de gestión que el coordinador, más el acceso a restablecer contraseñas
+    // (controlado dentro de la Cloud Function, no por estas reglas).
+    function isCoordinatorOrAdmin() {
+      return isCoordinator() || isAdmin();
+    }
+
+    function isTeacher() {
+      return isSignedIn() && userRole() == 'teacher';
+    }
+
+    function isStaff() {
+      return isCoordinatorOrAdmin() || isTeacher();
+    }
+
+    // Perfil de usuario: cualquier autenticado puede leer (para mostrar
+    // nombres/roles en listados), pero solo el propio usuario o el
+    // coordinador/administrador pueden modificarlo.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isCoordinatorOrAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow delete: if isCoordinatorOrAdmin();
+    }
+
+    // Notificaciones: subcolección privada por usuario.
+    match /notifications/{userId}/items/{notifId} {
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isStaff();
+      allow delete: if isCoordinatorOrAdmin();
+    }
+
+    // Datos académicos: lectura abierta a cualquier usuario autenticado,
+    // escritura reservada a coordinador y docentes.
+    match /{collection}/{docId} {
+      allow read: if isSignedIn() &&
+        collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
+                        'academic_years', 'academic_periods', 'standards',
+                        'indicators', 'activities', 'grades', 'attendance',
+                        'observations', 'subject_assignments', 'evaluation_configs'];
+      allow write: if isStaff() &&
+        collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
+                        'academic_years', 'academic_periods', 'standards',
+                        'indicators', 'activities', 'grades', 'attendance',
+                        'observations', 'subject_assignments', 'evaluation_configs'];
+    }
+  }
+}

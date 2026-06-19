@@ -1,4 +1,4 @@
-enum UserRole { coordinator, teacher, student, parent }
+enum UserRole { coordinator, teacher, student, parent, admin }
 
 class AppUser {
   final String id;
@@ -108,6 +108,7 @@ class Activity {
   final int order;
   bool isProgrammed;
   double? gradeValue;
+  DateTime? date;
 
   Activity({
     required this.id,
@@ -117,6 +118,7 @@ class Activity {
     required this.order,
     this.isProgrammed = false,
     this.gradeValue,
+    this.date,
   });
 }
 
@@ -214,6 +216,10 @@ class Grade {
   final String subjectId;
   final String periodId;
   final String? standardId;
+  // Indicador dentro del estándar y número de "casilla" (1-3) al que
+  // corresponde la nota. Ambos null = nota de Evaluación Final.
+  final String? indicatorId;
+  final int? slot;
   final double value;
   final String? note;
   final DateTime registeredAt;
@@ -224,6 +230,8 @@ class Grade {
     required this.subjectId,
     required this.periodId,
     this.standardId,
+    this.indicatorId,
+    this.slot,
     required this.value,
     this.note,
     required this.registeredAt,

@@ -326,16 +326,21 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               final subjectId = newSubject.id;
               // 1° Cerrar el diálogo ANTES de notifyListeners
               Navigator.pop(ctx);
-              // 2° Actualizar provider y estado
-              academic.addSubject(newSubject);
-              setState(() => _selectedSubject = subjectId);
-              // 3° Confirmar
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Asignatura "$subjectName" creada'),
-                  backgroundColor: AppColors.secondary,
-                ),
-              );
+              // 2° Diferir la mutación del provider al siguiente microtask para
+              // evitar el assertion "_dependents.isEmpty" al chocar con el cierre
+              // del diálogo en el mismo frame.
+              Future.microtask(() {
+                academic.addSubject(newSubject);
+                if (mounted) setState(() => _selectedSubject = subjectId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Asignatura "$subjectName" creada'),
+                      backgroundColor: AppColors.secondary,
+                    ),
+                  );
+                }
+              });
             },
             child: const Text('Guardar'),
           ),
@@ -413,15 +418,19 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               final standardName = newStandard.name;
               // 1° Cerrar ANTES de notifyListeners
               Navigator.pop(ctx);
-              // 2° Actualizar provider
-              academic.addStandard(newStandard);
-              // 3° Confirmar
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Estándar "$standardName" agregado'),
-                  backgroundColor: AppColors.secondary,
-                ),
-              );
+              // 2° Diferir la mutación del provider para evitar el assertion
+              // "_dependents.isEmpty" al chocar con el cierre del diálogo.
+              Future.microtask(() {
+                academic.addStandard(newStandard);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Estándar "$standardName" agregado'),
+                      backgroundColor: AppColors.secondary,
+                    ),
+                  );
+                }
+              });
             },
             child: const Text('Guardar'),
           ),
