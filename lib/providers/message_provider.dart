@@ -16,9 +16,8 @@ class MessageProvider extends ChangeNotifier {
         .where((c) => c.participantIds.contains(userId))
         .toList();
     for (final c in convs) {
-      final msgs =
-          _messages.where((m) => m.conversationId == c.id).toList()
-            ..sort((a, b) => b.sentAt.compareTo(a.sentAt));
+      final msgs = _messages.where((m) => m.conversationId == c.id).toList()
+        ..sort((a, b) => b.sentAt.compareTo(a.sentAt));
       c.lastMessage = msgs.isNotEmpty ? msgs.first : null;
     }
     convs.sort((a, b) {
@@ -30,9 +29,7 @@ class MessageProvider extends ChangeNotifier {
   }
 
   List<Message> messagesForConversation(String conversationId) =>
-      _messages
-          .where((m) => m.conversationId == conversationId)
-          .toList()
+      _messages.where((m) => m.conversationId == conversationId).toList()
         ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
 
   Conversation? conversationById(String id) {
@@ -44,18 +41,28 @@ class MessageProvider extends ChangeNotifier {
   }
 
   int unreadCount(String userId) => _messages
-      .where((m) =>
-          m.senderId != userId &&
-          !m.isReadBy(userId) &&
-          _conversations.any(
-              (c) => c.id == m.conversationId && c.participantIds.contains(userId)))
+      .where(
+        (m) =>
+            m.senderId != userId &&
+            !m.isReadBy(userId) &&
+            _conversations.any(
+              (c) =>
+                  c.id == m.conversationId && c.participantIds.contains(userId),
+            ),
+      )
       .length;
 
   // Returns the display title for a conversation from a given user's perspective.
-  String conversationTitle(Conversation conv, String currentUserId, List<AppUser> allUsers) {
+  String conversationTitle(
+    Conversation conv,
+    String currentUserId,
+    List<AppUser> allUsers,
+  ) {
     if (conv.type != ConversationType.individual) return conv.title;
-    final otherId =
-        conv.participantIds.firstWhere((id) => id != currentUserId, orElse: () => '');
+    final otherId = conv.participantIds.firstWhere(
+      (id) => id != currentUserId,
+      orElse: () => '',
+    );
     if (otherId.isEmpty) return conv.title;
     try {
       return allUsers.firstWhere((u) => u.id == otherId).name;
@@ -86,15 +93,17 @@ class MessageProvider extends ChangeNotifier {
     required UserRole senderRole,
     required String content,
   }) {
-    _messages.add(Message(
-      id: _uuid.v4(),
-      conversationId: conversationId,
-      senderId: senderId,
-      senderName: senderName,
-      senderRole: senderRole,
-      content: content,
-      sentAt: DateTime.now(),
-    ));
+    _messages.add(
+      Message(
+        id: _uuid.v4(),
+        conversationId: conversationId,
+        senderId: senderId,
+        senderName: senderName,
+        senderRole: senderRole,
+        content: content,
+        sentAt: DateTime.now(),
+      ),
+    );
     notifyListeners();
   }
 

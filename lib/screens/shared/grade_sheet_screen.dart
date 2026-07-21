@@ -29,22 +29,31 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
     super.didChangeDependencies();
     final academic = context.read<AcademicProvider>();
     _selectedPeriodId ??=
-        academic.currentOpenPeriod?.id ?? academic.activePeriods.firstOrNull?.id;
+        academic.currentOpenPeriod?.id ??
+        academic.activePeriods.firstOrNull?.id;
   }
 
   List<Course> _availableCourses(AcademicProvider academic, AuthProvider auth) {
-    if (auth.currentUser?.role == UserRole.coordinator || auth.currentUser?.role == UserRole.admin) {
+    if (auth.currentUser?.role == UserRole.coordinator ||
+        auth.currentUser?.role == UserRole.admin) {
       return academic.courses;
     }
     final teacher = academic.teacherByUserId(auth.currentUser!.id);
     if (teacher == null) return [];
-    final ids = academic.assignmentsForTeacher(teacher.id).map((a) => a.courseId).toSet();
+    final ids = academic
+        .assignmentsForTeacher(teacher.id)
+        .map((a) => a.courseId)
+        .toSet();
     return academic.courses.where((c) => ids.contains(c.id)).toList();
   }
 
-  List<Subject> _subjectsForSheet(AcademicProvider academic, AuthProvider auth) {
+  List<Subject> _subjectsForSheet(
+    AcademicProvider academic,
+    AuthProvider auth,
+  ) {
     if (_selectedCourseId == null) return [];
-    if (auth.currentUser?.role == UserRole.coordinator || auth.currentUser?.role == UserRole.admin) {
+    if (auth.currentUser?.role == UserRole.coordinator ||
+        auth.currentUser?.role == UserRole.admin) {
       return academic.subjectsForCourse(_selectedCourseId!);
     }
     final teacher = academic.teacherByUserId(auth.currentUser!.id);
@@ -70,7 +79,9 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             const Divider(height: 1),
             Expanded(
               child: _selectedCourseId == null || _selectedPeriodId == null
-                  ? const Center(child: Text('Seleccione un curso y un período.'))
+                  ? const Center(
+                      child: Text('Seleccione un curso y un período.'),
+                    )
                   : _buildTable(academic, auth),
             ),
           ],
@@ -98,7 +109,11 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
     );
   }
 
-  Widget _buildHeader(AcademicProvider academic, AuthProvider auth, List<Course> courses) {
+  Widget _buildHeader(
+    AcademicProvider academic,
+    AuthProvider auth,
+    List<Course> courses,
+  ) {
     final periods = academic.activePeriods;
     final canExport = _selectedCourseId != null && _selectedPeriodId != null;
 
@@ -114,12 +129,21 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Curso',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+              const Text(
+                'Curso',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               const SizedBox(height: 6),
               DropdownButtonHideUnderline(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.border),
                     borderRadius: BorderRadius.circular(8),
@@ -129,7 +153,12 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
                     hint: const Text('Seleccionar curso'),
                     isDense: true,
                     items: courses
-                        .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _selectedCourseId = v),
                   ),
@@ -141,8 +170,14 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Período',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+              const Text(
+                'Período',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
@@ -154,7 +189,9 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
                     onSelected: (_) => setState(() => _selectedPeriodId = p.id),
                     selectedColor: AppColors.primary,
                     labelStyle: TextStyle(
-                        color: selected ? Colors.white : AppColors.textPrimary, fontSize: 13),
+                      color: selected ? Colors.white : AppColors.textPrimary,
+                      fontSize: 13,
+                    ),
                   );
                 }).toList(),
               ),
@@ -164,24 +201,38 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Exportar',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+              const Text(
+                'Exportar',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               const SizedBox(height: 6),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   FilledButton.icon(
-                    onPressed: canExport ? () => _exportPDF(academic, auth) : null,
+                    onPressed: canExport
+                        ? () => _exportPDF(academic, auth)
+                        : null,
                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
                     label: const Text('PDF'),
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
-                    onPressed: canExport ? () => _exportExcel(academic, auth) : null,
+                    onPressed: canExport
+                        ? () => _exportExcel(academic, auth)
+                        : null,
                     icon: const Icon(Icons.table_chart_rounded, size: 16),
                     label: const Text('Excel'),
-                    style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                    ),
                   ),
                 ],
               ),
@@ -201,10 +252,16 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.people_outline, size: 48, color: AppColors.textSecondary),
+            Icon(
+              Icons.people_outline,
+              size: 48,
+              color: AppColors.textSecondary,
+            ),
             SizedBox(height: 12),
-            Text('No hay estudiantes en este curso.',
-                style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'No hay estudiantes en este curso.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ],
         ),
       );
@@ -216,8 +273,10 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
           children: [
             Icon(Icons.book_outlined, size: 48, color: AppColors.textSecondary),
             SizedBox(height: 12),
-            Text('No hay asignaturas asignadas.',
-                style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'No hay asignaturas asignadas.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ],
         ),
       );
@@ -233,14 +292,15 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             // Legend
             Row(
               children: [
-                Container(
-                  width: 14,
-                  height: 14,
-                  color: Colors.red.shade100,
-                ),
+                Container(width: 14, height: 14, color: Colors.red.shade100),
                 const SizedBox(width: 6),
-                const Text('Nota por debajo de 6.0',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                const Text(
+                  'Nota por debajo de 6.0',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -263,8 +323,14 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
                 ),
                 children: [
                   _buildHeaderRow(subjects),
-                  ...students.asMap().entries.map((e) =>
-                      _buildStudentRow(e.value, subjects, academic, e.key.isEven)),
+                  ...students.asMap().entries.map(
+                    (e) => _buildStudentRow(
+                      e.value,
+                      subjects,
+                      academic,
+                      e.key.isEven,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -276,7 +342,9 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
 
   TableRow _buildHeaderRow(List<Subject> subjects) {
     return TableRow(
-      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08)),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+      ),
       children: [
         _cell('Estudiante', isHeader: true, width: 220),
         ...subjects.map((s) => _cell(s.name, isHeader: true, width: 110)),
@@ -292,10 +360,18 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
     bool isEven,
   ) {
     final grades = subjects
-        .map((s) => academic.calculateSubjectPeriodGrade(student.id, s.id, _selectedPeriodId!))
+        .map(
+          (s) => academic.calculateSubjectPeriodGrade(
+            student.id,
+            s.id,
+            _selectedPeriodId!,
+          ),
+        )
         .toList();
     final valid = grades.where((g) => g > 0).toList();
-    final avg = valid.isEmpty ? 0.0 : valid.reduce((a, b) => a + b) / valid.length;
+    final avg = valid.isEmpty
+        ? 0.0
+        : valid.reduce((a, b) => a + b) / valid.length;
 
     return TableRow(
       decoration: BoxDecoration(
@@ -309,8 +385,12 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
     );
   }
 
-  Widget _cell(String text,
-      {bool isHeader = false, double width = 110, TextAlign align = TextAlign.center}) {
+  Widget _cell(
+    String text, {
+    bool isHeader = false,
+    double width = 110,
+    TextAlign align = TextAlign.center,
+  }) {
     return Container(
       width: width,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -353,7 +433,9 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
       final students = academic.studentsInCourse(_selectedCourseId!);
       final subjects = _subjectsForSheet(academic, auth);
       final course = academic.courseById(_selectedCourseId!)!;
-      final period = academic.activePeriods.firstWhere((p) => p.id == _selectedPeriodId);
+      final period = academic.activePeriods.firstWhere(
+        (p) => p.id == _selectedPeriodId,
+      );
 
       final doc = pw.Document();
       final bold = pw.Font.helveticaBold();
@@ -378,7 +460,10 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
             pw.Text(
               'Notas en rojo: por debajo de 6.0',
               style: pw.TextStyle(
-                  font: regular, fontSize: 8, color: PdfColors.grey600),
+                font: regular,
+                fontSize: 8,
+                color: PdfColors.grey600,
+              ),
             ),
             pw.SizedBox(height: 10),
             pw.Table(
@@ -393,10 +478,23 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: headerBg),
                   children: [
-                    _pdfCell('Estudiante', font: bold, textColor: PdfColors.white),
-                    ...subjects.map((s) =>
-                        _pdfCell(s.name, font: bold, textColor: PdfColors.white)),
-                    _pdfCell('Promedio', font: bold, textColor: PdfColors.white),
+                    _pdfCell(
+                      'Estudiante',
+                      font: bold,
+                      textColor: PdfColors.white,
+                    ),
+                    ...subjects.map(
+                      (s) => _pdfCell(
+                        s.name,
+                        font: bold,
+                        textColor: PdfColors.white,
+                      ),
+                    ),
+                    _pdfCell(
+                      'Promedio',
+                      font: bold,
+                      textColor: PdfColors.white,
+                    ),
                   ],
                 ),
                 // Data rows
@@ -404,8 +502,13 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
                   final student = entry.value;
                   final idx = entry.key;
                   final grades = subjects
-                      .map((s) => academic.calculateSubjectPeriodGrade(
-                          student.id, s.id, _selectedPeriodId!))
+                      .map(
+                        (s) => academic.calculateSubjectPeriodGrade(
+                          student.id,
+                          s.id,
+                          _selectedPeriodId!,
+                        ),
+                      )
                       .toList();
                   final valid = grades.where((g) => g > 0).toList();
                   final avg = valid.isEmpty
@@ -481,13 +584,18 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
 
   // ─── Excel ────────────────────────────────────────────────────────────────
 
-  Future<void> _exportExcel(AcademicProvider academic, AuthProvider auth) async {
+  Future<void> _exportExcel(
+    AcademicProvider academic,
+    AuthProvider auth,
+  ) async {
     setState(() => _exporting = true);
     try {
       final students = academic.studentsInCourse(_selectedCourseId!);
       final subjects = _subjectsForSheet(academic, auth);
       final course = academic.courseById(_selectedCourseId!)!;
-      final period = academic.activePeriods.firstWhere((p) => p.id == _selectedPeriodId);
+      final period = academic.activePeriods.firstWhere(
+        (p) => p.id == _selectedPeriodId,
+      );
 
       final excel = Excel.createExcel();
       excel.rename('Sheet1', 'Notas');
@@ -521,12 +629,17 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
         final grades = <double>[];
         for (int c = 0; c < subjects.length; c++) {
           final g = academic.calculateSubjectPeriodGrade(
-              student.id, subjects[c].id, _selectedPeriodId!);
+            student.id,
+            subjects[c].id,
+            _selectedPeriodId!,
+          );
           grades.add(g);
           if (g > 0) {
             final low = g < 6.0;
             _excelCell(
-              sheet, r + 1, c + 1,
+              sheet,
+              r + 1,
+              c + 1,
               double.parse(g.toStringAsFixed(1)),
               style: low
                   ? CellStyle(
@@ -543,11 +656,15 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
         }
 
         final valid = grades.where((g) => g > 0).toList();
-        final avg = valid.isEmpty ? 0.0 : valid.reduce((a, b) => a + b) / valid.length;
+        final avg = valid.isEmpty
+            ? 0.0
+            : valid.reduce((a, b) => a + b) / valid.length;
         final avgLow = avg > 0 && avg < 6.0;
         if (avg > 0) {
           _excelCell(
-            sheet, r + 1, subjects.length + 1,
+            sheet,
+            r + 1,
+            subjects.length + 1,
             double.parse(avg.toStringAsFixed(1)),
             style: CellStyle(
               backgroundColorHex: avgLow
@@ -572,8 +689,16 @@ class _GradeSheetScreenState extends State<GradeSheetScreen> {
     }
   }
 
-  void _excelCell(Sheet sheet, int row, int col, dynamic value, {CellStyle? style}) {
-    final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row));
+  void _excelCell(
+    Sheet sheet,
+    int row,
+    int col,
+    dynamic value, {
+    CellStyle? style,
+  }) {
+    final cell = sheet.cell(
+      CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
+    );
     if (value is String) {
       cell.value = TextCellValue(value);
     } else if (value is double) {

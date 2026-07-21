@@ -83,11 +83,17 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
     _primerApellidoCtrl = TextEditingController(text: s.lastName);
     _segundoApellidoCtrl = TextEditingController(text: p.segundoApellido ?? '');
     _documentoCtrl = TextEditingController(text: s.documentId);
-    _ciudadExpedicionCtrl = TextEditingController(text: p.ciudadExpedicion ?? '');
-    _ciudadNacimientoCtrl = TextEditingController(text: p.ciudadNacimiento ?? '');
+    _ciudadExpedicionCtrl = TextEditingController(
+      text: p.ciudadExpedicion ?? '',
+    );
+    _ciudadNacimientoCtrl = TextEditingController(
+      text: p.ciudadNacimiento ?? '',
+    );
     _fechaNacimientoCtrl = TextEditingController(
-        text: p.fechaNacimiento ??
-            '${s.birthDate.day.toString().padLeft(2, '0')}/${s.birthDate.month.toString().padLeft(2, '0')}/${s.birthDate.year}');
+      text:
+          p.fechaNacimiento ??
+          '${s.birthDate.day.toString().padLeft(2, '0')}/${s.birthDate.month.toString().padLeft(2, '0')}/${s.birthDate.year}',
+    );
     _numHijosCtrl = TextEditingController(text: p.numHijos ?? '');
     _tipoDocumento = p.tipoDocumento;
     _tipoSangre = p.tipoSangre;
@@ -106,7 +112,9 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
     _regimen = p.regimen;
 
     _emNombreCtrl = TextEditingController(text: p.emergenciaNombre ?? '');
-    _emParentescoCtrl = TextEditingController(text: p.emergenciaParentesco ?? '');
+    _emParentescoCtrl = TextEditingController(
+      text: p.emergenciaParentesco ?? '',
+    );
     _emTelefonoCtrl = TextEditingController(text: p.emergenciaTelefono ?? '');
     _emCelularCtrl = TextEditingController(text: p.emergenciaCelular ?? '');
 
@@ -118,12 +126,27 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
   @override
   void dispose() {
     for (final c in [
-      _primerNombreCtrl, _segundoNombreCtrl, _primerApellidoCtrl,
-      _segundoApellidoCtrl, _documentoCtrl, _ciudadExpedicionCtrl,
-      _ciudadNacimientoCtrl, _fechaNacimientoCtrl, _numHijosCtrl,
-      _direccionCtrl, _barrioCtrl, _telefonoCtrl, _celularCtrl,
-      _emailCtrl, _ciudadUbicacionCtrl, _sistemaSaludCtrl, _epsArsCtrl,
-      _emNombreCtrl, _emParentescoCtrl, _emTelefonoCtrl, _emCelularCtrl,
+      _primerNombreCtrl,
+      _segundoNombreCtrl,
+      _primerApellidoCtrl,
+      _segundoApellidoCtrl,
+      _documentoCtrl,
+      _ciudadExpedicionCtrl,
+      _ciudadNacimientoCtrl,
+      _fechaNacimientoCtrl,
+      _numHijosCtrl,
+      _direccionCtrl,
+      _barrioCtrl,
+      _telefonoCtrl,
+      _celularCtrl,
+      _emailCtrl,
+      _ciudadUbicacionCtrl,
+      _sistemaSaludCtrl,
+      _epsArsCtrl,
+      _emNombreCtrl,
+      _emParentescoCtrl,
+      _emTelefonoCtrl,
+      _emCelularCtrl,
     ]) {
       c.dispose();
     }
@@ -193,13 +216,21 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
               _HvSection(title: 'Datos Personales', child: _buildPersonal()),
               _HvSection(title: 'Datos Ubicación', child: _buildUbicacion()),
               _HvSection(title: 'Datos de Salud', child: _buildSalud()),
-              _HvSection(title: 'Contacto de Emergencia', child: _buildEmergencia()),
-              _HvSection(title: 'Historial Académico', child: _buildHistorial()),
+              _HvSection(
+                title: 'Contacto de Emergencia',
+                child: _buildEmergencia(),
+              ),
+              _HvSection(
+                title: 'Historial Académico',
+                child: _buildHistorial(),
+              ),
             ],
           ),
         ),
         Positioned(
-          bottom: 0, left: 0, right: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
           child: Container(
             color: const Color(0xFFF1F5F9),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -209,14 +240,18 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
                 if (_dirty)
                   const Padding(
                     padding: EdgeInsets.only(right: 12),
-                    child: Text('Cambios sin guardar',
-                        style: TextStyle(color: Color(0xFFEF6C00), fontSize: 13)),
+                    child: Text(
+                      'Cambios sin guardar',
+                      style: TextStyle(color: Color(0xFFEF6C00), fontSize: 13),
+                    ),
                   ),
                 FilledButton.icon(
                   icon: const Icon(Icons.save_rounded, size: 16),
                   label: const Text('Guardar Hoja de Vida'),
                   onPressed: _save,
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1976D2)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF1976D2),
+                  ),
                 ),
               ],
             ),
@@ -229,133 +264,230 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
   // ─── Sections ─────────────────────────────────────────────────────────────
 
   Widget _buildPersonal() {
-    return Column(children: [
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-          flex: 2,
-          child: Column(children: [
-            _fRow([
-              _fDropdown('Tipo Documento', _tipoDocumento,
-                  ['CC', 'CE', 'TI'], (v) => setState(() { _tipoDocumento = v!; _dirty = true; }),
-                  labels: ['Cédula de Ciudadanía', 'Cédula de Extranjería', 'Tarjeta de Identidad']),
-              _fText('Documento', _documentoCtrl),
-            ]),
-            const SizedBox(height: 10),
-            _fRow([_fText('Ciudad Expedición', _ciudadExpedicionCtrl, flex: 1)]),
-            const SizedBox(height: 10),
-            _fRow([
-              _fText('Primer Nombre', _primerNombreCtrl),
-              _fText('Segundo Nombre', _segundoNombreCtrl),
-              _fText('Primer Apellido', _primerApellidoCtrl),
-              _fText('Segundo Apellido', _segundoApellidoCtrl),
-            ]),
-            const SizedBox(height: 10),
-            _fRow([_fText('Ciudad de Nacimiento', _ciudadNacimientoCtrl, flex: 1)]),
-            const SizedBox(height: 10),
-            _fRow([
-              _fText('Fecha Nacimiento', _fechaNacimientoCtrl, hint: 'dd/mm/aaaa'),
-              _fDropdown('Tipo Sangre', _tipoSangre,
-                  ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-                  (v) => setState(() { _tipoSangre = v; _dirty = true; })),
-              _fDropdown('Sexo', _sexo, ['M', 'F'],
-                  (v) => setState(() { _sexo = v; _dirty = true; }),
-                  labels: ['Masculino', 'Femenino']),
-              _fDropdown('Estado Civil', _estadoCivil,
-                  ['Soltero(a)', 'Casado(a)', 'Unión Libre', 'Divorciado(a)', 'Viudo(a)'],
-                  (v) => setState(() { _estadoCivil = v; _dirty = true; })),
-            ]),
-          ]),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(
-          width: 160,
-          child: Column(children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Fotografía', style: TextStyle(fontSize: 11, color: Color(0xFF475569))),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: 140, height: 160,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFCBD5E1)),
-                color: const Color(0xFFF8FAFC),
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                children: [
+                  _fRow([
+                    _fDropdown(
+                      'Tipo Documento',
+                      _tipoDocumento,
+                      ['CC', 'CE', 'TI'],
+                      (v) => setState(() {
+                        _tipoDocumento = v!;
+                        _dirty = true;
+                      }),
+                      labels: [
+                        'Cédula de Ciudadanía',
+                        'Cédula de Extranjería',
+                        'Tarjeta de Identidad',
+                      ],
+                    ),
+                    _fText('Documento', _documentoCtrl),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText('Ciudad Expedición', _ciudadExpedicionCtrl, flex: 1),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText('Primer Nombre', _primerNombreCtrl),
+                    _fText('Segundo Nombre', _segundoNombreCtrl),
+                    _fText('Primer Apellido', _primerApellidoCtrl),
+                    _fText('Segundo Apellido', _segundoApellidoCtrl),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText(
+                      'Ciudad de Nacimiento',
+                      _ciudadNacimientoCtrl,
+                      flex: 1,
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText(
+                      'Fecha Nacimiento',
+                      _fechaNacimientoCtrl,
+                      hint: 'dd/mm/aaaa',
+                    ),
+                    _fDropdown(
+                      'Tipo Sangre',
+                      _tipoSangre,
+                      ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+                      (v) => setState(() {
+                        _tipoSangre = v;
+                        _dirty = true;
+                      }),
+                    ),
+                    _fDropdown(
+                      'Sexo',
+                      _sexo,
+                      ['M', 'F'],
+                      (v) => setState(() {
+                        _sexo = v;
+                        _dirty = true;
+                      }),
+                      labels: ['Masculino', 'Femenino'],
+                    ),
+                    _fDropdown(
+                      'Estado Civil',
+                      _estadoCivil,
+                      [
+                        'Soltero(a)',
+                        'Casado(a)',
+                        'Unión Libre',
+                        'Divorciado(a)',
+                        'Viudo(a)',
+                      ],
+                      (v) => setState(() {
+                        _estadoCivil = v;
+                        _dirty = true;
+                      }),
+                    ),
+                  ]),
+                ],
               ),
-              child: _photoBytes != null
-                  ? Image.memory(_photoBytes!, fit: BoxFit.cover)
-                  : const Icon(Icons.person, size: 60, color: Color(0xFFCBD5E1)),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(width: 16),
             SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _pickPhoto,
-                style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 6)),
-                child: const Text('Subir foto', style: TextStyle(fontSize: 12)),
+              width: 160,
+              child: Column(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Fotografía',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 140,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                      color: const Color(0xFFF8FAFC),
+                    ),
+                    child: _photoBytes != null
+                        ? Image.memory(_photoBytes!, fit: BoxFit.cover)
+                        : const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _pickPhoto,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      child: const Text(
+                        'Subir foto',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                  if (_photoBytes != null) ...[
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => setState(() {
+                          _photoBytes = null;
+                          _dirty = true;
+                        }),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                        ),
+                        child: const Text(
+                          'Quitar Foto',
+                          style: TextStyle(fontSize: 12, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (_photoBytes != null) ...[
-              const SizedBox(height: 4),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => setState(() { _photoBytes = null; _dirty = true; }),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 6)),
-                  child: const Text('Quitar Foto',
-                      style: TextStyle(fontSize: 12, color: Colors.white)),
-                ),
-              ),
-            ],
-          ]),
+          ],
         ),
-      ]),
-    ]);
+      ],
+    );
   }
 
   Widget _buildUbicacion() {
-    return Column(children: [
-      _fRow([
-        _fText('Dirección', _direccionCtrl, required: true, flex: 2),
-        _fText('Barrio', _barrioCtrl, required: true),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Teléfono', _telefonoCtrl, inputType: TextInputType.phone),
-        _fText('Celular', _celularCtrl, required: true, inputType: TextInputType.phone),
-        _fText('Email', _emailCtrl, inputType: TextInputType.emailAddress, flex: 2),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([_fText('Ciudad', _ciudadUbicacionCtrl, flex: 1)]),
-    ]);
+    return Column(
+      children: [
+        _fRow([
+          _fText('Dirección', _direccionCtrl, required: true, flex: 2),
+          _fText('Barrio', _barrioCtrl, required: true),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Teléfono', _telefonoCtrl, inputType: TextInputType.phone),
+          _fText(
+            'Celular',
+            _celularCtrl,
+            required: true,
+            inputType: TextInputType.phone,
+          ),
+          _fText(
+            'Email',
+            _emailCtrl,
+            inputType: TextInputType.emailAddress,
+            flex: 2,
+          ),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([_fText('Ciudad', _ciudadUbicacionCtrl, flex: 1)]),
+      ],
+    );
   }
 
   Widget _buildSalud() {
-    return Column(children: [
-      _fRow([
-        _fText('Sistema de Salud', _sistemaSaludCtrl),
-        _fDropdown('Régimen', _regimen,
+    return Column(
+      children: [
+        _fRow([
+          _fText('Sistema de Salud', _sistemaSaludCtrl),
+          _fDropdown(
+            'Régimen',
+            _regimen,
             ['Contributivo', 'Subsidiado', 'Especial', 'Exceptuado'],
-            (v) => setState(() { _regimen = v; _dirty = true; })),
-        _fText('EPS / ARS', _epsArsCtrl, flex: 2),
-      ]),
-    ]);
+            (v) => setState(() {
+              _regimen = v;
+              _dirty = true;
+            }),
+          ),
+          _fText('EPS / ARS', _epsArsCtrl, flex: 2),
+        ]),
+      ],
+    );
   }
 
   Widget _buildEmergencia() {
-    return Column(children: [
-      _fRow([
-        _fText('Nombre Completo', _emNombreCtrl, flex: 2),
-        _fText('Parentesco', _emParentescoCtrl),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Teléfono', _emTelefonoCtrl, inputType: TextInputType.phone),
-        _fText('Celular', _emCelularCtrl, inputType: TextInputType.phone),
-      ]),
-    ]);
+    return Column(
+      children: [
+        _fRow([
+          _fText('Nombre Completo', _emNombreCtrl, flex: 2),
+          _fText('Parentesco', _emParentescoCtrl),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Teléfono', _emTelefonoCtrl, inputType: TextInputType.phone),
+          _fText('Celular', _emCelularCtrl, inputType: TextInputType.phone),
+        ]),
+      ],
+    );
   }
 
   Widget _buildHistorial() {
@@ -365,15 +497,25 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Colegios cursados',
-                style: TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w600)),
+            const Text(
+              'Colegios cursados',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF475569),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             FilledButton.icon(
               icon: const Icon(Icons.add_rounded, size: 15),
               label: const Text('Agregar', style: TextStyle(fontSize: 12)),
               onPressed: _addRecord,
               style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1976D2),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                backgroundColor: const Color(0xFF1976D2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+              ),
             ),
           ],
         ),
@@ -386,8 +528,10 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Center(
-              child: Text('No hay registros académicos agregados.',
-                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+              child: Text(
+                'No hay registros académicos agregados.',
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+              ),
             ),
           )
         else ...[
@@ -395,19 +539,55 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
           Container(
             color: const Color(0xFF1976D2),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: const Row(children: [
-              Expanded(flex: 3, child: Text('Nombre del Colegio',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700))),
-              Expanded(flex: 2, child: Text('Grado / Curso',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700))),
-              Expanded(child: Text('Año',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700))),
-              SizedBox(width: 80,
-                  child: Text('Colegio Actual',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700))),
-              SizedBox(width: 36),
-            ]),
+            child: const Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    'Nombre del Colegio',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Grado / Curso',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Año',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    'Colegio Actual',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 36),
+              ],
+            ),
           ),
           ..._historial.asMap().entries.map((e) {
             final idx = e.key;
@@ -416,61 +596,82 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
             return Container(
               color: isEven ? Colors.white : const Color(0xFFF8FAFC),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Row(children: [
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: TextEditingController(text: rec.nombreColegio),
-                    onChanged: (v) { rec.nombreColegio = v; _dirty = true; },
-                    decoration: _inputDec(),
-                    style: const TextStyle(fontSize: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      controller: TextEditingController(
+                        text: rec.nombreColegio,
+                      ),
+                      onChanged: (v) {
+                        rec.nombreColegio = v;
+                        _dirty = true;
+                      },
+                      decoration: _inputDec(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: TextEditingController(text: rec.grado),
-                    onChanged: (v) { rec.grado = v; _dirty = true; },
-                    decoration: _inputDec(),
-                    style: const TextStyle(fontSize: 12),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: TextEditingController(text: rec.grado),
+                      onChanged: (v) {
+                        rec.grado = v;
+                        _dirty = true;
+                      },
+                      decoration: _inputDec(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: TextEditingController(text: rec.anio),
-                    onChanged: (v) { rec.anio = v; _dirty = true; },
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDec(),
-                    style: const TextStyle(fontSize: 12),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: TextEditingController(text: rec.anio),
+                      onChanged: (v) {
+                        rec.anio = v;
+                        _dirty = true;
+                      },
+                      keyboardType: TextInputType.number,
+                      decoration: _inputDec(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 80,
-                  child: Checkbox(
-                    value: rec.esColegioActual,
-                    onChanged: (v) => setState(() {
-                      if (v == true) {
-                        for (final r in _historial) { r.esColegioActual = false; }
-                      }
-                      rec.esColegioActual = v ?? false;
-                      _dirty = true;
-                    }),
-                    activeColor: const Color(0xFF1976D2),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 80,
+                    child: Checkbox(
+                      value: rec.esColegioActual,
+                      onChanged: (v) => setState(() {
+                        if (v == true) {
+                          for (final r in _historial) {
+                            r.esColegioActual = false;
+                          }
+                        }
+                        rec.esColegioActual = v ?? false;
+                        _dirty = true;
+                      }),
+                      activeColor: const Color(0xFF1976D2),
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: 36,
-                  child: IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        color: Colors.red, size: 18),
-                    onPressed: () => setState(() { _historial.removeAt(idx); _dirty = true; }),
-                    padding: EdgeInsets.zero,
+                  SizedBox(
+                    width: 36,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                      onPressed: () => setState(() {
+                        _historial.removeAt(idx);
+                        _dirty = true;
+                      }),
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             );
           }),
         ],
@@ -480,20 +681,23 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
 
   void _addRecord() {
     setState(() {
-      _historial.add(AcademicRecord(
-        id: _uuid.v4(),
-        nombreColegio: '',
-        grado: '',
-        anio: '',
-      ));
+      _historial.add(
+        AcademicRecord(id: _uuid.v4(), nombreColegio: '', grado: '', anio: ''),
+      );
       _dirty = true;
     });
   }
 
   Future<void> _pickPhoto() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
     if (result?.files.single.bytes != null) {
-      setState(() { _photoBytes = result!.files.single.bytes; _dirty = true; });
+      setState(() {
+        _photoBytes = result!.files.single.bytes;
+        _dirty = true;
+      });
     }
   }
 
@@ -502,21 +706,24 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
   Widget _fRow(List<Widget> fields) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: fields
-          .expand((f) => [f, const SizedBox(width: 10)])
-          .toList()
+      children: fields.expand((f) => [f, const SizedBox(width: 10)]).toList()
         ..removeLast(),
     );
   }
 
-  Widget _fText(String label, TextEditingController ctrl, {
-    bool required = false, int flex = 1,
-    TextInputType inputType = TextInputType.text, String? hint,
+  Widget _fText(
+    String label,
+    TextEditingController ctrl, {
+    bool required = false,
+    int flex = 1,
+    TextInputType inputType = TextInputType.text,
+    String? hint,
   }) {
     return Expanded(
       flex: flex,
       child: _HvField(
-        label: label, required: required,
+        label: label,
+        required: required,
         child: TextField(
           controller: ctrl,
           keyboardType: inputType,
@@ -528,8 +735,13 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
     );
   }
 
-  Widget _fDropdown(String label, String? value, List<String> options,
-      ValueChanged<String?> onChanged, {List<String>? labels}) {
+  Widget _fDropdown(
+    String label,
+    String? value,
+    List<String> options,
+    ValueChanged<String?> onChanged, {
+    List<String>? labels,
+  }) {
     return Expanded(
       child: _HvField(
         label: label,
@@ -539,7 +751,9 @@ class _HojaDeVidaStudentScreenState extends State<HojaDeVidaStudentScreen> {
           isDense: true,
           underline: Container(
             height: 1,
-            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFCBD5E1))),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
           ),
           style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
           items: options.asMap().entries.map((e) {
@@ -596,16 +810,26 @@ class _HvSectionState extends State<_HvSection> {
           child: Container(
             color: const Color(0xFF1976D2),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(children: [
-              Icon(
-                _expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                color: Colors.white, size: 20,
-              ),
-              const SizedBox(width: 10),
-              Text(widget.title,
+            child: Row(
+              children: [
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  widget.title,
                   style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-            ]),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         if (_expanded)
@@ -624,7 +848,11 @@ class _HvField extends StatelessWidget {
   final String label;
   final Widget child;
   final bool required;
-  const _HvField({required this.label, required this.child, this.required = false});
+  const _HvField({
+    required this.label,
+    required this.child,
+    this.required = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -634,9 +862,21 @@ class _HvField extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF475569),
+              fontWeight: FontWeight.w500,
+            ),
             children: required
-                ? const [TextSpan(text: ' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700))]
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ]
                 : [],
           ),
         ),

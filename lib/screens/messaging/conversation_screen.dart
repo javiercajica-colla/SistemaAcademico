@@ -39,9 +39,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
   void _markRead() {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
-    context
-        .read<MessageProvider>()
-        .markConversationAsRead(widget.conversationId, user.id);
+    context.read<MessageProvider>().markConversationAsRead(
+      widget.conversationId,
+      user.id,
+    );
   }
 
   void _scrollToBottom() {
@@ -91,7 +92,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final messages = msgProv.messagesForConversation(widget.conversationId);
     final title = msgProv.conversationTitle(conv, user.id, allUsers);
     final isInstitutional = conv.type == ConversationType.institutional;
-    final canReply = !isInstitutional || user.role == UserRole.coordinator || user.role == UserRole.admin;
+    final canReply =
+        !isInstitutional ||
+        user.role == UserRole.coordinator ||
+        user.role == UserRole.admin;
 
     // Auto-scroll when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
@@ -101,26 +105,33 @@ class _ConversationScreenState extends State<ConversationScreen> {
       appBar: _buildAppBar(context, conv, title),
       body: Column(
         children: [
-          if (isInstitutional && !canReply)
-            _readOnlyBanner(),
+          if (isInstitutional && !canReply) _readOnlyBanner(),
           Expanded(
             child: messages.isEmpty
                 ? const Center(
-                    child: Text('No hay mensajes aún',
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 14)))
+                    child: Text(
+                      'No hay mensajes aún',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     itemCount: messages.length,
                     itemBuilder: (context, i) {
-                      final showDate = i == 0 ||
-                          !_sameDay(
-                              messages[i].sentAt, messages[i - 1].sentAt);
+                      final showDate =
+                          i == 0 ||
+                          !_sameDay(messages[i].sentAt, messages[i - 1].sentAt);
                       return Column(
                         children: [
-                          if (showDate) _DateSeparator(date: messages[i].sentAt),
+                          if (showDate)
+                            _DateSeparator(date: messages[i].sentAt),
                           _MessageBubble(
                             message: messages[i],
                             isMe: messages[i].senderId == user.id,
@@ -137,7 +148,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(
-      BuildContext context, Conversation conv, String title) {
+    BuildContext context,
+    Conversation conv,
+    String title,
+  ) {
     Color typeColor;
     IconData typeIcon;
     String typeLabel;
@@ -150,7 +164,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
       case ConversationType.group:
         typeColor = AppColors.teacher;
         typeIcon = Icons.group_rounded;
-        typeLabel = 'Mensaje grupal · ${conv.participantIds.length} participantes';
+        typeLabel =
+            'Mensaje grupal · ${conv.participantIds.length} participantes';
         break;
       case ConversationType.institutional:
         typeColor = AppColors.parent;
@@ -164,7 +179,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
       elevation: 0,
       titleSpacing: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+        icon: const Icon(
+          Icons.arrow_back_rounded,
+          color: AppColors.textPrimary,
+        ),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Row(
@@ -179,14 +197,21 @@ class _ConversationScreenState extends State<ConversationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
-                Text(typeLabel,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  typeLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -206,8 +231,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.lock_outline_rounded,
-              size: 14, color: AppColors.parent),
+          Icon(Icons.lock_outline_rounded, size: 14, color: AppColors.parent),
           const SizedBox(width: 8),
           const Text(
             'Comunicado de solo lectura — solo el coordinador puede responder',
@@ -236,7 +260,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
               decoration: InputDecoration(
                 hintText: 'Escribe un mensaje...',
                 hintStyle: const TextStyle(
-                    fontSize: 13, color: AppColors.textSecondary),
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
                 filled: true,
                 fillColor: AppColors.background,
                 border: OutlineInputBorder(
@@ -244,7 +270,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               onSubmitted: (_) => _send(),
             ),
@@ -260,8 +288,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
                 onTap: _sending ? null : _send,
                 child: const Padding(
                   padding: EdgeInsets.all(12),
-                  child: Icon(Icons.send_rounded,
-                      color: Colors.white, size: 20),
+                  child: Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -293,8 +324,19 @@ class _DateSeparator extends StatelessWidget {
       label = 'Ayer';
     } else {
       const months = [
-        '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-        'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+        '',
+        'ene',
+        'feb',
+        'mar',
+        'abr',
+        'may',
+        'jun',
+        'jul',
+        'ago',
+        'sep',
+        'oct',
+        'nov',
+        'dic',
       ];
       label = '${date.day} ${months[date.month]} ${date.year}';
     }
@@ -305,11 +347,14 @@ class _DateSeparator extends StatelessWidget {
           Expanded(child: Divider(color: Colors.grey.shade300)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500)),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           Expanded(child: Divider(color: Colors.grey.shade300)),
         ],
@@ -356,8 +401,9 @@ class _MessageBubble extends StatelessWidget {
             ],
           ),
           child: Column(
-            crossAxisAlignment:
-                isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 Padding(

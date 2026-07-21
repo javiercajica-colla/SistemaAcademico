@@ -91,8 +91,12 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
     _primerApellidoCtrl = TextEditingController(text: t.lastName);
     _segundoApellidoCtrl = TextEditingController(text: p.segundoApellido ?? '');
     _documentoCtrl = TextEditingController(text: t.documentId);
-    _ciudadExpedicionCtrl = TextEditingController(text: p.ciudadExpedicion ?? '');
-    _ciudadNacimientoCtrl = TextEditingController(text: p.ciudadNacimiento ?? '');
+    _ciudadExpedicionCtrl = TextEditingController(
+      text: p.ciudadExpedicion ?? '',
+    );
+    _ciudadNacimientoCtrl = TextEditingController(
+      text: p.ciudadNacimiento ?? '',
+    );
     _fechaNacimientoCtrl = TextEditingController(text: p.fechaNacimiento ?? '');
     _numHijosCtrl = TextEditingController(text: p.numHijos ?? '');
     _tipoDocumento = p.tipoDocumento;
@@ -112,23 +116,39 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
     _regimen = p.regimen;
 
     _emNombreCtrl = TextEditingController(text: p.emergenciaNombre ?? '');
-    _emParentescoCtrl = TextEditingController(text: p.emergenciaParentesco ?? '');
+    _emParentescoCtrl = TextEditingController(
+      text: p.emergenciaParentesco ?? '',
+    );
     _emTelefonoCtrl = TextEditingController(text: p.emergenciaTelefono ?? '');
     _emCelularCtrl = TextEditingController(text: p.emergenciaCelular ?? '');
 
-    _fechaVinMagCtrl = TextEditingController(text: p.fechaVinculacionMagisterio ?? '');
-    _decretoVinMagCtrl = TextEditingController(text: p.decretoVinculacionMagisterio ?? '');
-    _claseFuncionarioCtrl = TextEditingController(text: p.claseFuncionario ?? '');
+    _fechaVinMagCtrl = TextEditingController(
+      text: p.fechaVinculacionMagisterio ?? '',
+    );
+    _decretoVinMagCtrl = TextEditingController(
+      text: p.decretoVinculacionMagisterio ?? '',
+    );
+    _claseFuncionarioCtrl = TextEditingController(
+      text: p.claseFuncionario ?? '',
+    );
     _escalafonCtrl = TextEditingController(text: p.escalafon ?? '');
     _estadoDocenteCtrl = TextEditingController(text: p.estadoDocente ?? '');
     _maxCargaCtrl = TextEditingController(text: p.maxCargaHoraria ?? '');
-    _fechaVinColegioCtrl = TextEditingController(text: p.fechaVinculacionColegio ?? '');
+    _fechaVinColegioCtrl = TextEditingController(
+      text: p.fechaVinculacionColegio ?? '',
+    );
     _fechaRetiroCtrl = TextEditingController(text: p.fechaRetiroColegio ?? '');
-    _decretoVinColegioCtrl = TextEditingController(text: p.decretoVinculacionColegio ?? '');
+    _decretoVinColegioCtrl = TextEditingController(
+      text: p.decretoVinculacionColegio ?? '',
+    );
     _areaEnsenanzaCtrl = TextEditingController(text: p.areaEnsenanza ?? '');
-    _tipoNombramientoCtrl = TextEditingController(text: p.tipoNombramiento ?? '');
+    _tipoNombramientoCtrl = TextEditingController(
+      text: p.tipoNombramiento ?? '',
+    );
     _horarioLaboralCtrl = TextEditingController(text: p.horarioLaboral ?? '');
-    _anosFormacionCtrl = TextEditingController(text: p.anosFormacionSuperior ?? '');
+    _anosFormacionCtrl = TextEditingController(
+      text: p.anosFormacionSuperior ?? '',
+    );
   }
 
   @override
@@ -140,18 +160,41 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
   }
 
   List<TextEditingController> get _allControllers => [
-        _primerNombreCtrl, _segundoNombreCtrl, _primerApellidoCtrl,
-        _segundoApellidoCtrl, _documentoCtrl, _ciudadExpedicionCtrl,
-        _ciudadNacimientoCtrl, _fechaNacimientoCtrl, _numHijosCtrl,
-        _direccionCtrl, _barrioCtrl, _telefonoCtrl, _celularCtrl,
-        _emailCtrl, _ciudadUbicacionCtrl, _sistemaSaludCtrl, _epsArsCtrl,
-        _emNombreCtrl, _emParentescoCtrl, _emTelefonoCtrl, _emCelularCtrl,
-        _fechaVinMagCtrl, _decretoVinMagCtrl, _claseFuncionarioCtrl,
-        _escalafonCtrl, _estadoDocenteCtrl, _maxCargaCtrl,
-        _fechaVinColegioCtrl, _fechaRetiroCtrl, _decretoVinColegioCtrl,
-        _areaEnsenanzaCtrl, _tipoNombramientoCtrl, _horarioLaboralCtrl,
-        _anosFormacionCtrl,
-      ];
+    _primerNombreCtrl,
+    _segundoNombreCtrl,
+    _primerApellidoCtrl,
+    _segundoApellidoCtrl,
+    _documentoCtrl,
+    _ciudadExpedicionCtrl,
+    _ciudadNacimientoCtrl,
+    _fechaNacimientoCtrl,
+    _numHijosCtrl,
+    _direccionCtrl,
+    _barrioCtrl,
+    _telefonoCtrl,
+    _celularCtrl,
+    _emailCtrl,
+    _ciudadUbicacionCtrl,
+    _sistemaSaludCtrl,
+    _epsArsCtrl,
+    _emNombreCtrl,
+    _emParentescoCtrl,
+    _emTelefonoCtrl,
+    _emCelularCtrl,
+    _fechaVinMagCtrl,
+    _decretoVinMagCtrl,
+    _claseFuncionarioCtrl,
+    _escalafonCtrl,
+    _estadoDocenteCtrl,
+    _maxCargaCtrl,
+    _fechaVinColegioCtrl,
+    _fechaRetiroCtrl,
+    _decretoVinColegioCtrl,
+    _areaEnsenanzaCtrl,
+    _tipoNombramientoCtrl,
+    _horarioLaboralCtrl,
+    _anosFormacionCtrl,
+  ];
 
   void _save() {
     final academic = context.read<AcademicProvider>();
@@ -226,22 +269,13 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
           child: Column(
             children: [
-              _HvSection(
-                title: 'Datos Personales',
-                child: _buildPersonal(),
-              ),
-              _HvSection(
-                title: 'Datos Ubicación',
-                child: _buildUbicacion(),
-              ),
+              _HvSection(title: 'Datos Personales', child: _buildPersonal()),
+              _HvSection(title: 'Datos Ubicación', child: _buildUbicacion()),
               _HvSection(
                 title: 'Datos Institucionales',
                 child: _buildInstitucional(),
               ),
-              _HvSection(
-                title: 'Datos de Salud',
-                child: _buildSalud(),
-              ),
+              _HvSection(title: 'Datos de Salud', child: _buildSalud()),
               _HvSection(
                 title: 'Contacto de Emergencia',
                 child: _buildEmergencia(),
@@ -263,15 +297,18 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
                 if (_dirty)
                   const Padding(
                     padding: EdgeInsets.only(right: 12),
-                    child: Text('Cambios sin guardar',
-                        style: TextStyle(color: Color(0xFFEF6C00), fontSize: 13)),
+                    child: Text(
+                      'Cambios sin guardar',
+                      style: TextStyle(color: Color(0xFFEF6C00), fontSize: 13),
+                    ),
                   ),
                 FilledButton.icon(
                   icon: const Icon(Icons.save_rounded, size: 16),
                   label: const Text('Guardar Hoja de Vida'),
                   onPressed: _save,
                   style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF1976D2)),
+                    backgroundColor: const Color(0xFF1976D2),
+                  ),
                 ),
               ],
             ),
@@ -287,176 +324,289 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
     return Column(
       children: [
         // Row 1: Tipo Doc | Documento | Photo (right side)
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            flex: 2,
-            child: Column(children: [
-              _fRow([
-                _fDropdown('Tipo Documento', _tipoDocumento,
-                    ['CC', 'CE', 'TI'], (v) => setState(() { _tipoDocumento = v!; _dirty = true; }),
-                    labels: ['Cédula de Ciudadanía', 'Cédula de Extranjería', 'Tarjeta de Identidad']),
-                _fText('Documento', _documentoCtrl),
-              ]),
-              const SizedBox(height: 10),
-              _fRow([_fText('Ciudad Expedición', _ciudadExpedicionCtrl, flex: 1)]),
-              const SizedBox(height: 10),
-              _fRow([
-                _fText('Primer Nombre', _primerNombreCtrl),
-                _fText('Segundo Nombre', _segundoNombreCtrl),
-                _fText('Primer Apellido', _primerApellidoCtrl),
-                _fText('Segundo Apellido', _segundoApellidoCtrl),
-              ]),
-              const SizedBox(height: 10),
-              _fRow([_fText('Ciudad de Nacimiento', _ciudadNacimientoCtrl, flex: 1)]),
-              const SizedBox(height: 10),
-              _fRow([
-                _fText('Fecha Nacimiento', _fechaNacimientoCtrl,
-                    hint: 'dd/mm/aaaa'),
-                _fDropdown('Tipo Sangre', _tipoSangre,
-                    ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-                    (v) => setState(() { _tipoSangre = v; _dirty = true; })),
-                _fDropdown('Sexo', _sexo, ['M', 'F'],
-                    (v) => setState(() { _sexo = v; _dirty = true; }),
-                    labels: ['Masculino', 'Femenino']),
-                _fDropdown('Estado Civil', _estadoCivil,
-                    ['Soltero(a)', 'Casado(a)', 'Unión Libre', 'Divorciado(a)', 'Viudo(a)'],
-                    (v) => setState(() { _estadoCivil = v; _dirty = true; })),
-                _fText('N° Hijos', _numHijosCtrl,
-                    inputType: TextInputType.number),
-              ]),
-            ]),
-          ),
-          const SizedBox(width: 16),
-          // Photo column
-          SizedBox(
-            width: 160,
-            child: Column(
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Fotografía',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF475569))),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: 140,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                    color: const Color(0xFFF8FAFC),
-                  ),
-                  child: _photoBytes != null
-                      ? Image.memory(_photoBytes!, fit: BoxFit.cover)
-                      : const Icon(Icons.person, size: 60, color: Color(0xFFCBD5E1)),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _pickPhoto,
-                    style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 6)),
-                    child: const Text('Subir foto', style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (_photoBytes != null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => setState(() { _photoBytes = null; _dirty = true; }),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 6)),
-                      child: const Text('Quitar Foto',
-                          style: TextStyle(fontSize: 12, color: Colors.white)),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                children: [
+                  _fRow([
+                    _fDropdown(
+                      'Tipo Documento',
+                      _tipoDocumento,
+                      ['CC', 'CE', 'TI'],
+                      (v) => setState(() {
+                        _tipoDocumento = v!;
+                        _dirty = true;
+                      }),
+                      labels: [
+                        'Cédula de Ciudadanía',
+                        'Cédula de Extranjería',
+                        'Tarjeta de Identidad',
+                      ],
+                    ),
+                    _fText('Documento', _documentoCtrl),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText('Ciudad Expedición', _ciudadExpedicionCtrl, flex: 1),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText('Primer Nombre', _primerNombreCtrl),
+                    _fText('Segundo Nombre', _segundoNombreCtrl),
+                    _fText('Primer Apellido', _primerApellidoCtrl),
+                    _fText('Segundo Apellido', _segundoApellidoCtrl),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText(
+                      'Ciudad de Nacimiento',
+                      _ciudadNacimientoCtrl,
+                      flex: 1,
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  _fRow([
+                    _fText(
+                      'Fecha Nacimiento',
+                      _fechaNacimientoCtrl,
+                      hint: 'dd/mm/aaaa',
+                    ),
+                    _fDropdown(
+                      'Tipo Sangre',
+                      _tipoSangre,
+                      ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+                      (v) => setState(() {
+                        _tipoSangre = v;
+                        _dirty = true;
+                      }),
+                    ),
+                    _fDropdown(
+                      'Sexo',
+                      _sexo,
+                      ['M', 'F'],
+                      (v) => setState(() {
+                        _sexo = v;
+                        _dirty = true;
+                      }),
+                      labels: ['Masculino', 'Femenino'],
+                    ),
+                    _fDropdown(
+                      'Estado Civil',
+                      _estadoCivil,
+                      [
+                        'Soltero(a)',
+                        'Casado(a)',
+                        'Unión Libre',
+                        'Divorciado(a)',
+                        'Viudo(a)',
+                      ],
+                      (v) => setState(() {
+                        _estadoCivil = v;
+                        _dirty = true;
+                      }),
+                    ),
+                    _fText(
+                      'N° Hijos',
+                      _numHijosCtrl,
+                      inputType: TextInputType.number,
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Photo column
+            SizedBox(
+              width: 160,
+              child: Column(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Fotografía',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF475569)),
                     ),
                   ),
-              ],
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 140,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                      color: const Color(0xFFF8FAFC),
+                    ),
+                    child: _photoBytes != null
+                        ? Image.memory(_photoBytes!, fit: BoxFit.cover)
+                        : const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _pickPhoto,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      child: const Text(
+                        'Subir foto',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (_photoBytes != null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => setState(() {
+                          _photoBytes = null;
+                          _dirty = true;
+                        }),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                        ),
+                        child: const Text(
+                          'Quitar Foto',
+                          style: TextStyle(fontSize: 12, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUbicacion() {
+    return Column(
+      children: [
+        _fRow([
+          _fText('Dirección', _direccionCtrl, required: true, flex: 2),
+          _fText('Barrio', _barrioCtrl, required: true),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText(
+            'Teléfono',
+            _telefonoCtrl,
+            required: true,
+            inputType: TextInputType.phone,
+          ),
+          _fText(
+            'Celular',
+            _celularCtrl,
+            required: true,
+            inputType: TextInputType.phone,
+          ),
+          _fText(
+            'Email',
+            _emailCtrl,
+            required: true,
+            inputType: TextInputType.emailAddress,
+            flex: 2,
+          ),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([_fText('Ciudad', _ciudadUbicacionCtrl, flex: 1)]),
+      ],
+    );
+  }
+
+  Widget _buildInstitucional() {
+    return Column(
+      children: [
+        _fRow([
+          _fText(
+            'Fecha Vinculación Magisterio',
+            _fechaVinMagCtrl,
+            hint: 'dd/mm/aaaa',
+          ),
+          _fText('Decreto Vinculación Magisterio', _decretoVinMagCtrl),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Clase de Funcionario', _claseFuncionarioCtrl),
+          _fText('Escalafón', _escalafonCtrl),
+          _fText('Estado', _estadoDocenteCtrl),
+          _fText(
+            'Máx. Carga (h/semana)',
+            _maxCargaCtrl,
+            inputType: TextInputType.number,
+          ),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText(
+            'Fecha Vinculación Colegio',
+            _fechaVinColegioCtrl,
+            hint: 'dd/mm/aaaa',
+          ),
+          _fText('Fecha Retiro Colegio', _fechaRetiroCtrl, hint: 'dd/mm/aaaa'),
+          _fText('Decreto Vinculación Colegio', _decretoVinColegioCtrl),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Área Enseñanza / Nombramiento', _areaEnsenanzaCtrl, flex: 2),
+          _fText('Tipo Nombramiento', _tipoNombramientoCtrl),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Horario Laboral', _horarioLaboralCtrl),
+          _fText(
+            'Años Formación Superior',
+            _anosFormacionCtrl,
+            inputType: TextInputType.number,
           ),
         ]),
       ],
     );
   }
 
-  Widget _buildUbicacion() {
-    return Column(children: [
-      _fRow([
-        _fText('Dirección', _direccionCtrl, required: true, flex: 2),
-        _fText('Barrio', _barrioCtrl, required: true),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Teléfono', _telefonoCtrl, required: true,
-            inputType: TextInputType.phone),
-        _fText('Celular', _celularCtrl, required: true,
-            inputType: TextInputType.phone),
-        _fText('Email', _emailCtrl, required: true,
-            inputType: TextInputType.emailAddress, flex: 2),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([_fText('Ciudad', _ciudadUbicacionCtrl, flex: 1)]),
-    ]);
-  }
-
-  Widget _buildInstitucional() {
-    return Column(children: [
-      _fRow([
-        _fText('Fecha Vinculación Magisterio', _fechaVinMagCtrl, hint: 'dd/mm/aaaa'),
-        _fText('Decreto Vinculación Magisterio', _decretoVinMagCtrl),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Clase de Funcionario', _claseFuncionarioCtrl),
-        _fText('Escalafón', _escalafonCtrl),
-        _fText('Estado', _estadoDocenteCtrl),
-        _fText('Máx. Carga (h/semana)', _maxCargaCtrl,
-            inputType: TextInputType.number),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Fecha Vinculación Colegio', _fechaVinColegioCtrl, hint: 'dd/mm/aaaa'),
-        _fText('Fecha Retiro Colegio', _fechaRetiroCtrl, hint: 'dd/mm/aaaa'),
-        _fText('Decreto Vinculación Colegio', _decretoVinColegioCtrl),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Área Enseñanza / Nombramiento', _areaEnsenanzaCtrl, flex: 2),
-        _fText('Tipo Nombramiento', _tipoNombramientoCtrl),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Horario Laboral', _horarioLaboralCtrl),
-        _fText('Años Formación Superior', _anosFormacionCtrl,
-            inputType: TextInputType.number),
-      ]),
-    ]);
-  }
-
   Widget _buildSalud() {
-    return Column(children: [
-      _fRow([
-        _fText('Sistema de Salud', _sistemaSaludCtrl),
-        _fDropdown('Régimen', _regimen, ['Contributivo', 'Subsidiado', 'Especial', 'Exceptuado'],
-            (v) => setState(() { _regimen = v; _dirty = true; })),
-        _fText('EPS / ARS', _epsArsCtrl, flex: 2),
-      ]),
-    ]);
+    return Column(
+      children: [
+        _fRow([
+          _fText('Sistema de Salud', _sistemaSaludCtrl),
+          _fDropdown(
+            'Régimen',
+            _regimen,
+            ['Contributivo', 'Subsidiado', 'Especial', 'Exceptuado'],
+            (v) => setState(() {
+              _regimen = v;
+              _dirty = true;
+            }),
+          ),
+          _fText('EPS / ARS', _epsArsCtrl, flex: 2),
+        ]),
+      ],
+    );
   }
 
   Widget _buildEmergencia() {
-    return Column(children: [
-      _fRow([
-        _fText('Nombre Completo', _emNombreCtrl, flex: 2),
-        _fText('Parentesco', _emParentescoCtrl),
-      ]),
-      const SizedBox(height: 10),
-      _fRow([
-        _fText('Teléfono', _emTelefonoCtrl, inputType: TextInputType.phone),
-        _fText('Celular', _emCelularCtrl, inputType: TextInputType.phone),
-      ]),
-    ]);
+    return Column(
+      children: [
+        _fRow([
+          _fText('Nombre Completo', _emNombreCtrl, flex: 2),
+          _fText('Parentesco', _emParentescoCtrl),
+        ]),
+        const SizedBox(height: 10),
+        _fRow([
+          _fText('Teléfono', _emTelefonoCtrl, inputType: TextInputType.phone),
+          _fText('Celular', _emCelularCtrl, inputType: TextInputType.phone),
+        ]),
+      ],
+    );
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -477,9 +627,7 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
   Widget _fRow(List<Widget> fields) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: fields
-          .expand((f) => [f, const SizedBox(width: 10)])
-          .toList()
+      children: fields.expand((f) => [f, const SizedBox(width: 10)]).toList()
         ..removeLast(),
     );
   }
@@ -540,24 +688,23 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
   }
 
   InputDecoration _inputDec({String? hint}) => InputDecoration(
-        isDense: true,
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: Color(0xFFCBD5E1)),
-        ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: Color(0xFFCBD5E1)),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: Color(0xFF1976D2), width: 1.5),
-        ),
-      );
+    isDense: true,
+    hintText: hint,
+    hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+    border: const OutlineInputBorder(
+      borderRadius: BorderRadius.zero,
+      borderSide: BorderSide(color: Color(0xFFCBD5E1)),
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.zero,
+      borderSide: BorderSide(color: Color(0xFFCBD5E1)),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.zero,
+      borderSide: BorderSide(color: Color(0xFF1976D2), width: 1.5),
+    ),
+  );
 }
 
 // ─── Shared widgets ────────────────────────────────────────────────────────
@@ -646,15 +793,19 @@ class _HvField extends StatelessWidget {
           text: TextSpan(
             text: label,
             style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF475569),
-                fontWeight: FontWeight.w500),
+              fontSize: 11,
+              color: Color(0xFF475569),
+              fontWeight: FontWeight.w500,
+            ),
             children: required
                 ? const [
                     TextSpan(
-                        text: ' *',
-                        style: TextStyle(
-                            color: Colors.red, fontWeight: FontWeight.w700))
+                      text: ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ]
                 : [],
           ),

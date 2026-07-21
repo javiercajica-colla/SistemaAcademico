@@ -8,8 +8,9 @@ import '../../core/utils/credential_export.dart';
 import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../repositories/auth_repository.dart';
+import '../../repositories/repository_provider.dart';
 import '../../services/credential_log_service.dart';
-import '../../services/firebase_auth_service.dart';
 import '../../services/user_credential_generator.dart';
 import '../../widgets/bulk_import_dialog.dart';
 import '../../widgets/user_avatar.dart';
@@ -21,7 +22,8 @@ class UsersScreen extends StatefulWidget {
   State<UsersScreen> createState() => _UsersScreenState();
 }
 
-class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStateMixin {
+class _UsersScreenState extends State<UsersScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabs;
   String _search = '';
 
@@ -92,28 +94,41 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             itemBuilder: (ctx) => const [
               PopupMenuItem(
                 value: 'pdf',
-                child: Row(children: [
-                  Icon(Icons.picture_as_pdf_rounded, size: 18),
-                  SizedBox(width: 8),
-                  Text('Exportar credenciales (PDF)'),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(Icons.picture_as_pdf_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Exportar credenciales (PDF)'),
+                  ],
+                ),
               ),
               PopupMenuItem(
                 value: 'excel',
-                child: Row(children: [
-                  Icon(Icons.grid_on_rounded, size: 18),
-                  SizedBox(width: 8),
-                  Text('Exportar credenciales (Excel)'),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(Icons.grid_on_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Exportar credenciales (Excel)'),
+                  ],
+                ),
               ),
               PopupMenuDivider(),
               PopupMenuItem(
                 value: 'clear',
-                child: Row(children: [
-                  Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
-                  SizedBox(width: 8),
-                  Text('Limpiar registro', style: TextStyle(color: AppColors.error)),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                      color: AppColors.error,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Limpiar registro',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -150,16 +165,30 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   }
 
   Widget _buildTeachersTab(AcademicProvider academic) {
-    final teachers = academic.teachers.where((t) => t.fullName.toLowerCase().contains(_search)).toList();
+    final teachers = academic.teachers
+        .where((t) => t.fullName.toLowerCase().contains(_search))
+        .toList();
     return _buildTabCard(
       title: 'Docentes (${teachers.length})',
       table: _buildTable(
-        columns: const ['Nombre', 'Especialización', 'Asignaturas', 'Estado', ''],
+        columns: const [
+          'Nombre',
+          'Especialización',
+          'Asignaturas',
+          'Estado',
+          '',
+        ],
         rows: teachers.map((t) {
           final assignmentCount = academic.assignmentsForTeacher(t.id).length;
           final directedCourse = academic.courses.firstWhere(
             (c) => c.directorTeacherId == t.id,
-            orElse: () => const Course(id: '', name: '', grade: '', section: '', academicYearId: ''),
+            orElse: () => const Course(
+              id: '',
+              name: '',
+              grade: '',
+              section: '',
+              academicYearId: '',
+            ),
           );
           return [
             _nameCell(t.userId, t.fullName, AppColors.teacher),
@@ -169,7 +198,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 : '$assignmentCount asignatura(s) · Dir. ${directedCourse.name}',
             'Activo',
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               tooltip: 'Editar asignaturas y dirección de grupo',
               onPressed: () => _showEditTeacherDialog(context, t),
             ),
@@ -180,7 +213,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   }
 
   Widget _buildStudentsTab(AcademicProvider academic) {
-    final students = academic.students.where((s) => s.fullName.toLowerCase().contains(_search)).toList();
+    final students = academic.students
+        .where((s) => s.fullName.toLowerCase().contains(_search))
+        .toList();
     return _buildTabCard(
       title: 'Estudiantes (${students.length})',
       table: _buildTable(
@@ -194,7 +229,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             '${course?.name ?? "Sin curso"}${parentCount > 0 ? ' · $parentCount acudiente(s)' : ''}',
             'Activo',
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               tooltip: 'Editar estudiante',
               onPressed: () => _showEditStudentDialog(context, s),
             ),
@@ -205,33 +244,100 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   }
 
   Widget _buildParentsTab(AcademicProvider academic) {
-    final parents = academic.parents.where((p) => p.fullName.toLowerCase().contains(_search)).toList();
+    final parents = academic.parents
+        .where((p) => p.fullName.toLowerCase().contains(_search))
+        .toList();
     return _buildTabCard(
       title: 'Padres de Familia (${parents.length})',
       table: _buildTable(
         columns: const ['Nombre', 'Documento', 'Teléfono', 'Hijos'],
-        rows: parents.map((p) => [
-          _nameCell(p.userId, p.fullName, AppColors.parent),
-          p.documentId,
-          p.phone,
-          '${p.studentIds.length} estudiante(s)',
-        ]).toList(),
+        rows: parents
+            .map(
+              (p) => [
+                _nameCell(p.userId, p.fullName, AppColors.parent),
+                p.documentId,
+                p.phone,
+                '${p.studentIds.length} estudiante(s)',
+              ],
+            )
+            .toList(),
       ),
     );
   }
 
   Widget _buildAllUsersTab(AcademicProvider academic) {
-    final users = academic.users.where((u) => u.name.toLowerCase().contains(_search)).toList();
+    final currentUserId = context.watch<AuthProvider>().currentUser?.id;
+    final users = academic.users
+        .where((u) => u.name.toLowerCase().contains(_search))
+        .toList();
     return _buildTabCard(
       title: 'Todos los Usuarios (${users.length})',
       table: _buildTable(
-        columns: const ['Nombre', 'Email', 'Rol', 'Estado'],
-        rows: users.map((u) => [
-          _nameCell(u.id, u.name, _roleColor(u.role)),
-          u.email,
-          _roleLabel(u.role),
-          u.isActive ? 'Activo' : 'Inactivo',
-        ]).toList(),
+        columns: const ['Nombre', 'Email', 'Rol', 'Estado', ''],
+        rows: users
+            .map(
+              (u) => [
+                _nameCell(u.id, u.name, _roleColor(u.role)),
+                u.email,
+                _roleLabel(u.role),
+                u.isActive ? 'Activo' : 'Inactivo',
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppColors.error,
+                  ),
+                  tooltip: u.id == currentUserId
+                      ? 'No puedes eliminar tu propia cuenta'
+                      : 'Eliminar usuario',
+                  onPressed: u.id == currentUserId
+                      ? null
+                      : () => _confirmDeleteUser(context, u),
+                ),
+              ],
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  AppUser? _userFor(AcademicProvider academic, String userId) {
+    try {
+      return academic.users.firstWhere((u) => u.id == userId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _confirmDeleteUser(BuildContext context, AppUser user) {
+    final academic = context.read<AcademicProvider>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar usuario'),
+        content: Text(
+          '¿Seguro que quieres eliminar a "${user.name}" (${_roleLabel(user.role)})? '
+          'Se borrará su perfil y datos asociados en el sistema. Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              academic.deleteUserAccount(user);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('"${user.name}" fue eliminado del sistema'),
+                ),
+              );
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
   }
@@ -273,34 +379,74 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     required List<List<dynamic>> rows,
   }) {
     if (rows.isEmpty) {
-      return const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No hay datos que mostrar')));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: Text('No hay datos que mostrar'),
+        ),
+      );
     }
     return SingleChildScrollView(
       child: Table(
-        border: TableBorder(horizontalInside: BorderSide(color: AppColors.border)),
-        columnWidths: const {0: FlexColumnWidth(2.5), 1: FlexColumnWidth(2), 2: FlexColumnWidth(1.5), 3: FlexColumnWidth(1), 4: FixedColumnWidth(48)},
+        border: TableBorder(
+          horizontalInside: BorderSide(color: AppColors.border),
+        ),
+        columnWidths: const {
+          0: FlexColumnWidth(2.5),
+          1: FlexColumnWidth(2),
+          2: FlexColumnWidth(1.5),
+          3: FlexColumnWidth(1),
+          4: FixedColumnWidth(48),
+        },
         children: [
           TableRow(
             decoration: const BoxDecoration(color: AppColors.surfaceVariant),
-            children: columns.map((c) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Text(c, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-            )).toList(),
+            children: columns
+                .map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    child: Text(
+                      c,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
-          ...rows.map((row) => TableRow(
-            children: row.map((cell) {
-              if (cell is Widget) return Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), child: cell);
-              final text = cell.toString();
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: text == 'Activo'
-                    ? _statusBadge(true)
-                    : text == 'Inactivo'
-                        ? _statusBadge(false)
-                        : Text(text, style: const TextStyle(fontSize: 13)),
-              );
-            }).toList(),
-          )),
+          ...rows.map(
+            (row) => TableRow(
+              children: row.map((cell) {
+                if (cell is Widget) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    child: cell,
+                  );
+                }
+                final text = cell.toString();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: text == 'Activo'
+                      ? _statusBadge(true)
+                      : text == 'Inactivo'
+                      ? _statusBadge(false)
+                      : Text(text, style: const TextStyle(fontSize: 13)),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -332,30 +478,47 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 1),
                   ),
-                  child: const Icon(Icons.camera_alt, size: 8, color: Colors.white),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 8,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(width: 10),
-        Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ),
       ],
     );
   }
 
-  Future<void> _exportCredentialsPdf(BuildContext context, {List<CredentialLogEntry>? entriesOverride}) async {
+  Future<void> _exportCredentialsPdf(
+    BuildContext context, {
+    List<CredentialLogEntry>? entriesOverride,
+  }) async {
     final entries = entriesOverride ?? await CredentialLogService().getAll();
     if (entries.isEmpty) {
+      // ignore: use_build_context_synchronously
       if (mounted) _showEmptyLogMessage(context);
       return;
     }
     await exportCredentialsPdf(entries);
   }
 
-  Future<void> _exportCredentialsExcel(BuildContext context, {List<CredentialLogEntry>? entriesOverride}) async {
+  Future<void> _exportCredentialsExcel(
+    BuildContext context, {
+    List<CredentialLogEntry>? entriesOverride,
+  }) async {
     final entries = entriesOverride ?? await CredentialLogService().getAll();
     if (entries.isEmpty) {
+      // ignore: use_build_context_synchronously
       if (mounted) _showEmptyLogMessage(context);
       return;
     }
@@ -364,7 +527,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
   void _showEmptyLogMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No hay credenciales generadas en esta sesión todavía')),
+      const SnackBar(
+        content: Text('No hay credenciales generadas en esta sesión todavía'),
+      ),
     );
   }
 
@@ -378,15 +543,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           'Asegúrate de haberlos exportado o compartido antes de continuar.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () async {
               await CredentialLogService().clear();
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
+                // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Registro de credenciales eliminado')),
+                  const SnackBar(
+                    content: Text('Registro de credenciales eliminado'),
+                  ),
                 );
               }
             },
@@ -403,7 +574,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       withData: true,
     );
     if (result?.files.single.bytes != null && mounted) {
-      context.read<AuthProvider>().updateAvatar(userId, result!.files.single.bytes!);
+      context.read<AuthProvider>().updateAvatar(
+        userId,
+        result!.files.single.bytes!,
+      );
     }
   }
 
@@ -411,11 +585,19 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: active ? AppColors.secondary.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
+        color: active
+            ? AppColors.secondary.withValues(alpha: 0.1)
+            : AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(active ? 'Activo' : 'Inactivo',
-          style: TextStyle(color: active ? AppColors.secondary : AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
+      child: Text(
+        active ? 'Activo' : 'Inactivo',
+        style: TextStyle(
+          color: active ? AppColors.secondary : AppColors.error,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -439,14 +621,24 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     String? pendingSubjectId;
     String? pendingCourseId;
     String? selectedDirectorCourseId;
+    final List<String> pendingParentStudentIds = [];
+    String? pendingStudentId;
 
     String computeUsername() {
-      final parts = nameCtrl.text.trim().split(' ').where((p) => p.isNotEmpty).toList();
+      final parts = nameCtrl.text
+          .trim()
+          .split(' ')
+          .where((p) => p.isNotEmpty)
+          .toList();
       if (parts.isEmpty) return '';
       final firstName = parts.first;
       final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       final existing = academic.users.map((u) => u.email.split('@').first);
-      return UserCredentialGenerator.generateUsername(firstName, lastName, existing);
+      return UserCredentialGenerator.generateUsername(
+        firstName,
+        lastName,
+        existing,
+      );
     }
 
     showDialog(
@@ -471,16 +663,28 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
                           ),
-                          child: Text(errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+                          child: Text(
+                            errorMsg!,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
                       ],
                       TextFormField(
                         controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: 'Nombre completo'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Nombre completo',
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Campo requerido'
+                            : null,
                         onChanged: (_) => setDialogState(() {}),
                       ),
                       const SizedBox(height: 12),
@@ -490,18 +694,28 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Credenciales generadas automáticamente',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                            const Text(
+                              'Credenciales generadas automáticamente',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             _credentialRow(
                               label: 'Usuario',
                               value: username.isEmpty ? '—' : username,
-                              onCopy: username.isEmpty ? null : () => _copyToClipboard(context, username),
+                              onCopy: username.isEmpty
+                                  ? null
+                                  : () => _copyToClipboard(context, username),
                             ),
                             const SizedBox(height: 6),
                             _credentialRow(
@@ -509,10 +723,14 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                               value: password,
                               onCopy: () => _copyToClipboard(context, password),
                               trailing: IconButton(
-                                icon: const Icon(Icons.refresh_rounded, size: 16),
+                                icon: const Icon(
+                                  Icons.refresh_rounded,
+                                  size: 16,
+                                ),
                                 tooltip: 'Generar otra contraseña',
                                 onPressed: () => setDialogState(() {
-                                  password = UserCredentialGenerator.generatePassword();
+                                  password =
+                                      UserCredentialGenerator.generatePassword();
                                 }),
                               ),
                             ),
@@ -524,11 +742,26 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         initialValue: selectedRole,
                         decoration: const InputDecoration(labelText: 'Rol'),
                         items: const [
-                          DropdownMenuItem(value: UserRole.coordinator, child: Text('Coordinador')),
-                          DropdownMenuItem(value: UserRole.admin,       child: Text('Administrador')),
-                          DropdownMenuItem(value: UserRole.teacher,     child: Text('Docente')),
-                          DropdownMenuItem(value: UserRole.student,     child: Text('Estudiante')),
-                          DropdownMenuItem(value: UserRole.parent,      child: Text('Padre de Familia')),
+                          DropdownMenuItem(
+                            value: UserRole.coordinator,
+                            child: Text('Coordinador'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.admin,
+                            child: Text('Administrador'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.teacher,
+                            child: Text('Docente'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.student,
+                            child: Text('Estudiante'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.parent,
+                            child: Text('Padre de Familia'),
+                          ),
                         ],
                         onChanged: (v) => setDialogState(() {
                           selectedRole = v!;
@@ -539,20 +772,34 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       TextFormField(
                         controller: docCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Documento de identidad'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Documento de identidad',
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Campo requerido'
+                            : null,
                       ),
                       // Campos dinámicos según rol
                       if (selectedRole == UserRole.teacher) ...[
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: specializationCtrl,
-                          decoration: const InputDecoration(labelText: 'Especialización'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Especialización',
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Campo requerido'
+                              : null,
                         ),
                         const SizedBox(height: 16),
-                        const Text('Asignaturas y cursos a cargo (opcional)',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                        const Text(
+                          'Asignaturas y cursos a cargo (opcional)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         if (pendingAssignments.isNotEmpty)
                           Padding(
@@ -564,8 +811,13 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                                 final subj = academic.subjectById(p.$1);
                                 final course = academic.courseById(p.$2);
                                 return Chip(
-                                  label: Text('${subj?.name ?? ''} · ${course?.name ?? ''}', style: const TextStyle(fontSize: 12)),
-                                  onDeleted: () => setDialogState(() => pendingAssignments.remove(p)),
+                                  label: Text(
+                                    '${subj?.name ?? ''} · ${course?.name ?? ''}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  onDeleted: () => setDialogState(
+                                    () => pendingAssignments.remove(p),
+                                  ),
                                 );
                               }).toList(),
                             ),
@@ -576,11 +828,23 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                               child: DropdownButtonFormField<String>(
                                 initialValue: pendingSubjectId,
                                 isExpanded: true,
-                                decoration: const InputDecoration(labelText: 'Asignatura', isDense: true),
+                                decoration: const InputDecoration(
+                                  labelText: 'Asignatura',
+                                  isDense: true,
+                                ),
                                 items: academic.subjects
-                                    .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis)))
+                                    .map(
+                                      (s) => DropdownMenuItem(
+                                        value: s.id,
+                                        child: Text(
+                                          s.name,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    )
                                     .toList(),
-                                onChanged: (v) => setDialogState(() => pendingSubjectId = v),
+                                onChanged: (v) =>
+                                    setDialogState(() => pendingSubjectId = v),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -588,26 +852,46 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                               child: DropdownButtonFormField<String>(
                                 initialValue: pendingCourseId,
                                 isExpanded: true,
-                                decoration: const InputDecoration(labelText: 'Curso', isDense: true),
+                                decoration: const InputDecoration(
+                                  labelText: 'Curso',
+                                  isDense: true,
+                                ),
                                 items: academic.courses
-                                    .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis)))
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                        value: c.id,
+                                        child: Text(
+                                          c.name,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    )
                                     .toList(),
-                                onChanged: (v) => setDialogState(() => pendingCourseId = v),
+                                onChanged: (v) =>
+                                    setDialogState(() => pendingCourseId = v),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary),
+                              icon: const Icon(
+                                Icons.add_circle_rounded,
+                                color: AppColors.primary,
+                              ),
                               tooltip: 'Agregar asignación',
-                              onPressed: (pendingSubjectId == null || pendingCourseId == null)
+                              onPressed:
+                                  (pendingSubjectId == null ||
+                                      pendingCourseId == null)
                                   ? null
                                   : () => setDialogState(() {
-                                        final pair = (pendingSubjectId!, pendingCourseId!);
-                                        if (!pendingAssignments.contains(pair)) {
-                                          pendingAssignments.add(pair);
-                                        }
-                                        pendingSubjectId = null;
-                                        pendingCourseId = null;
-                                      }),
+                                      final pair = (
+                                        pendingSubjectId!,
+                                        pendingCourseId!,
+                                      );
+                                      if (!pendingAssignments.contains(pair)) {
+                                        pendingAssignments.add(pair);
+                                      }
+                                      pendingSubjectId = null;
+                                      pendingCourseId = null;
+                                    }),
                             ),
                           ],
                         ),
@@ -615,31 +899,58 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         DropdownButtonFormField<String?>(
                           initialValue: selectedDirectorCourseId,
                           isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Director de grupo (opcional)'),
+                          decoration: const InputDecoration(
+                            labelText: 'Director de grupo (opcional)',
+                          ),
                           items: [
-                            const DropdownMenuItem(value: null, child: Text('Ninguno')),
-                            ...academic.courses.where((c) => c.directorTeacherId == null).map(
-                                  (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('Ninguno'),
+                            ),
+                            ...academic.courses
+                                .where((c) => c.directorTeacherId == null)
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c.id,
+                                    child: Text(c.name),
+                                  ),
                                 ),
                           ],
-                          onChanged: (v) => setDialogState(() => selectedDirectorCourseId = v),
+                          onChanged: (v) => setDialogState(
+                            () => selectedDirectorCourseId = v,
+                          ),
                         ),
-                        if (academic.courses.every((c) => c.directorTeacherId != null))
+                        if (academic.courses.every(
+                          (c) => c.directorTeacherId != null,
+                        ))
                           const Padding(
                             padding: EdgeInsets.only(top: 6),
-                            child: Text('Todos los cursos ya tienen director de grupo asignado.',
-                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            child: Text(
+                              'Todos los cursos ya tienen director de grupo asignado.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ),
                       ],
                       if (selectedRole == UserRole.student) ...[
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           initialValue: selectedCourseId,
-                          decoration: const InputDecoration(labelText: 'Curso (opcional)'),
+                          decoration: const InputDecoration(
+                            labelText: 'Curso (opcional)',
+                          ),
                           items: academic.courses
-                              .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c.id,
+                                  child: Text(c.name),
+                                ),
+                              )
                               .toList(),
-                          onChanged: (v) => setDialogState(() => selectedCourseId = v),
+                          onChanged: (v) =>
+                              setDialogState(() => selectedCourseId = v),
                         ),
                       ],
                       if (selectedRole == UserRole.parent) ...[
@@ -647,14 +958,105 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         TextFormField(
                           controller: phoneCtrl,
                           keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(labelText: 'Teléfono'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Teléfono',
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Campo requerido'
+                              : null,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: relationshipCtrl,
-                          decoration: const InputDecoration(labelText: 'Parentesco (Padre, Madre, Tutor...)'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Parentesco (Padre, Madre, Tutor...)',
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Campo requerido'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Estudiantes a cargo (opcional)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (pendingParentStudentIds.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: pendingParentStudentIds.map((sId) {
+                                final s = academic.studentById(sId);
+                                return Chip(
+                                  label: Text(
+                                    s?.fullName ?? '',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  onDeleted: () => setDialogState(
+                                    () => pendingParentStudentIds.remove(sId),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: pendingStudentId,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Estudiante',
+                                  isDense: true,
+                                ),
+                                items: academic.students
+                                    .where(
+                                      (s) => !pendingParentStudentIds.contains(
+                                        s.id,
+                                      ),
+                                    )
+                                    .map((s) {
+                                      final course = s.courseId == null
+                                          ? null
+                                          : academic.courseById(s.courseId!);
+                                      final label = course == null
+                                          ? s.fullName
+                                          : '${s.fullName} · ${course.name}';
+                                      return DropdownMenuItem(
+                                        value: s.id,
+                                        child: Text(
+                                          label,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    })
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setDialogState(() => pendingStudentId = v),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.add_circle_rounded,
+                                color: AppColors.primary,
+                              ),
+                              tooltip: 'Agregar estudiante',
+                              onPressed: pendingStudentId == null
+                                  ? null
+                                  : () => setDialogState(() {
+                                      pendingParentStudentIds.add(
+                                        pendingStudentId!,
+                                      );
+                                      pendingStudentId = null;
+                                    }),
+                            ),
+                          ],
                         ),
                       ],
                     ],
@@ -680,7 +1082,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         const uuid = Uuid();
                         final parts = nameCtrl.text.trim().split(' ');
                         final firstName = parts.first;
-                        final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+                        final lastName = parts.length > 1
+                            ? parts.sublist(1).join(' ')
+                            : '';
                         final role = selectedRole;
                         final doc = docCtrl.text.trim();
                         final spec = specializationCtrl.text.trim();
@@ -693,7 +1097,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         try {
                           // Crea la cuenta real en Firebase Auth (sin afectar
                           // la sesión del coordinador) y su perfil en Firestore.
-                          final newUser = await FirebaseAuthService().createUser(
+                          final newUser = await authRepository.createUser(
                             email: '$generatedUsername@colegio.edu.co',
                             password: generatedPassword,
                             name: nameCtrl.text.trim(),
@@ -705,64 +1109,107 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           switch (role) {
                             case UserRole.teacher:
                               final teacherId = uuid.v4();
-                              academic.addTeacher(Teacher(
-                                id: teacherId,
-                                userId: userId,
-                                firstName: firstName,
-                                lastName: lastName,
-                                documentId: doc,
-                                specialization: spec,
-                                subjectIds: pendingAssignments.map((p) => p.$1).toSet().toList(),
-                              ));
+                              academic.addTeacher(
+                                Teacher(
+                                  id: teacherId,
+                                  userId: userId,
+                                  firstName: firstName,
+                                  lastName: lastName,
+                                  documentId: doc,
+                                  specialization: spec,
+                                  subjectIds: pendingAssignments
+                                      .map((p) => p.$1)
+                                      .toSet()
+                                      .toList(),
+                                ),
+                              );
                               for (final pa in pendingAssignments) {
-                                academic.addAssignment(SubjectAssignment(
-                                  id: uuid.v4(),
-                                  teacherId: teacherId,
-                                  subjectId: pa.$1,
-                                  courseId: pa.$2,
-                                  academicYearId: academic.activeYear.id,
-                                ));
+                                academic.addAssignment(
+                                  SubjectAssignment(
+                                    id: uuid.v4(),
+                                    teacherId: teacherId,
+                                    subjectId: pa.$1,
+                                    courseId: pa.$2,
+                                    academicYearId: academic.activeYear.id,
+                                  ),
+                                );
                               }
                               if (selectedDirectorCourseId != null) {
-                                academic.setCourseDirector(selectedDirectorCourseId!, teacherId);
+                                academic.setCourseDirector(
+                                  selectedDirectorCourseId!,
+                                  teacherId,
+                                );
                               }
                             case UserRole.student:
-                              academic.addStudent(Student(
-                                id: uuid.v4(),
-                                userId: userId,
-                                firstName: firstName,
-                                lastName: lastName,
-                                documentId: doc,
-                                birthDate: DateTime(2010),
-                                courseId: courseId,
-                              ));
+                              academic.addStudent(
+                                Student(
+                                  id: uuid.v4(),
+                                  userId: userId,
+                                  firstName: firstName,
+                                  lastName: lastName,
+                                  documentId: doc,
+                                  birthDate: DateTime(2010),
+                                  courseId: courseId,
+                                ),
+                              );
                             case UserRole.parent:
-                              academic.addParent(Parent(
-                                id: uuid.v4(),
-                                userId: userId,
-                                firstName: firstName,
-                                lastName: lastName,
-                                documentId: doc,
-                                phone: phone,
-                                relationship: rel,
-                              ));
+                              final parentId = uuid.v4();
+                              academic.addParent(
+                                Parent(
+                                  id: parentId,
+                                  userId: userId,
+                                  firstName: firstName,
+                                  lastName: lastName,
+                                  documentId: doc,
+                                  phone: phone,
+                                  relationship: rel,
+                                  studentIds: pendingParentStudentIds,
+                                ),
+                              );
+                              // El padre recién creado aún no está en la caché
+                              // local (el guardado es async), así que no se
+                              // puede usar linkParentToStudent aquí — se arma
+                              // el vínculo directo con los estudiantes, que sí
+                              // ya existen en caché.
+                              for (final sId in pendingParentStudentIds) {
+                                final s = academic.studentById(sId);
+                                if (s != null &&
+                                    !s.parentIds.contains(parentId)) {
+                                  academic.updateStudent(
+                                    Student(
+                                      id: s.id,
+                                      userId: s.userId,
+                                      firstName: s.firstName,
+                                      lastName: s.lastName,
+                                      documentId: s.documentId,
+                                      birthDate: s.birthDate,
+                                      courseId: s.courseId,
+                                      parentIds: [...s.parentIds, parentId],
+                                    ),
+                                  );
+                                }
+                              }
                             case UserRole.coordinator:
                             case UserRole.admin:
                               break;
                           }
 
-                          await CredentialLogService().add(CredentialLogEntry(
-                            firstName: firstName,
-                            lastName: lastName,
-                            documentId: doc,
-                            username: generatedUsername,
-                            password: generatedPassword,
-                            roleLabel: _roleLabel(role),
-                            createdAt: DateTime.now(),
-                          ));
+                          await CredentialLogService().add(
+                            CredentialLogEntry(
+                              firstName: firstName,
+                              lastName: lastName,
+                              documentId: doc,
+                              username: generatedUsername,
+                              password: generatedPassword,
+                              roleLabel: _roleLabel(role),
+                              createdAt: DateTime.now(),
+                            ),
+                          );
 
+                          if (!ctx.mounted) return;
                           Navigator.pop(ctx);
                           if (mounted) {
+                            // ignore: use_build_context_synchronously
                             _showSuccessDialog(
                               context,
                               userName: userName,
@@ -781,7 +1228,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text('Crear Usuario'),
               ),
@@ -808,10 +1258,23 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       children: [
         SizedBox(
           width: 80,
-          child: Text('$label:', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          child: Text(
+            '$label:',
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
         Expanded(
-          child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'monospace')),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
+            ),
+          ),
         ),
         if (onCopy != null)
           IconButton(
@@ -829,7 +1292,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   void _copyToClipboard(BuildContext context, String value) {
     Clipboard.setData(ClipboardData(text: value));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copiado al portapapeles'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Copiado al portapapeles'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -842,11 +1308,13 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: AppColors.secondary),
-          SizedBox(width: 8),
-          Text('Usuario creado'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AppColors.secondary),
+            SizedBox(width: 8),
+            Text('Usuario creado'),
+          ],
+        ),
         content: SizedBox(
           width: 380,
           child: Column(
@@ -887,7 +1355,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 18),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -923,8 +1395,13 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
           final currentStudent = academic.studentById(student.id) ?? student;
-          final linkedParents = currentStudent.parentIds.map(academic.parentById).whereType<Parent>().toList();
-          final availableParents = academic.parents.where((p) => !currentStudent.parentIds.contains(p.id)).toList();
+          final linkedParents = currentStudent.parentIds
+              .map(academic.parentById)
+              .whereType<Parent>()
+              .toList();
+          final availableParents = academic.parents
+              .where((p) => !currentStudent.parentIds.contains(p.id))
+              .toList();
 
           return AlertDialog(
             title: Text('Editar — ${student.fullName}'),
@@ -938,7 +1415,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     TextFormField(
                       controller: docCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Documento de identidad'),
+                      decoration: const InputDecoration(
+                        labelText: 'Documento de identidad',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     InkWell(
@@ -949,11 +1428,17 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           firstDate: DateTime(1990),
                           lastDate: DateTime.now(),
                         );
-                        if (picked != null) setDialogState(() => birthDate = picked);
+                        if (picked != null) {
+                          setDialogState(() => birthDate = picked);
+                        }
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Fecha de nacimiento'),
-                        child: Text('${birthDate.day}/${birthDate.month}/${birthDate.year}'),
+                        decoration: const InputDecoration(
+                          labelText: 'Fecha de nacimiento',
+                        ),
+                        child: Text(
+                          '${birthDate.day}/${birthDate.month}/${birthDate.year}',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -962,19 +1447,40 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Curso'),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('Sin curso')),
-                        ...academic.courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Sin curso'),
+                        ),
+                        ...academic.courses.map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
+                        ),
                       ],
-                      onChanged: (v) => setDialogState(() => selectedCourseId = v),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedCourseId = v),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Acudientes (padres de familia)',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                    const Text(
+                      'Acudientes (padres de familia)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     if (linkedParents.isEmpty)
                       const Padding(
                         padding: EdgeInsets.only(bottom: 8),
-                        child: Text('Sin acudiente asignado aún.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        child: Text(
+                          'Sin acudiente asignado aún.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       )
                     else
                       Padding(
@@ -984,9 +1490,15 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           runSpacing: 6,
                           children: linkedParents.map((p) {
                             return Chip(
-                              label: Text('${p.fullName} (${p.relationship})', style: const TextStyle(fontSize: 12)),
+                              label: Text(
+                                '${p.fullName} (${p.relationship})',
+                                style: const TextStyle(fontSize: 12),
+                              ),
                               onDeleted: () {
-                                academic.unlinkParentFromStudent(student.id, p.id);
+                                academic.unlinkParentFromStudent(
+                                  student.id,
+                                  p.id,
+                                );
                                 setDialogState(() {});
                               },
                             );
@@ -999,20 +1511,38 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           child: DropdownButtonFormField<String>(
                             initialValue: pendingParentId,
                             isExpanded: true,
-                            decoration: const InputDecoration(labelText: 'Agregar acudiente', isDense: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Agregar acudiente',
+                              isDense: true,
+                            ),
                             items: availableParents
-                                .map((p) => DropdownMenuItem(value: p.id, child: Text('${p.fullName} (${p.relationship})', overflow: TextOverflow.ellipsis)))
+                                .map(
+                                  (p) => DropdownMenuItem(
+                                    value: p.id,
+                                    child: Text(
+                                      '${p.fullName} (${p.relationship})',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
                                 .toList(),
-                            onChanged: (v) => setDialogState(() => pendingParentId = v),
+                            onChanged: (v) =>
+                                setDialogState(() => pendingParentId = v),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.add_circle_rounded,
+                            color: AppColors.primary,
+                          ),
                           tooltip: 'Vincular acudiente',
                           onPressed: pendingParentId == null
                               ? null
                               : () {
-                                  academic.linkParentToStudent(student.id, pendingParentId!);
+                                  academic.linkParentToStudent(
+                                    student.id,
+                                    pendingParentId!,
+                                  );
                                   setDialogState(() => pendingParentId = null);
                                 },
                         ),
@@ -1023,26 +1553,39 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               ),
             ),
             actions: [
+              if (_userFor(academic, student.userId) case final user?)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteUser(context, user);
+                  },
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  child: const Text('Eliminar'),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cerrar'),
               ),
               FilledButton(
                 onPressed: () {
-                  academic.updateStudent(Student(
-                    id: student.id,
-                    userId: student.userId,
-                    firstName: student.firstName,
-                    lastName: student.lastName,
-                    documentId: docCtrl.text.trim(),
-                    birthDate: birthDate,
-                    courseId: selectedCourseId,
-                    parentIds: currentStudent.parentIds,
-                  ));
+                  academic.updateStudent(
+                    Student(
+                      id: student.id,
+                      userId: student.userId,
+                      firstName: student.firstName,
+                      lastName: student.lastName,
+                      documentId: docCtrl.text.trim(),
+                      birthDate: birthDate,
+                      courseId: selectedCourseId,
+                      parentIds: currentStudent.parentIds,
+                    ),
+                  );
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Cambios guardados para ${student.fullName}'),
+                      content: Text(
+                        'Cambios guardados para ${student.fullName}',
+                      ),
                       backgroundColor: AppColors.secondary,
                     ),
                   );
@@ -1062,9 +1605,17 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     String? pendingCourseId;
     final currentDirectorCourse = academic.courses.firstWhere(
       (c) => c.directorTeacherId == teacher.id,
-      orElse: () => const Course(id: '', name: '', grade: '', section: '', academicYearId: ''),
+      orElse: () => const Course(
+        id: '',
+        name: '',
+        grade: '',
+        section: '',
+        academicYearId: '',
+      ),
     );
-    String? selectedDirectorCourseId = currentDirectorCourse.id.isEmpty ? null : currentDirectorCourse.id;
+    String? selectedDirectorCourseId = currentDirectorCourse.id.isEmpty
+        ? null
+        : currentDirectorCourse.id;
 
     showDialog(
       context: context,
@@ -1080,16 +1631,33 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Especialización: ${teacher.specialization}',
-                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(
+                      'Especialización: ${teacher.specialization}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    const Text('Asignaturas y cursos a cargo',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                    const Text(
+                      'Asignaturas y cursos a cargo',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     if (assignments.isEmpty)
                       const Padding(
                         padding: EdgeInsets.only(bottom: 8),
-                        child: Text('Sin asignaturas asignadas aún.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        child: Text(
+                          'Sin asignaturas asignadas aún.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       )
                     else
                       Padding(
@@ -1101,7 +1669,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                             final subj = academic.subjectById(a.subjectId);
                             final course = academic.courseById(a.courseId);
                             return Chip(
-                              label: Text('${subj?.name ?? ''} · ${course?.name ?? ''}', style: const TextStyle(fontSize: 12)),
+                              label: Text(
+                                '${subj?.name ?? ''} · ${course?.name ?? ''}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
                               onDeleted: () {
                                 academic.deleteAssignment(a.id);
                                 setDialogState(() {});
@@ -1116,11 +1687,23 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           child: DropdownButtonFormField<String>(
                             initialValue: pendingSubjectId,
                             isExpanded: true,
-                            decoration: const InputDecoration(labelText: 'Asignatura', isDense: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Asignatura',
+                              isDense: true,
+                            ),
                             items: academic.subjects
-                                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis)))
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s.id,
+                                    child: Text(
+                                      s.name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
                                 .toList(),
-                            onChanged: (v) => setDialogState(() => pendingSubjectId = v),
+                            onChanged: (v) =>
+                                setDialogState(() => pendingSubjectId = v),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1128,30 +1711,51 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           child: DropdownButtonFormField<String>(
                             initialValue: pendingCourseId,
                             isExpanded: true,
-                            decoration: const InputDecoration(labelText: 'Curso', isDense: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Curso',
+                              isDense: true,
+                            ),
                             items: academic.courses
-                                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis)))
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c.id,
+                                    child: Text(
+                                      c.name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
                                 .toList(),
-                            onChanged: (v) => setDialogState(() => pendingCourseId = v),
+                            onChanged: (v) =>
+                                setDialogState(() => pendingCourseId = v),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.add_circle_rounded,
+                            color: AppColors.primary,
+                          ),
                           tooltip: 'Agregar asignación',
-                          onPressed: (pendingSubjectId == null || pendingCourseId == null)
+                          onPressed:
+                              (pendingSubjectId == null ||
+                                  pendingCourseId == null)
                               ? null
                               : () {
                                   final alreadyExists = assignments.any(
-                                    (a) => a.subjectId == pendingSubjectId && a.courseId == pendingCourseId,
+                                    (a) =>
+                                        a.subjectId == pendingSubjectId &&
+                                        a.courseId == pendingCourseId,
                                   );
                                   if (!alreadyExists) {
-                                    academic.addAssignment(SubjectAssignment(
-                                      id: const Uuid().v4(),
-                                      teacherId: teacher.id,
-                                      subjectId: pendingSubjectId!,
-                                      courseId: pendingCourseId!,
-                                      academicYearId: academic.activeYear.id,
-                                    ));
+                                    academic.addAssignment(
+                                      SubjectAssignment(
+                                        id: const Uuid().v4(),
+                                        teacherId: teacher.id,
+                                        subjectId: pendingSubjectId!,
+                                        courseId: pendingCourseId!,
+                                        academicYearId: academic.activeYear.id,
+                                      ),
+                                    );
                                   }
                                   setDialogState(() {
                                     pendingSubjectId = null;
@@ -1162,34 +1766,55 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text('Director de grupo',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                    const Text(
+                      'Director de grupo',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String?>(
                       initialValue: selectedDirectorCourseId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Curso a dirigir (opcional)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Curso a dirigir (opcional)',
+                      ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('Ninguno')),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Ninguno'),
+                        ),
                         ...academic.courses.map((c) {
-                          final hasOtherDirector = c.directorTeacherId != null && c.directorTeacherId != teacher.id;
-                          final otherDirector = hasOtherDirector ? academic.teacherById(c.directorTeacherId!) : null;
+                          final hasOtherDirector =
+                              c.directorTeacherId != null &&
+                              c.directorTeacherId != teacher.id;
+                          final otherDirector = hasOtherDirector
+                              ? academic.teacherById(c.directorTeacherId!)
+                              : null;
                           return DropdownMenuItem(
                             value: c.id,
                             child: Text(
-                              hasOtherDirector ? '${c.name} (actual: ${otherDirector?.fullName ?? "—"})' : c.name,
+                              hasOtherDirector
+                                  ? '${c.name} (actual: ${otherDirector?.fullName ?? "—"})'
+                                  : c.name,
                               overflow: TextOverflow.ellipsis,
                             ),
                           );
                         }),
                       ],
-                      onChanged: (v) => setDialogState(() => selectedDirectorCourseId = v),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedDirectorCourseId = v),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
                         'Si el curso elegido ya tiene director, será reemplazado por este docente.',
-                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -1197,6 +1822,15 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               ),
             ),
             actions: [
+              if (_userFor(academic, teacher.userId) case final user?)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteUser(context, user);
+                  },
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                  child: const Text('Eliminar'),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cerrar'),
@@ -1204,16 +1838,22 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               FilledButton(
                 onPressed: () {
                   // Quitar la dirección anterior si cambió de curso o se quitó
-                  if (currentDirectorCourse.id.isNotEmpty && currentDirectorCourse.id != selectedDirectorCourseId) {
+                  if (currentDirectorCourse.id.isNotEmpty &&
+                      currentDirectorCourse.id != selectedDirectorCourseId) {
                     academic.setCourseDirector(currentDirectorCourse.id, null);
                   }
                   if (selectedDirectorCourseId != null) {
-                    academic.setCourseDirector(selectedDirectorCourseId!, teacher.id);
+                    academic.setCourseDirector(
+                      selectedDirectorCourseId!,
+                      teacher.id,
+                    );
                   }
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Cambios guardados para ${teacher.fullName}'),
+                      content: Text(
+                        'Cambios guardados para ${teacher.fullName}',
+                      ),
                       backgroundColor: AppColors.secondary,
                     ),
                   );
@@ -1229,22 +1869,31 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
   Color _roleColor(UserRole r) {
     switch (r) {
-      case UserRole.coordinator: return AppColors.coordinator;
-      case UserRole.admin: return AppColors.purple;
-      case UserRole.teacher: return AppColors.teacher;
-      case UserRole.student: return AppColors.student;
-      case UserRole.parent: return AppColors.parent;
+      case UserRole.coordinator:
+        return AppColors.coordinator;
+      case UserRole.admin:
+        return AppColors.purple;
+      case UserRole.teacher:
+        return AppColors.teacher;
+      case UserRole.student:
+        return AppColors.student;
+      case UserRole.parent:
+        return AppColors.parent;
     }
   }
 
-
   String _roleLabel(UserRole r) {
     switch (r) {
-      case UserRole.coordinator: return 'Coordinador';
-      case UserRole.admin: return 'Administrador';
-      case UserRole.teacher: return 'Docente';
-      case UserRole.student: return 'Estudiante';
-      case UserRole.parent: return 'Padre de Familia';
+      case UserRole.coordinator:
+        return 'Coordinador';
+      case UserRole.admin:
+        return 'Administrador';
+      case UserRole.teacher:
+        return 'Docente';
+      case UserRole.student:
+        return 'Estudiante';
+      case UserRole.parent:
+        return 'Padre de Familia';
     }
   }
 }

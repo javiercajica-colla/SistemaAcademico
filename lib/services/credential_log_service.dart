@@ -25,16 +25,17 @@ class CredentialLogEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'firstName': firstName,
-        'lastName': lastName,
-        'documentId': documentId,
-        'username': username,
-        'password': password,
-        'roleLabel': roleLabel,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'firstName': firstName,
+    'lastName': lastName,
+    'documentId': documentId,
+    'username': username,
+    'password': password,
+    'roleLabel': roleLabel,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
-  factory CredentialLogEntry.fromJson(Map<String, dynamic> json) => CredentialLogEntry(
+  factory CredentialLogEntry.fromJson(Map<String, dynamic> json) =>
+      CredentialLogEntry(
         firstName: json['firstName'] as String,
         lastName: json['lastName'] as String,
         documentId: json['documentId'] as String,

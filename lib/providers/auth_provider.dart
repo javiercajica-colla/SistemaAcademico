@@ -1,8 +1,7 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
-import '../services/firebase_auth_service.dart';
-import '../services/firestore_service.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/repository_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
@@ -10,8 +9,8 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   final Map<String, Uint8List> _avatarMap = {};
 
-  final FirebaseAuthService _authService = FirebaseAuthService();
-  final FirestoreService _store = FirestoreService();
+  final AuthRepository _authService = authRepository;
+  final _store = dataRepository;
 
   AppUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -71,7 +70,10 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({required String name, required String email}) async {
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+  }) async {
     if (_currentUser == null) return;
     _currentUser = AppUser(
       id: _currentUser!.id,

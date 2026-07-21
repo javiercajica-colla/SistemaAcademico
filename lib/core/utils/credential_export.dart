@@ -19,12 +19,18 @@ Future<void> exportCredentialsPdf(List<CredentialLogEntry> entries) async {
       pageFormat: PdfPageFormat.a4.landscape,
       margin: const pw.EdgeInsets.all(24),
       build: (ctx) => [
-        pw.Text('Credenciales de Usuarios Generadas',
-            style: pw.TextStyle(font: bold, fontSize: 16, color: navy)),
+        pw.Text(
+          'Credenciales de Usuarios Generadas',
+          style: pw.TextStyle(font: bold, fontSize: 16, color: navy),
+        ),
         pw.SizedBox(height: 4),
         pw.Text(
           'Generado el ${DateTime.now().toString().split('.').first} — Solo incluye usuarios creados en esta sesión',
-          style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey600),
+          style: pw.TextStyle(
+            font: regular,
+            fontSize: 9,
+            color: PdfColors.grey600,
+          ),
         ),
         pw.SizedBox(height: 12),
         pw.Table(
@@ -40,21 +46,53 @@ Future<void> exportCredentialsPdf(List<CredentialLogEntry> entries) async {
           children: [
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: navy),
-              children: ['Nombre', 'Apellido', 'Documento', 'Rol', 'Usuario', 'Contraseña']
-                  .map((h) => pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(h, style: pw.TextStyle(font: bold, fontSize: 9, color: PdfColors.white)),
-                      ))
-                  .toList(),
-            ),
-            ...entries.map((e) => pw.TableRow(
-                  children: [e.firstName, e.lastName, e.documentId, e.roleLabel, e.username, e.password]
-                      .map((v) => pw.Padding(
-                            padding: const pw.EdgeInsets.all(6),
-                            child: pw.Text(v, style: pw.TextStyle(font: regular, fontSize: 9)),
-                          ))
+              children:
+                  [
+                        'Nombre',
+                        'Apellido',
+                        'Documento',
+                        'Rol',
+                        'Usuario',
+                        'Contraseña',
+                      ]
+                      .map(
+                        (h) => pw.Padding(
+                          padding: const pw.EdgeInsets.all(6),
+                          child: pw.Text(
+                            h,
+                            style: pw.TextStyle(
+                              font: bold,
+                              fontSize: 9,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
-                )),
+            ),
+            ...entries.map(
+              (e) => pw.TableRow(
+                children:
+                    [
+                          e.firstName,
+                          e.lastName,
+                          e.documentId,
+                          e.roleLabel,
+                          e.username,
+                          e.password,
+                        ]
+                        .map(
+                          (v) => pw.Padding(
+                            padding: const pw.EdgeInsets.all(6),
+                            child: pw.Text(
+                              v,
+                              style: pw.TextStyle(font: regular, fontSize: 9),
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+            ),
           ],
         ),
       ],
@@ -62,7 +100,10 @@ Future<void> exportCredentialsPdf(List<CredentialLogEntry> entries) async {
   );
 
   final bytes = await doc.save();
-  downloadBytes(bytes, 'credenciales_usuarios_${DateTime.now().millisecondsSinceEpoch}.pdf');
+  downloadBytes(
+    bytes,
+    'credenciales_usuarios_${DateTime.now().millisecondsSinceEpoch}.pdf',
+  );
 }
 
 Future<void> exportCredentialsExcel(List<CredentialLogEntry> entries) async {
@@ -77,7 +118,14 @@ Future<void> exportCredentialsExcel(List<CredentialLogEntry> entries) async {
     horizontalAlign: HorizontalAlign.Center,
   );
 
-  const headers = ['Nombre', 'Apellido', 'Documento', 'Rol', 'Usuario', 'Contraseña'];
+  const headers = [
+    'Nombre',
+    'Apellido',
+    'Documento',
+    'Rol',
+    'Usuario',
+    'Contraseña',
+  ];
   for (int c = 0; c < headers.length; c++) {
     _excelCredCell(sheet, 0, c, headers[c], style: headerStyle);
   }
@@ -88,7 +136,14 @@ Future<void> exportCredentialsExcel(List<CredentialLogEntry> entries) async {
 
   for (int r = 0; r < entries.length; r++) {
     final e = entries[r];
-    final values = [e.firstName, e.lastName, e.documentId, e.roleLabel, e.username, e.password];
+    final values = [
+      e.firstName,
+      e.lastName,
+      e.documentId,
+      e.roleLabel,
+      e.username,
+      e.password,
+    ];
     for (int c = 0; c < values.length; c++) {
       _excelCredCell(sheet, r + 1, c, values[c]);
     }
@@ -96,12 +151,23 @@ Future<void> exportCredentialsExcel(List<CredentialLogEntry> entries) async {
 
   final bytes = excel.encode();
   if (bytes != null) {
-    downloadBytes(bytes, 'credenciales_usuarios_${DateTime.now().millisecondsSinceEpoch}.xlsx');
+    downloadBytes(
+      bytes,
+      'credenciales_usuarios_${DateTime.now().millisecondsSinceEpoch}.xlsx',
+    );
   }
 }
 
-void _excelCredCell(Sheet sheet, int row, int col, String value, {CellStyle? style}) {
-  final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row));
+void _excelCredCell(
+  Sheet sheet,
+  int row,
+  int col,
+  String value, {
+  CellStyle? style,
+}) {
+  final cell = sheet.cell(
+    CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
+  );
   cell.value = TextCellValue(value);
   if (style != null) cell.cellStyle = style;
 }

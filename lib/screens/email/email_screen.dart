@@ -49,11 +49,13 @@ class _EmailScreenState extends State<EmailScreen> {
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       emails = emails
-          .where((e) =>
-              e.senderName.toLowerCase().contains(q) ||
-              e.receiverName.toLowerCase().contains(q) ||
-              e.subject.toLowerCase().contains(q) ||
-              e.body.toLowerCase().contains(q))
+          .where(
+            (e) =>
+                e.senderName.toLowerCase().contains(q) ||
+                e.receiverName.toLowerCase().contains(q) ||
+                e.subject.toLowerCase().contains(q) ||
+                e.body.toLowerCase().contains(q),
+          )
           .toList();
     }
 
@@ -141,10 +143,8 @@ class _EmailScreenState extends State<EmailScreen> {
                       }
                       setState(() => _selectedEmail = email);
                     },
-                    onToggleUnread: (v) =>
-                        setState(() => _showUnreadOnly = v),
-                    onSearchChanged: (v) =>
-                        setState(() => _searchQuery = v),
+                    onToggleUnread: (v) => setState(() => _showUnreadOnly = v),
+                    onSearchChanged: (v) => setState(() => _searchQuery = v),
                     onBulkDelete: () => _bulkAction(emailProv, 'delete'),
                     onBulkRead: () => _bulkAction(emailProv, 'read'),
                     onBulkUnread: () => _bulkAction(emailProv, 'unread'),
@@ -182,11 +182,13 @@ class _EmailScreenState extends State<EmailScreen> {
     // Acudientes solo pueden escribir a docentes y coordinadores
     final availableRecipients = user.role == UserRole.parent
         ? academic.users
-            .where((u) =>
-                u.role == UserRole.teacher ||
-                u.role == UserRole.coordinator ||
-                u.role == UserRole.admin)
-            .toList()
+              .where(
+                (u) =>
+                    u.role == UserRole.teacher ||
+                    u.role == UserRole.coordinator ||
+                    u.role == UserRole.admin,
+              )
+              .toList()
         : academic.users;
 
     showDialog(
@@ -275,7 +277,13 @@ class _FolderPanel extends StatelessWidget {
             onTap: onCompose,
           ),
           const SizedBox(height: 4),
-          Divider(height: 1, thickness: 1, color: AppColors.border, indent: 12, endIndent: 12),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.border,
+            indent: 12,
+            endIndent: 12,
+          ),
           const SizedBox(height: 4),
           // Inbox
           _FolderTile(
@@ -308,7 +316,13 @@ class _FolderPanel extends StatelessWidget {
             onTap: () => onFolderChanged(EmailFolder.starred),
           ),
           const SizedBox(height: 4),
-          Divider(height: 1, thickness: 1, color: AppColors.border, indent: 12, endIndent: 12),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.border,
+            indent: 12,
+            endIndent: 12,
+          ),
           const SizedBox(height: 4),
           // Trash
           _FolderTile(
@@ -362,8 +376,8 @@ class _FolderTileState extends State<_FolderTile> {
             color: active
                 ? AppColors.primary.withValues(alpha: 0.1)
                 : _hovered
-                    ? AppColors.border
-                    : Colors.transparent,
+                ? AppColors.border
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
@@ -386,8 +400,10 @@ class _FolderTileState extends State<_FolderTile> {
               ),
               if (widget.badge > 0)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: active ? AppColors.primary : AppColors.textSecondary,
                     borderRadius: BorderRadius.circular(10),
@@ -534,8 +550,10 @@ class _EmailListPane extends StatelessWidget {
                       )
                     : null,
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
               ),
               onChanged: onSearchChanged,
             ),
@@ -558,8 +576,8 @@ class _EmailListPane extends StatelessWidget {
                   value: allSelected
                       ? true
                       : selectedIds.isNotEmpty
-                          ? null
-                          : false,
+                      ? null
+                      : false,
                   tristate: true,
                   onChanged: (v) => onSelectAll(v == true),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -609,19 +627,19 @@ class _EmailListPane extends StatelessWidget {
           child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : emails.isEmpty
-                  ? _EmptyState(folder: folder, filtered: showUnreadOnly)
-                  : ListView.separated(
-                      itemCount: emails.length,
-                      separatorBuilder: (_, _) =>
-                          const Divider(height: 1, thickness: 1),
-                      itemBuilder: (context, i) => _EmailRow(
-                        email: emails[i],
-                        folder: folder,
-                        isSelected: selectedIds.contains(emails[i].id),
-                        onToggleSelect: onToggleSelect,
-                        onTap: () => onTapEmail(emails[i]),
-                      ),
-                    ),
+              ? _EmptyState(folder: folder, filtered: showUnreadOnly)
+              : ListView.separated(
+                  itemCount: emails.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, thickness: 1),
+                  itemBuilder: (context, i) => _EmailRow(
+                    email: emails[i],
+                    folder: folder,
+                    isSelected: selectedIds.contains(emails[i].id),
+                    onToggleSelect: onToggleSelect,
+                    onTap: () => onTapEmail(emails[i]),
+                  ),
+                ),
         ),
       ],
     );
@@ -654,19 +672,21 @@ class _EmailRowState extends State<_EmailRow> {
   Widget build(BuildContext context) {
     final email = widget.email;
     final unread = !email.isRead;
-    final isSentFolder = widget.folder == EmailFolder.sent ||
+    final isSentFolder =
+        widget.folder == EmailFolder.sent ||
         widget.folder == EmailFolder.drafts;
 
     final bgColor = widget.isSelected
         ? AppColors.primary.withValues(alpha: 0.08)
         : _hovered
-            ? AppColors.surfaceVariant
-            : unread
-                ? const Color(0xFFF0F4FF)
-                : AppColors.surface;
+        ? AppColors.surfaceVariant
+        : unread
+        ? const Color(0xFFF0F4FF)
+        : AppColors.surface;
 
-    final nameLabel =
-        isSentFolder ? 'Para: ${email.receiverName}' : email.senderName;
+    final nameLabel = isSentFolder
+        ? 'Para: ${email.receiverName}'
+        : email.senderName;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -711,8 +731,7 @@ class _EmailRowState extends State<_EmailRow> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight:
-                        unread ? FontWeight.w700 : FontWeight.w400,
+                    fontWeight: unread ? FontWeight.w700 : FontWeight.w400,
                     color: unread
                         ? AppColors.textPrimary
                         : AppColors.textSecondary,
@@ -739,8 +758,9 @@ class _EmailRowState extends State<_EmailRow> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight:
-                              unread ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: unread
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           color: unread
                               ? AppColors.textPrimary
                               : AppColors.textSecondary,
@@ -749,8 +769,11 @@ class _EmailRowState extends State<_EmailRow> {
                     ),
                     if (email.isStarred) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.star_rounded,
-                          size: 13, color: AppColors.warning),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 13,
+                        color: AppColors.warning,
+                      ),
                     ],
                   ],
                 ),
@@ -766,8 +789,7 @@ class _EmailRowState extends State<_EmailRow> {
                     color: unread
                         ? AppColors.textPrimary
                         : AppColors.textTertiary,
-                    fontWeight:
-                        unread ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
               ),
@@ -780,20 +802,28 @@ class _EmailRowState extends State<_EmailRow> {
 
   String _shortDate(DateTime dt) {
     final now = DateTime.now();
-    if (dt.year == now.year &&
-        dt.month == now.month &&
-        dt.day == now.day) {
+    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
       final h = dt.hour == 0
           ? 12
           : dt.hour > 12
-              ? dt.hour - 12
-              : dt.hour;
+          ? dt.hour - 12
+          : dt.hour;
       final m = dt.minute.toString().padLeft(2, '0');
       return '$h:$m ${dt.hour >= 12 ? "pm" : "am"}';
     }
     const months = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     if (dt.year == now.year) return '${months[dt.month - 1]} ${dt.day}';
     return '${dt.day}/${dt.month}/${dt.year.toString().substring(2)}';
@@ -845,7 +875,8 @@ class _EmailDetailPane extends StatelessWidget {
                 tooltip: 'Volver a la lista',
                 onPressed: onBack,
                 style: IconButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary),
+                  foregroundColor: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(width: 4),
               if (isInbox)
@@ -860,7 +891,9 @@ class _EmailDetailPane extends StatelessWidget {
                 icon: isTrash
                     ? Icons.delete_forever_outlined
                     : Icons.delete_outline_rounded,
-                tooltip: isTrash ? 'Eliminar permanentemente' : 'Mover a papelera',
+                tooltip: isTrash
+                    ? 'Eliminar permanentemente'
+                    : 'Mover a papelera',
                 enabled: true,
                 onTap: () => onDelete(email),
               ),
@@ -892,8 +925,9 @@ class _EmailDetailPane extends StatelessWidget {
                   email.isStarred
                       ? Icons.star_rounded
                       : Icons.star_border_rounded,
-                  color:
-                      email.isStarred ? AppColors.warning : AppColors.textTertiary,
+                  color: email.isStarred
+                      ? AppColors.warning
+                      : AppColors.textTertiary,
                   size: 20,
                 ),
                 tooltip: email.isStarred ? 'Quitar destacado' : 'Destacar',
@@ -971,16 +1005,35 @@ class _EmailDetailPane extends StatelessWidget {
 
   String _fullDate(DateTime dt) {
     const days = [
-      'lunes', 'martes', 'miércoles', 'jueves',
-      'viernes', 'sábado', 'domingo'
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+      'domingo',
     ];
     const months = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
     ];
     final day = days[dt.weekday - 1];
     final month = months[dt.month - 1];
-    final h = dt.hour == 0 ? 12 : dt.hour > 12 ? dt.hour - 12 : dt.hour;
+    final h = dt.hour == 0
+        ? 12
+        : dt.hour > 12
+        ? dt.hour - 12
+        : dt.hour;
     final m = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour >= 12 ? 'p.m.' : 'a.m.';
     return '$day ${dt.day} de $month de ${dt.year}, $h:$m $period';
@@ -1032,19 +1085,22 @@ class _EmptyState extends StatelessWidget {
         ? ('No hay correos no leídos', Icons.drafts_rounded)
         : switch (folder) {
             EmailFolder.inbox => (
-                'Bandeja de entrada vacía',
-                Icons.inbox_rounded
-              ),
+              'Bandeja de entrada vacía',
+              Icons.inbox_rounded,
+            ),
             EmailFolder.sent => ('No has enviado correos', Icons.send_rounded),
             EmailFolder.drafts => (
-                'No tienes borradores',
-                Icons.description_outlined
-              ),
+              'No tienes borradores',
+              Icons.description_outlined,
+            ),
             EmailFolder.starred => (
-                'No tienes correos destacados',
-                Icons.star_border_rounded
-              ),
-            EmailFolder.trash => ('La papelera está vacía', Icons.delete_outline_rounded),
+              'No tienes correos destacados',
+              Icons.star_border_rounded,
+            ),
+            EmailFolder.trash => (
+              'La papelera está vacía',
+              Icons.delete_outline_rounded,
+            ),
           };
     return Center(
       child: Column(
@@ -1055,7 +1111,9 @@ class _EmptyState extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-                fontSize: 15, color: AppColors.textSecondary),
+              fontSize: 15,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -1152,10 +1210,9 @@ class _ComposeDialogState extends State<_ComposeDialog> {
   @override
   void initState() {
     super.initState();
-    _recipients = widget.allUsers
-        .where((u) => u.id != widget.currentUser.id)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    _recipients =
+        widget.allUsers.where((u) => u.id != widget.currentUser.id).toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
     if (widget.replyTo != null) {
       final rt = widget.replyTo!;
@@ -1216,8 +1273,11 @@ class _ComposeDialogState extends State<_ComposeDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white70, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -1238,17 +1298,21 @@ class _ComposeDialogState extends State<_ComposeDialog> {
                         initialValue: _recipient,
                         decoration: const InputDecoration(
                           labelText: 'Para',
-                          prefixIcon: Icon(Icons.person_outline_rounded,
-                              size: 18),
+                          prefixIcon: Icon(
+                            Icons.person_outline_rounded,
+                            size: 18,
+                          ),
                         ),
                         items: _recipients
-                            .map((u) => DropdownMenuItem(
-                                  value: u,
-                                  child: Text(
-                                    '${u.name} — ${_roleLabel(u.role)}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ))
+                            .map(
+                              (u) => DropdownMenuItem(
+                                value: u,
+                                child: Text(
+                                  '${u.name} — ${_roleLabel(u.role)}',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (u) => setState(() => _recipient = u),
                         validator: (v) =>
@@ -1260,13 +1324,11 @@ class _ComposeDialogState extends State<_ComposeDialog> {
                         controller: _subjectCtrl,
                         decoration: const InputDecoration(
                           labelText: 'Asunto',
-                          prefixIcon:
-                              Icon(Icons.subject_rounded, size: 18),
+                          prefixIcon: Icon(Icons.subject_rounded, size: 18),
                         ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty)
-                                ? 'El asunto no puede estar vacío'
-                                : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'El asunto no puede estar vacío'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       // Body
@@ -1283,10 +1345,9 @@ class _ComposeDialogState extends State<_ComposeDialog> {
                             child: Icon(Icons.notes_rounded, size: 18),
                           ),
                         ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty)
-                                ? 'El mensaje no puede estar vacío'
-                                : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'El mensaje no puede estar vacío'
+                            : null,
                       ),
                     ],
                   ),
@@ -1314,7 +1375,9 @@ class _ComposeDialogState extends State<_ComposeDialog> {
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.send_rounded, size: 16),
                     label: Text(_sending ? 'Enviando...' : 'Enviar'),
@@ -1344,17 +1407,27 @@ class _ComposeDialogState extends State<_ComposeDialog> {
   }
 
   String _roleLabel(UserRole role) => switch (role) {
-        UserRole.coordinator => 'Coordinador',
-        UserRole.admin => 'Administrador',
-        UserRole.teacher => 'Docente',
-        UserRole.student => 'Estudiante',
-        UserRole.parent => 'Padre/Madre',
-      };
+    UserRole.coordinator => 'Coordinador',
+    UserRole.admin => 'Administrador',
+    UserRole.teacher => 'Docente',
+    UserRole.student => 'Estudiante',
+    UserRole.parent => 'Padre/Madre',
+  };
 
   String _dateStr(DateTime dt) {
     const months = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
     ];
     return '${dt.day} ${months[dt.month - 1]}. ${dt.year}';
   }

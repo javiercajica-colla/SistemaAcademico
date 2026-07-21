@@ -15,12 +15,19 @@ class TeacherDashboard extends StatelessWidget {
     final academic = context.watch<AcademicProvider>();
     final teacher = academic.teacherByUserId(auth.currentUser!.id);
 
-    if (teacher == null) return const Center(child: Text('Perfil de docente no encontrado'));
+    if (teacher == null) {
+      return const Center(child: Text('Perfil de docente no encontrado'));
+    }
 
     final myAssignments = academic.assignmentsForTeacher(teacher.id);
     final myCourseIds = myAssignments.map((a) => a.courseId).toSet();
-    final myCourses = academic.courses.where((c) => myCourseIds.contains(c.id)).toList();
-    final totalStudents = myCourses.fold(0, (sum, c) => sum + academic.studentsInCourse(c.id).length);
+    final myCourses = academic.courses
+        .where((c) => myCourseIds.contains(c.id))
+        .toList();
+    final totalStudents = myCourses.fold(
+      0,
+      (sum, c) => sum + academic.studentsInCourse(c.id).length,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -34,7 +41,15 @@ class TeacherDashboard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 2, child: _buildMyCourses(context, myCourses, academic, teacher.id)),
+              Expanded(
+                flex: 2,
+                child: _buildMyCourses(
+                  context,
+                  myCourses,
+                  academic,
+                  teacher.id,
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(child: _buildPendingTasks(academic, teacher.id)),
             ],
@@ -50,7 +65,11 @@ class TeacherDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AppColors.teacher, Color(0xFF059669)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: const LinearGradient(
+          colors: [AppColors.teacher, Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -61,10 +80,19 @@ class TeacherDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Bienvenido, ${name.split(' ').first}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                Text(
+                  'Bienvenido, ${name.split(' ').first}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Año Lectivo 2026 • ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(
+                  'Año Lectivo 2026 • ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -84,14 +112,35 @@ class TeacherDashboard extends StatelessWidget {
         mainAxisExtent: 90,
       ),
       children: [
-        StatCard(title: 'Mis Cursos', value: '$courses', icon: Icons.class_rounded, color: AppColors.teacher),
-        StatCard(title: 'Total Estudiantes', value: '$students', subtitle: 'A mi cargo', icon: Icons.people_rounded, color: AppColors.primary),
-        StatCard(title: 'Asignaturas', value: '$assignments', icon: Icons.book_rounded, color: AppColors.purple),
+        StatCard(
+          title: 'Mis Cursos',
+          value: '$courses',
+          icon: Icons.class_rounded,
+          color: AppColors.teacher,
+        ),
+        StatCard(
+          title: 'Total Estudiantes',
+          value: '$students',
+          subtitle: 'A mi cargo',
+          icon: Icons.people_rounded,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'Asignaturas',
+          value: '$assignments',
+          icon: Icons.book_rounded,
+          color: AppColors.purple,
+        ),
       ],
     );
   }
 
-  Widget _buildMyCourses(BuildContext context, List myCourses, AcademicProvider academic, String teacherId) {
+  Widget _buildMyCourses(
+    BuildContext context,
+    List myCourses,
+    AcademicProvider academic,
+    String teacherId,
+  ) {
     return AppCard(
       title: 'Mis Cursos y Asignaturas',
       child: myCourses.isEmpty
@@ -99,7 +148,11 @@ class TeacherDashboard extends StatelessWidget {
           : Column(
               children: myCourses.map((c) {
                 final students = academic.studentsInCourse(c.id);
-                final courseAssignments = academic.assignments.where((a) => a.courseId == c.id && a.teacherId == teacherId).toList();
+                final courseAssignments = academic.assignments
+                    .where(
+                      (a) => a.courseId == c.id && a.teacherId == teacherId,
+                    )
+                    .toList();
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Container(
@@ -115,17 +168,44 @@ class TeacherDashboard extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              width: 36, height: 36,
-                              decoration: BoxDecoration(color: AppColors.teacher.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                              child: Center(child: Text(c.grade, style: const TextStyle(color: AppColors.teacher, fontWeight: FontWeight.bold, fontSize: 15))),
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.teacher.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  c.grade,
+                                  style: const TextStyle(
+                                    color: AppColors.teacher,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                  Text('${students.length} estudiantes', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                  Text(
+                                    c.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${students.length} estudiantes',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -139,12 +219,24 @@ class TeacherDashboard extends StatelessWidget {
                             children: courseAssignments.map((sa) {
                               final sub = academic.subjectById(sa.subjectId);
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.08),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(sub?.name ?? '', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
+                                child: Text(
+                                  sub?.name ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               );
                             }).toList(),
                           ),
@@ -164,19 +256,47 @@ class TeacherDashboard extends StatelessWidget {
       title: 'Tareas Pendientes',
       child: Column(
         children: [
-          _taskItem('Registrar calificaciones P2', period?.name ?? '', Icons.grade_rounded, AppColors.warning, true),
-          _taskItem('Tomar asistencia hoy', 'Matemáticas 6°A', Icons.fact_check_rounded, AppColors.primary, false),
-          _taskItem('Observaciones pendientes', '3 estudiantes', Icons.edit_note_rounded, AppColors.purple, false),
+          _taskItem(
+            'Registrar calificaciones P2',
+            period?.name ?? '',
+            Icons.grade_rounded,
+            AppColors.warning,
+            true,
+          ),
+          _taskItem(
+            'Tomar asistencia hoy',
+            'Matemáticas 6°A',
+            Icons.fact_check_rounded,
+            AppColors.primary,
+            false,
+          ),
+          _taskItem(
+            'Observaciones pendientes',
+            '3 estudiantes',
+            Icons.edit_note_rounded,
+            AppColors.purple,
+            false,
+          ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.secondary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: const Row(
               children: [
-                Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 18),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.secondary,
+                  size: 18,
+                ),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('3 tareas completadas esta semana', style: TextStyle(fontSize: 12, color: AppColors.secondary)),
+                  child: Text(
+                    '3 tareas completadas esta semana',
+                    style: TextStyle(fontSize: 12, color: AppColors.secondary),
+                  ),
                 ),
               ],
             ),
@@ -186,14 +306,24 @@ class TeacherDashboard extends StatelessWidget {
     );
   }
 
-  Widget _taskItem(String title, String subtitle, IconData icon, Color color, bool urgent) {
+  Widget _taskItem(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    bool urgent,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
           Container(
-            width: 32, height: 32,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 10),
@@ -201,16 +331,38 @@ class TeacherDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
           if (urgent)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-              child: const Text('Urgente', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Urgente',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
         ],
       ),
@@ -235,19 +387,57 @@ class TeacherDashboard extends StatelessWidget {
                   getTitlesWidget: (v, m) {
                     final i = v.toInt();
                     if (i >= myCourses.length) return const SizedBox.shrink();
-                    return Padding(padding: const EdgeInsets.only(top: 4), child: Text(myCourses[i].name, style: const TextStyle(fontSize: 10)));
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        myCourses[i].name,
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
                   },
                 ),
               ),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1, reservedSize: 28, getTitlesWidget: (v, m) => Text(v.toStringAsFixed(0), style: const TextStyle(fontSize: 10)))),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 1,
+                  reservedSize: 28,
+                  getTitlesWidget: (v, m) => Text(
+                    v.toStringAsFixed(0),
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: AppColors.border, strokeWidth: 1)),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (v) =>
+                  FlLine(color: AppColors.border, strokeWidth: 1),
+            ),
             borderData: FlBorderData(show: false),
-            barGroups: List.generate(myCourses.length, (i) => BarChartGroupData(x: i, barRods: [
-              BarChartRodData(toY: 3.5 + i * 0.1, color: AppColors.teacher, width: 28, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
-            ])),
+            barGroups: List.generate(
+              myCourses.length,
+              (i) => BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: 3.5 + i * 0.1,
+                    color: AppColors.teacher,
+                    width: 28,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

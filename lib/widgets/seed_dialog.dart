@@ -94,8 +94,11 @@ class _SeedDialogState extends State<SeedDialog> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: Colors.amber, size: 18),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -117,8 +120,10 @@ class _SeedDialogState extends State<SeedDialog> {
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   itemCount: _log.length,
                   itemBuilder: (_, i) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
@@ -130,8 +135,8 @@ class _SeedDialogState extends State<SeedDialog> {
                         color: _log[i].startsWith('✓')
                             ? Colors.greenAccent
                             : _log[i].startsWith('✗')
-                                ? Colors.redAccent
-                                : Colors.white70,
+                            ? Colors.redAccent
+                            : Colors.white70,
                       ),
                     ),
                   ),
@@ -148,8 +153,7 @@ class _SeedDialogState extends State<SeedDialog> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(_status,
-                          style: theme.textTheme.bodySmall),
+                      child: Text(_status, style: theme.textTheme.bodySmall),
                     ),
                   ],
                 ),
@@ -158,21 +162,27 @@ class _SeedDialogState extends State<SeedDialog> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: Colors.green, size: 20),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.green,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Base de datos inicializada correctamente.',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: Colors.green),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.green,
+                      ),
                     ),
                   ],
                 ),
               ],
               if (_error) ...[
                 const SizedBox(height: 8),
-                Text(_status,
-                    style: const TextStyle(color: Colors.red, fontSize: 12)),
+                Text(
+                  _status,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
               ],
             ],
           ],

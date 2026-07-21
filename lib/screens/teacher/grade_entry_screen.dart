@@ -219,8 +219,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                               ),
                             )
                             .toList(),
-                        onChanged: (v) =>
-                            setState(() => _selectedPeriod = v),
+                        onChanged: (v) => setState(() => _selectedPeriod = v),
                       ),
                     ),
                   ],
@@ -275,7 +274,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                 children: [
                   const Text(
                     'Gestionar Calificaciones',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   Text(
                     '${course.name} • ${subject?.name ?? ''} • ${period?.name ?? ''}',
@@ -306,7 +308,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     final fw = evalConfig?.finalExamWeight ?? 30;
 
     final indicatorsByStandard = {
-      for (final std in standards) std.id: academic.indicatorsForStandard(std.id),
+      for (final std in standards)
+        std.id: academic.indicatorsForStandard(std.id),
     };
 
     return AppCard(
@@ -344,258 +347,303 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         thumbVisibility: true,
         trackVisibility: true,
         child: SingleChildScrollView(
-        controller: _hScrollController,
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(bottom: 12),
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
-          headingRowHeight: 56,
-          border: TableBorder(
-            horizontalInside: const BorderSide(color: AppColors.border),
-            verticalInside: const BorderSide(color: AppColors.border, width: 0.5),
-          ),
-          columns: [
-            const DataColumn(
-              label: Text(
-                'Estudiante',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          controller: _hScrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(bottom: 12),
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
+            headingRowHeight: 56,
+            border: TableBorder(
+              horizontalInside: const BorderSide(color: AppColors.border),
+              verticalInside: const BorderSide(
+                color: AppColors.border,
+                width: 0.5,
               ),
             ),
-            for (var si = 0; si < standards.length; si++) ...[
-              if ((indicatorsByStandard[standards[si].id] ?? const <Indicator>[]).isEmpty)
-                DataColumn(
-                  label: _groupHeader(
-                    'EST${si + 1}',
-                    '${standards[si].weight.toStringAsFixed(0)}%',
-                    'Sin competencias',
-                    tooltip: standards[si].name,
-                  ),
-                )
-              else ...[
-                for (final ind in indicatorsByStandard[standards[si].id]!) ...[
-                  for (var slot = 1; slot <= 3; slot++)
-                    DataColumn(
-                      label: _slotHeader(context, academic, standards[si], si + 1, ind, slot),
-                    ),
+            columns: [
+              const DataColumn(
+                label: Text(
+                  'Estudiante',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+              ),
+              for (var si = 0; si < standards.length; si++) ...[
+                if ((indicatorsByStandard[standards[si].id] ??
+                        const <Indicator>[])
+                    .isEmpty)
                   DataColumn(
                     label: _groupHeader(
                       'EST${si + 1}',
-                      'I${ind.order}',
-                      'Prom.',
-                      italic: true,
-                      tooltip: '${standards[si].name} — ${ind.name}',
+                      '${standards[si].weight.toStringAsFixed(0)}%',
+                      'Sin competencias',
+                      tooltip: standards[si].name,
                     ),
-                  ),
-                ],
-                DataColumn(
-                  label: _groupHeader(
-                    'EST${si + 1}',
-                    'Prom. Estándar',
-                    '${standards[si].weight.toStringAsFixed(0)}%',
-                    bold: true,
-                    tooltip: standards[si].name,
-                  ),
-                ),
-              ],
-            ],
-            const DataColumn(
-              label: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Eval. Final',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-                  ),
-                  Text(
-                    '30%',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const DataColumn(
-              label: Text(
-                'Promedio',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-              ),
-            ),
-            const DataColumn(
-              label: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Nota Final',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-                  ),
-                  Text(
-                    '(sin Ev. Final)',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          rows: List.generate(students.length, (rowIndex) {
-            final student = students[rowIndex];
-            final existingGrades = academic.gradesForStudentSubjectPeriod(
-              student.id,
-              _selectedSubject!,
-              _selectedPeriod!,
-            );
-            for (final std in standards) {
-              for (final ind in indicatorsByStandard[std.id] ?? const <Indicator>[]) {
-                for (var slot = 1; slot <= 3; slot++) {
-                  final ctrl = _getController(student.id, _slotKey(ind.id, slot));
-                  if (ctrl.text.isEmpty) {
-                    try {
-                      final g = existingGrades.firstWhere(
-                        (g) => g.indicatorId == ind.id && g.slot == slot,
-                      );
-                      ctrl.text = g.value.toString();
-                    } catch (_) {}
-                  }
-                }
-              }
-            }
-            final finalCtrl = _getController(student.id, 'final');
-            if (finalCtrl.text.isEmpty) {
-              try {
-                final g = existingGrades.firstWhere(
-                  (g) => g.standardId == null,
-                );
-                finalCtrl.text = g.value.toString();
-              } catch (_) {}
-            }
-
-            double weightedSum = 0;
-            double totalWeight = 0;
-            for (final std in standards) {
-              final inds = indicatorsByStandard[std.id] ?? const <Indicator>[];
-              final score = _standardPreview(student.id, inds);
-              if (score != null) {
-                weightedSum += score * std.weight;
-                totalWeight += std.weight;
-              }
-            }
-            // Si falta alguna nota (estándar o evaluación final), esa parte
-            // simplemente no se tiene en cuenta, en vez de contarse como 0.
-            final standardsAvg = totalWeight > 0 ? weightedSum / totalWeight : null;
-            final fv = double.tryParse(finalCtrl.text);
-            final double avg;
-            if (standardsAvg != null && fv != null) {
-              avg = (standardsAvg * sw / 100) + (fv * fw / 100);
-            } else if (standardsAvg != null) {
-              avg = standardsAvg;
-            } else if (fv != null) {
-              avg = fv;
-            } else {
-              avg = 0.0;
-            }
-
-            return DataRow(
-              cells: [
-                DataCell(
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: AppColors.teacher.withValues(
-                          alpha: 0.1,
-                        ),
-                        child: Text(
-                          student.firstName.substring(0, 1),
-                          style: const TextStyle(
-                            color: AppColors.teacher,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                  )
+                else ...[
+                  for (final ind
+                      in indicatorsByStandard[standards[si].id]!) ...[
+                    for (var slot = 1; slot <= 3; slot++)
+                      DataColumn(
+                        label: _slotHeader(
+                          context,
+                          academic,
+                          standards[si],
+                          si + 1,
+                          ind,
+                          slot,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        student.fullName,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                for (final std in standards) ...[
-                  if ((indicatorsByStandard[std.id] ?? const <Indicator>[]).isEmpty)
-                    const DataCell(
-                      Text('-', style: TextStyle(color: AppColors.textTertiary)),
-                    )
-                  else ...[
-                    for (final ind in indicatorsByStandard[std.id]!) ...[
-                      for (var slot = 1; slot <= 3; slot++)
-                        DataCell(
-                          _buildSlotCell(context, academic, students, rowIndex, ind, slot),
-                        ),
-                      DataCell(
-                        _previewChip(_indicatorPreview(student.id, ind)),
-                      ),
-                    ],
-                    DataCell(
-                      _previewChip(
-                        _standardPreview(
-                          student.id,
-                          indicatorsByStandard[std.id]!,
-                        ),
-                        bold: true,
+                    DataColumn(
+                      label: _groupHeader(
+                        'EST${si + 1}',
+                        'I${ind.order}',
+                        'Prom.',
+                        italic: true,
+                        tooltip: '${standards[si].name} — ${ind.name}',
                       ),
                     ),
                   ],
+                  DataColumn(
+                    label: _groupHeader(
+                      'EST${si + 1}',
+                      'Prom. Estándar',
+                      '${standards[si].weight.toStringAsFixed(0)}%',
+                      bold: true,
+                      tooltip: standards[si].name,
+                    ),
+                  ),
                 ],
-                DataCell(
-                  SizedBox(
-                    width: 70,
-                    child: Focus(
-                      onKeyEvent: (node, event) =>
-                          _handleVerticalNav(event, students, rowIndex, 'final'),
-                      child: TextField(
-                        controller: finalCtrl,
-                        focusNode: _getFocusNode(student.id, 'final'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                        ],
-                        style: const TextStyle(fontSize: 13),
-                        decoration: _gradeDecoration(finalCtrl.text),
-                        onChanged: (_) => setState(() {}),
+              ],
+              const DataColumn(
+                label: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Eval. Final',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      '30%',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const DataColumn(
+                label: Text(
+                  'Promedio',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+                ),
+              ),
+              const DataColumn(
+                label: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nota Final',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      '(sin Ev. Final)',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            rows: List.generate(students.length, (rowIndex) {
+              final student = students[rowIndex];
+              final existingGrades = academic.gradesForStudentSubjectPeriod(
+                student.id,
+                _selectedSubject!,
+                _selectedPeriod!,
+              );
+              for (final std in standards) {
+                for (final ind
+                    in indicatorsByStandard[std.id] ?? const <Indicator>[]) {
+                  for (var slot = 1; slot <= 3; slot++) {
+                    final ctrl = _getController(
+                      student.id,
+                      _slotKey(ind.id, slot),
+                    );
+                    if (ctrl.text.isEmpty) {
+                      try {
+                        final g = existingGrades.firstWhere(
+                          (g) => g.indicatorId == ind.id && g.slot == slot,
+                        );
+                        ctrl.text = g.value.toString();
+                      } catch (_) {}
+                    }
+                  }
+                }
+              }
+              final finalCtrl = _getController(student.id, 'final');
+              if (finalCtrl.text.isEmpty) {
+                try {
+                  final g = existingGrades.firstWhere(
+                    (g) => g.standardId == null,
+                  );
+                  finalCtrl.text = g.value.toString();
+                } catch (_) {}
+              }
+
+              double weightedSum = 0;
+              double totalWeight = 0;
+              for (final std in standards) {
+                final inds =
+                    indicatorsByStandard[std.id] ?? const <Indicator>[];
+                final score = _standardPreview(student.id, inds);
+                if (score != null) {
+                  weightedSum += score * std.weight;
+                  totalWeight += std.weight;
+                }
+              }
+              // Si falta alguna nota (estándar o evaluación final), esa parte
+              // simplemente no se tiene en cuenta, en vez de contarse como 0.
+              final standardsAvg = totalWeight > 0
+                  ? weightedSum / totalWeight
+                  : null;
+              final fv = double.tryParse(finalCtrl.text);
+              final double avg;
+              if (standardsAvg != null && fv != null) {
+                avg = (standardsAvg * sw / 100) + (fv * fw / 100);
+              } else if (standardsAvg != null) {
+                avg = standardsAvg;
+              } else if (fv != null) {
+                avg = fv;
+              } else {
+                avg = 0.0;
+              }
+
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.teacher.withValues(
+                            alpha: 0.1,
+                          ),
+                          child: Text(
+                            student.firstName.substring(0, 1),
+                            style: const TextStyle(
+                              color: AppColors.teacher,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          student.fullName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (final std in standards) ...[
+                    if ((indicatorsByStandard[std.id] ?? const <Indicator>[])
+                        .isEmpty)
+                      const DataCell(
+                        Text(
+                          '-',
+                          style: TextStyle(color: AppColors.textTertiary),
+                        ),
+                      )
+                    else ...[
+                      for (final ind in indicatorsByStandard[std.id]!) ...[
+                        for (var slot = 1; slot <= 3; slot++)
+                          DataCell(
+                            _buildSlotCell(
+                              context,
+                              academic,
+                              students,
+                              rowIndex,
+                              ind,
+                              slot,
+                            ),
+                          ),
+                        DataCell(
+                          _previewChip(_indicatorPreview(student.id, ind)),
+                        ),
+                      ],
+                      DataCell(
+                        _previewChip(
+                          _standardPreview(
+                            student.id,
+                            indicatorsByStandard[std.id]!,
+                          ),
+                          bold: true,
+                        ),
+                      ),
+                    ],
+                  ],
+                  DataCell(
+                    SizedBox(
+                      width: 70,
+                      child: Focus(
+                        onKeyEvent: (node, event) => _handleVerticalNav(
+                          event,
+                          students,
+                          rowIndex,
+                          'final',
+                        ),
+                        child: TextField(
+                          controller: finalCtrl,
+                          focusNode: _getFocusNode(student.id, 'final'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d*'),
+                            ),
+                          ],
+                          style: const TextStyle(fontSize: 13),
+                          decoration: _gradeDecoration(finalCtrl.text),
+                          onChanged: (_) => setState(() {}),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                DataCell(
-                  avg > 0
-                      ? GradeChip(grade: avg, compact: true)
-                      : const Text(
-                          '-',
-                          style: TextStyle(color: AppColors.textTertiary),
-                        ),
-                ),
-                DataCell(
-                  standardsAvg != null && standardsAvg > 0
-                      ? GradeChip(grade: standardsAvg, compact: true)
-                      : const Text(
-                          '-',
-                          style: TextStyle(color: AppColors.textTertiary),
-                        ),
-                ),
-              ],
-            );
-          }),
-        ),
+                  DataCell(
+                    avg > 0
+                        ? GradeChip(grade: avg, compact: true)
+                        : const Text(
+                            '-',
+                            style: TextStyle(color: AppColors.textTertiary),
+                          ),
+                  ),
+                  DataCell(
+                    standardsAvg != null && standardsAvg > 0
+                        ? GradeChip(grade: standardsAvg, compact: true)
+                        : const Text(
+                            '-',
+                            style: TextStyle(color: AppColors.textTertiary),
+                          ),
+                  ),
+                ],
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -657,34 +705,39 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         ? '${std.name} — ${ind.name} — ${existing.name}'
         : '${std.name} — ${ind.name} — (sin definir, clic para registrar)';
     return InkWell(
-      onTap: () => _showActivityDialog(context, academic, ind, slot, existing: existing),
+      onTap: () =>
+          _showActivityDialog(context, academic, ind, slot, existing: existing),
       child: Tooltip(
         message: tooltipMsg,
         child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'EST$stdNum',
-            style: const TextStyle(
-              fontSize: 9,
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'EST$stdNum',
+              style: const TextStyle(
+                fontSize: 9,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          Text(
-            'I${ind.order}',
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-          ),
-          Text(
-            'Act$slot',
-            style: TextStyle(
-              fontSize: 9,
-              color: existing == null ? AppColors.primary : AppColors.textSecondary,
-              fontStyle: existing == null ? FontStyle.italic : FontStyle.normal,
+            Text(
+              'I${ind.order}',
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
             ),
-          ),
-        ],
+            Text(
+              'Act$slot',
+              style: TextStyle(
+                fontSize: 9,
+                color: existing == null
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
+                fontStyle: existing == null
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -724,15 +777,15 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         onKeyEvent: (node, event) =>
             _handleVerticalNav(event, students, rowIndex, colKey),
         child: TextField(
-        controller: ctrl,
-        focusNode: _getFocusNode(student.id, colKey),
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-        ],
-        style: const TextStyle(fontSize: 13),
-        decoration: _gradeDecoration(ctrl.text),
-        onChanged: (_) => setState(() {}),
+          controller: ctrl,
+          focusNode: _getFocusNode(student.id, colKey),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
+          style: const TextStyle(fontSize: 13),
+          decoration: _gradeDecoration(ctrl.text),
+          onChanged: (_) => setState(() {}),
         ),
       ),
     );
@@ -765,7 +818,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                 children: [
                   const Text(
                     'Diligencie el formulario para registrar la actividad por forma de evaluación',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -788,7 +844,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Fecha',
                               border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                              suffixIcon: Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                              ),
                             ),
                             child: Text(
                               date == null
@@ -811,8 +870,9 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                             labelText: 'Nombre',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Requerido'
+                              : null,
                         ),
                       ),
                     ],
@@ -860,7 +920,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
 
   Widget _previewChip(double? value, {bool bold = false}) {
     if (value == null) {
-      return const Text('-', style: TextStyle(color: AppColors.textTertiary, fontSize: 12));
+      return const Text(
+        '-',
+        style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+      );
     }
     return Text(
       value.toStringAsFixed(1),

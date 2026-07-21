@@ -20,7 +20,9 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
     final student = academic.studentByUserId(auth.currentUser!.id);
-    if (student == null) return const Center(child: Text('Perfil no encontrado'));
+    if (student == null) {
+      return const Center(child: Text('Perfil no encontrado'));
+    }
 
     final subjects = academic.subjects;
 
@@ -29,13 +31,18 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(title: 'Mis Calificaciones', subtitle: 'Consulta tus notas por asignatura y período'),
+          SectionHeader(
+            title: 'Mis Calificaciones',
+            subtitle: 'Consulta tus notas por asignatura y período',
+          ),
           const SizedBox(height: 20),
           _buildPeriodSelector(academic),
           const SizedBox(height: 20),
           _buildOverallSummary(student.id, academic),
           const SizedBox(height: 16),
-          ...subjects.map((s) => _buildSubjectCard(student.id, s.id, s.name, academic)),
+          ...subjects.map(
+            (s) => _buildSubjectCard(student.id, s.id, s.name, academic),
+          ),
         ],
       ),
     );
@@ -64,11 +71,19 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
 
   Widget _buildOverallSummary(String studentId, AcademicProvider academic) {
     final avg = academic.calculateOverallAverage(studentId, _selectedPeriod);
-    final color = avg >= 4.0 ? AppColors.secondary : avg >= 3.0 ? AppColors.warning : AppColors.error;
+    final color = avg >= 4.0
+        ? AppColors.secondary
+        : avg >= 3.0
+        ? AppColors.warning
+        : AppColors.error;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [color.withValues(alpha: 0.8), color], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: LinearGradient(
+          colors: [color.withValues(alpha: 0.8), color],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -79,17 +94,40 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Promedio del período', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                Text(avg > 0 ? avg.toStringAsFixed(2) : 'Sin calificaciones', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
+                const Text(
+                  'Promedio del período',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                Text(
+                  avg > 0 ? avg.toStringAsFixed(2) : 'Sin calificaciones',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Text(
-              avg >= 4.6 ? 'Superior' : avg >= 4.0 ? 'Alto' : avg >= 3.0 ? 'Básico' : 'Bajo',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+              avg >= 4.6
+                  ? 'Superior'
+                  : avg >= 4.0
+                  ? 'Alto'
+                  : avg >= 3.0
+                  ? 'Básico'
+                  : 'Bajo',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
             ),
           ),
         ],
@@ -97,10 +135,26 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
     );
   }
 
-  Widget _buildSubjectCard(String studentId, String subjectId, String subjectName, AcademicProvider academic) {
-    final standards = academic.standardsForSubjectAndPeriod(subjectId, _selectedPeriod);
-    final gradesList = academic.gradesForStudentSubjectPeriod(studentId, subjectId, _selectedPeriod);
-    final avg = academic.calculateSubjectPeriodGrade(studentId, subjectId, _selectedPeriod);
+  Widget _buildSubjectCard(
+    String studentId,
+    String subjectId,
+    String subjectName,
+    AcademicProvider academic,
+  ) {
+    final standards = academic.standardsForSubjectAndPeriod(
+      subjectId,
+      _selectedPeriod,
+    );
+    final gradesList = academic.gradesForStudentSubjectPeriod(
+      studentId,
+      subjectId,
+      _selectedPeriod,
+    );
+    final avg = academic.calculateSubjectPeriodGrade(
+      studentId,
+      subjectId,
+      _selectedPeriod,
+    );
     final config = academic.evalConfigFor(subjectId, _selectedPeriod);
     final sw = config?.standardsWeight ?? 70;
     final fw = config?.finalExamWeight ?? 30;
@@ -116,19 +170,46 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
           title: Row(
             children: [
               Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.student.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.book_rounded, color: AppColors.student, size: 20),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.student.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.book_rounded,
+                  color: AppColors.student,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(subjectName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
-              avg > 0 ? GradeChip(grade: avg) : const Text('Sin nota', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+              Expanded(
+                child: Text(
+                  subjectName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              avg > 0
+                  ? GradeChip(grade: avg)
+                  : const Text(
+                      'Sin nota',
+                      style: TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 12,
+                      ),
+                    ),
             ],
           ),
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Column(
                 children: [
                   Row(
@@ -146,17 +227,33 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
                       _selectedPeriod,
                       std.id,
                     );
-                    return _gradeRow(std.name, score, '${std.weight.toStringAsFixed(0)}%');
+                    return _gradeRow(
+                      std.name,
+                      score,
+                      '${std.weight.toStringAsFixed(0)}%',
+                    );
                   }),
                   const Divider(),
-                  Builder(builder: (_) {
-                    try {
-                      final fg = gradesList.firstWhere((g) => g.standardId == null);
-                      return _gradeRow('Evaluación Final', fg.value, '${fw.toStringAsFixed(0)}%');
-                    } catch (_) {
-                      return _gradeRow('Evaluación Final', null, '${fw.toStringAsFixed(0)}%');
-                    }
-                  }),
+                  Builder(
+                    builder: (_) {
+                      try {
+                        final fg = gradesList.firstWhere(
+                          (g) => g.standardId == null,
+                        );
+                        return _gradeRow(
+                          'Evaluación Final',
+                          fg.value,
+                          '${fw.toStringAsFixed(0)}%',
+                        );
+                      } catch (_) {
+                        return _gradeRow(
+                          'Evaluación Final',
+                          null,
+                          '${fw.toStringAsFixed(0)}%',
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
@@ -172,9 +269,20 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
       child: Row(
         children: [
           Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
-          Text(weight, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          Text(
+            weight,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(width: 16),
-          value != null ? GradeChip(grade: value, compact: true) : const Text('—', style: TextStyle(color: AppColors.textTertiary)),
+          value != null
+              ? GradeChip(grade: value, compact: true)
+              : const Text(
+                  '—',
+                  style: TextStyle(color: AppColors.textTertiary),
+                ),
         ],
       ),
     );
@@ -183,8 +291,18 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
   Widget _weightBadge(String label, double weight) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4)),
-      child: Text('$label: ${weight.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        '$label: ${weight.toStringAsFixed(0)}%',
+        style: const TextStyle(
+          fontSize: 11,
+          color: AppColors.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

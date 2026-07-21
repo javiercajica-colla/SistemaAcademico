@@ -33,7 +33,6 @@ import '../../widgets/main_layout.dart';
 final _rootKey = GlobalKey<NavigatorState>();
 final _shellKey = GlobalKey<NavigatorState>();
 
-
 GoRouter createRouter(AuthProvider auth) {
   return GoRouter(
     navigatorKey: _rootKey,
@@ -66,10 +65,10 @@ GoRouter createRouter(AuthProvider auth) {
           if (!auth.isAuthenticated) return '/login';
           final roleStr = switch (auth.currentUser!.role) {
             UserRole.coordinator => 'coordinator',
-            UserRole.admin      => 'coordinator',
-            UserRole.teacher    => 'teacher',
-            UserRole.student    => 'student',
-            UserRole.parent     => 'parent',
+            UserRole.admin => 'coordinator',
+            UserRole.teacher => 'teacher',
+            UserRole.student => 'student',
+            UserRole.parent => 'parent',
           };
           final path = state.matchedLocation;
           const roles = ['coordinator', 'teacher', 'student', 'parent'];

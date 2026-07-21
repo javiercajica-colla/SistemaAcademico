@@ -27,7 +27,8 @@ class _GradeFormatScreenState extends State<GradeFormatScreen> {
     super.didChangeDependencies();
     final academic = context.read<AcademicProvider>();
     _selectedPeriodId ??=
-        academic.currentOpenPeriod?.id ?? academic.activePeriods.firstOrNull?.id;
+        academic.currentOpenPeriod?.id ??
+        academic.activePeriods.firstOrNull?.id;
   }
 
   @override
@@ -118,7 +119,10 @@ class _GradeFormatScreenState extends State<GradeFormatScreen> {
         final students = academic.studentsInCourse(course.id)
           ..sort((a, b) => a.fullName.compareTo(b.fullName));
         final standards = _selectedPeriodId != null
-            ? academic.standardsForSubjectAndPeriod(subject.id, _selectedPeriodId!)
+            ? academic.standardsForSubjectAndPeriod(
+                subject.id,
+                _selectedPeriodId!,
+              )
             : academic.standardsForSubject(subject.id);
         final period = _selectedPeriodId != null
             ? academic.periodById(_selectedPeriodId!)
@@ -191,7 +195,9 @@ class _AssignmentCard extends StatelessWidget {
                 Text(
                   subject.name,
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Wrap(
@@ -199,8 +205,10 @@ class _AssignmentCard extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     _chip(Icons.class_rounded, course.name),
-                    _chip(Icons.people_rounded,
-                        '${students.length} estudiantes'),
+                    _chip(
+                      Icons.people_rounded,
+                      '${students.length} estudiantes',
+                    ),
                     _chip(
                       Icons.checklist_rounded,
                       standards.isEmpty
@@ -230,9 +238,10 @@ class _AssignmentCard extends StatelessWidget {
       children: [
         Icon(icon, size: 13, color: AppColors.textSecondary),
         const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 12, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -318,12 +327,16 @@ class _PreviewDialog extends StatelessWidget {
                 Text(
                   '${subject.name}  ·  ${course.name}',
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   'Período: ${period?.name ?? "—"}  ·  ${students.length} estudiantes',
                   style: const TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -335,9 +348,12 @@ class _PreviewDialog extends StatelessWidget {
                 icon: const Icon(Icons.picture_as_pdf_rounded, size: 15),
                 label: const Text('PDF'),
                 style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10)),
+                  backgroundColor: Colors.red.shade700,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                ),
                 onPressed: () => _exportPDF(),
               ),
               const SizedBox(width: 8),
@@ -345,9 +361,12 @@ class _PreviewDialog extends StatelessWidget {
                 icon: const Icon(Icons.table_chart_rounded, size: 15),
                 label: const Text('Excel'),
                 style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10)),
+                  backgroundColor: Colors.green.shade700,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                ),
                 onPressed: () => _exportExcel(),
               ),
               const SizedBox(width: 8),
@@ -399,8 +418,10 @@ class _PreviewDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
       decoration: const BoxDecoration(
         color: Color(0xFF1E3A8A),
-        borderRadius:
-            BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(4),
+        ),
       ),
       child: Column(
         children: [
@@ -481,10 +502,7 @@ class _PreviewDialog extends StatelessWidget {
       fontSize: 11,
       fontWeight: FontWeight.w700,
     );
-    const cellTextStyle = TextStyle(
-      color: Color(0xFF1E293B),
-      fontSize: 11,
-    );
+    const cellTextStyle = TextStyle(color: Color(0xFF1E293B), fontSize: 11);
     const borderColor = Color(0xFFCBD5E1);
 
     return Table(
@@ -511,7 +529,9 @@ class _PreviewDialog extends StatelessWidget {
               _cell('${e.key + 1}', cellTextStyle, 32, bg: bg, center: true),
               _cell(e.value.fullName, cellTextStyle, 230, bg: bg),
               ...List.generate(
-                  cols.length, (_) => _cell('', cellTextStyle, 80, bg: bg)),
+                cols.length,
+                (_) => _cell('', cellTextStyle, 80, bg: bg),
+              ),
               _cell('', cellTextStyle, 76, bg: bg),
               _cell('', cellTextStyle, 100, bg: bg),
             ],
@@ -521,8 +541,13 @@ class _PreviewDialog extends StatelessWidget {
     );
   }
 
-  Widget _cell(String text, TextStyle style, double width,
-      {Color bg = Colors.white, bool center = false}) {
+  Widget _cell(
+    String text,
+    TextStyle style,
+    double width, {
+    Color bg = Colors.white,
+    bool center = false,
+  }) {
     return Container(
       width: width,
       height: 26,
@@ -603,23 +628,29 @@ class _PreviewDialog extends StatelessWidget {
                 children: [
                   _pCell('#', bold, PdfColors.white, center: true),
                   _pCell('Apellidos y Nombres', bold, PdfColors.white),
-                  ...cols.map((c) =>
-                      _pCell(c, bold, PdfColors.white, center: true)),
+                  ...cols.map(
+                    (c) => _pCell(c, bold, PdfColors.white, center: true),
+                  ),
                   _pCell('Promedio', bold, PdfColors.white, center: true),
                   _pCell('Observación', bold, PdfColors.white),
                 ],
               ),
               ...students.asMap().entries.map((e) {
-                final bg =
-                    e.key.isEven ? PdfColors.white : altRow;
+                final bg = e.key.isEven ? PdfColors.white : altRow;
                 return pw.TableRow(
                   decoration: pw.BoxDecoration(color: bg),
                   children: [
-                    _pCell('${e.key + 1}', regular, PdfColors.black,
-                        center: true),
+                    _pCell(
+                      '${e.key + 1}',
+                      regular,
+                      PdfColors.black,
+                      center: true,
+                    ),
                     _pCell(e.value.fullName, regular, PdfColors.black),
-                    ...List.generate(cols.length + 2,
-                        (_) => _pCell('', regular, PdfColors.black)),
+                    ...List.generate(
+                      cols.length + 2,
+                      (_) => _pCell('', regular, PdfColors.black),
+                    ),
                     _pCell('', regular, PdfColors.black),
                   ],
                 );
@@ -635,9 +666,10 @@ class _PreviewDialog extends StatelessWidget {
               pw.Text(
                 'Total estudiantes: ${students.length}',
                 style: pw.TextStyle(
-                    font: regular,
-                    fontSize: 8,
-                    color: PdfColors.grey600),
+                  font: regular,
+                  fontSize: 8,
+                  color: PdfColors.grey600,
+                ),
               ),
             ],
           ),
@@ -667,19 +699,21 @@ class _PreviewDialog extends StatelessWidget {
           pw.Text(
             'COLEGIO SAN JOSÉ',
             style: pw.TextStyle(
-                font: bold,
-                fontSize: 14,
-                color: PdfColors.white,
-                letterSpacing: 2),
+              font: bold,
+              fontSize: 14,
+              color: PdfColors.white,
+              letterSpacing: 2,
+            ),
           ),
           pw.SizedBox(height: 3),
           pw.Text(
             'FORMATO DE REGISTRO DE NOTAS',
             style: pw.TextStyle(
-                font: regular,
-                fontSize: 8,
-                color: const PdfColor(0.749, 0.851, 1.0),
-                letterSpacing: 1),
+              font: regular,
+              fontSize: 8,
+              color: const PdfColor(0.749, 0.851, 1.0),
+              letterSpacing: 1,
+            ),
           ),
           pw.SizedBox(height: 8),
           pw.Row(
@@ -697,25 +731,38 @@ class _PreviewDialog extends StatelessWidget {
   }
 
   pw.Widget _pHeaderInfo(
-      pw.Font bold, pw.Font regular, String label, String value) {
+    pw.Font bold,
+    pw.Font regular,
+    String label,
+    String value,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Text(label,
-            style: pw.TextStyle(
-                font: bold,
-                fontSize: 7,
-                color: const PdfColor(0.58, 0.77, 1.0),
-                letterSpacing: 0.5)),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            font: bold,
+            fontSize: 7,
+            color: const PdfColor(0.58, 0.77, 1.0),
+            letterSpacing: 0.5,
+          ),
+        ),
         pw.SizedBox(height: 2),
-        pw.Text(value,
-            style: pw.TextStyle(font: bold, fontSize: 9, color: PdfColors.white)),
+        pw.Text(
+          value,
+          style: pw.TextStyle(font: bold, fontSize: 9, color: PdfColors.white),
+        ),
       ],
     );
   }
 
-  pw.Widget _pCell(String text, pw.Font font, PdfColor color,
-      {bool center = false}) {
+  pw.Widget _pCell(
+    String text,
+    pw.Font font,
+    PdfColor color, {
+    bool center = false,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
       child: pw.Text(
@@ -733,9 +780,14 @@ class _PreviewDialog extends StatelessWidget {
       children: [
         pw.Container(width: width, height: 0.5, color: PdfColors.grey600),
         pw.SizedBox(height: 3),
-        pw.Text(label,
-            style: pw.TextStyle(
-                font: font, fontSize: 7.5, color: PdfColors.grey600)),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            font: font,
+            fontSize: 7.5,
+            color: PdfColors.grey600,
+          ),
+        ),
       ],
     );
   }
@@ -791,8 +843,13 @@ class _PreviewDialog extends StatelessWidget {
     // ── Table header (row 6) ──
     const hr = 6;
     _xlCell(sheet, hr, 0, '#', style: headerStyle);
-    _xlCell(sheet, hr, 1, 'Apellidos y Nombres del Estudiante',
-        style: headerStyle);
+    _xlCell(
+      sheet,
+      hr,
+      1,
+      'Apellidos y Nombres del Estudiante',
+      style: headerStyle,
+    );
     for (int c = 0; c < cols.length; c++) {
       _xlCell(sheet, hr, c + 2, cols[c], style: headerStyle);
     }
@@ -825,11 +882,20 @@ class _PreviewDialog extends StatelessWidget {
 
     // ── Signature rows ──
     final sigRow = hr + 1 + students.length + 2;
-    _xlCell(sheet, sigRow, 0,
-        'Firma Docente: ________________________________', style: labelStyle);
-    _xlCell(sheet, sigRow, cols.length + 1,
-        'VoBo Coordinación: ________________________________',
-        style: labelStyle);
+    _xlCell(
+      sheet,
+      sigRow,
+      0,
+      'Firma Docente: ________________________________',
+      style: labelStyle,
+    );
+    _xlCell(
+      sheet,
+      sigRow,
+      cols.length + 1,
+      'VoBo Coordinación: ________________________________',
+      style: labelStyle,
+    );
 
     final bytes = xls.encode();
     if (bytes != null) {
@@ -840,10 +906,16 @@ class _PreviewDialog extends StatelessWidget {
     }
   }
 
-  void _xlCell(Sheet sheet, int row, int col, dynamic value,
-      {CellStyle? style}) {
-    final cell = sheet
-        .cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row));
+  void _xlCell(
+    Sheet sheet,
+    int row,
+    int col,
+    dynamic value, {
+    CellStyle? style,
+  }) {
+    final cell = sheet.cell(
+      CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
+    );
     if (value is String) {
       cell.value = TextCellValue(value);
     } else if (value is int) {

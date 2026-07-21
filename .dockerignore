@@ -1,0 +1,14 @@
+# No enviar al contexto de build lo que la imagen no necesita — build más
+# rápido y no se filtran credenciales/artefactos locales a la imagen.
+.dart_tool/
+.git/
+.idea/
+.vscode/
+build/
+android/
+functions/
+test/
+*.log
+.flutter-plugins
+.flutter-plugins-dependencies
+android/key.properties

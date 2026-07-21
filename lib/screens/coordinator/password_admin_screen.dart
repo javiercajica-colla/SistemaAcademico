@@ -55,18 +55,25 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
     final entries = await CredentialLogService().getAll();
     if (!mounted) return;
     setState(() {
-      _passwordsByUsername = {for (final e in entries) e.username.toLowerCase(): e.password};
+      _passwordsByUsername = {
+        for (final e in entries) e.username.toLowerCase(): e.password,
+      };
       _loadingLog = false;
     });
   }
 
   String _roleLabel(UserRole r) {
     switch (r) {
-      case UserRole.coordinator: return 'Coordinador';
-      case UserRole.admin: return 'Administrador';
-      case UserRole.teacher: return 'Docente';
-      case UserRole.student: return 'Estudiante';
-      case UserRole.parent: return 'Padre de Familia';
+      case UserRole.coordinator:
+        return 'Coordinador';
+      case UserRole.admin:
+        return 'Administrador';
+      case UserRole.teacher:
+        return 'Docente';
+      case UserRole.student:
+        return 'Estudiante';
+      case UserRole.parent:
+        return 'Padre de Familia';
     }
   }
 
@@ -93,7 +100,9 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
             firstName = s.firstName;
             lastName = s.lastName;
             documentId = s.documentId;
-            courseName = s.courseId == null ? 'Sin curso' : (academic.courseById(s.courseId!)?.name ?? 'Sin curso');
+            courseName = s.courseId == null
+                ? 'Sin curso'
+                : (academic.courseById(s.courseId!)?.name ?? 'Sin curso');
           }
         case UserRole.parent:
           final p = academic.parentByUserId(u.id);
@@ -123,16 +132,20 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
   Future<void> _resetPassword(_RosterEntry entry) async {
     setState(() => _resetting.add(entry.user.id));
     try {
-      final newPassword = await AdminCredentialsService().resetUserPassword(entry.user.id);
-      await CredentialLogService().add(CredentialLogEntry(
-        firstName: entry.firstName,
-        lastName: entry.lastName,
-        documentId: entry.documentId,
-        username: entry.username,
-        password: newPassword,
-        roleLabel: entry.roleLabel,
-        createdAt: DateTime.now(),
-      ));
+      final newPassword = await AdminCredentialsService().resetUserPassword(
+        entry.user.id,
+      );
+      await CredentialLogService().add(
+        CredentialLogEntry(
+          firstName: entry.firstName,
+          lastName: entry.lastName,
+          documentId: entry.documentId,
+          username: entry.username,
+          password: newPassword,
+          roleLabel: entry.roleLabel,
+          createdAt: DateTime.now(),
+        ),
+      );
       if (!mounted) return;
       setState(() {
         _passwordsByUsername[entry.username.toLowerCase()] = newPassword;
@@ -152,11 +165,13 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: AppColors.secondary),
-          SizedBox(width: 8),
-          Text('Contraseña restablecida'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AppColors.secondary),
+            SizedBox(width: 8),
+            Text('Contraseña restablecida'),
+          ],
+        ),
         content: SizedBox(
           width: 380,
           child: Column(
@@ -189,11 +204,18 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
             icon: const Icon(Icons.copy_rounded, size: 16),
             label: const Text('Copiar'),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: 'Usuario: ${entry.username}\nContraseña: $newPassword'));
+              Clipboard.setData(
+                ClipboardData(
+                  text: 'Usuario: ${entry.username}\nContraseña: $newPassword',
+                ),
+              );
               Navigator.pop(ctx);
             },
           ),
-          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido'),
+          ),
         ],
       ),
     );
@@ -202,8 +224,26 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
   Widget _credentialRow(String label, String value) {
     return Row(
       children: [
-        SizedBox(width: 110, child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontFamily: 'monospace', fontWeight: FontWeight.w600))),
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -218,9 +258,19 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
       fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
       backgroundColorHex: ExcelColor.fromHexString('#1E3A8A'),
     );
-    const headers = ['Rol', 'Nombre', 'Apellido', 'Documento', 'Curso', 'Username', 'Password'];
+    const headers = [
+      'Rol',
+      'Nombre',
+      'Apellido',
+      'Documento',
+      'Curso',
+      'Username',
+      'Password',
+    ];
     for (var c = 0; c < headers.length; c++) {
-      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0));
+      final cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0),
+      );
       cell.value = TextCellValue(headers[c]);
       cell.cellStyle = headerStyle;
       sheet.setColumnWidth(c, 18);
@@ -238,13 +288,20 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
         e.password ?? 'No disponible',
       ];
       for (var c = 0; c < values.length; c++) {
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r + 1)).value = TextCellValue(values[c]);
+        sheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r + 1))
+            .value = TextCellValue(
+          values[c],
+        );
       }
     }
 
     final bytes = excel.encode();
     if (bytes != null) {
-      downloadBytes(bytes, 'usuarios_credenciales_${DateTime.now().millisecondsSinceEpoch}.xlsx');
+      downloadBytes(
+        bytes,
+        'usuarios_credenciales_${DateTime.now().millisecondsSinceEpoch}.xlsx',
+      );
     }
   }
 
@@ -263,7 +320,11 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
     }
 
     final roster = _buildRoster(academic)
-        .where((e) => '${e.firstName} ${e.lastName} ${e.username}'.toLowerCase().contains(_search))
+        .where(
+          (e) => '${e.firstName} ${e.lastName} ${e.username}'
+              .toLowerCase()
+              .contains(_search),
+        )
         .toList();
 
     return Column(
@@ -302,7 +363,9 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
                 border: Border.all(color: AppColors.border),
               ),
               child: Table(
-                border: TableBorder(horizontalInside: BorderSide(color: AppColors.border)),
+                border: TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.border),
+                ),
                 columnWidths: const {
                   0: FlexColumnWidth(1.2),
                   1: FlexColumnWidth(2.2),
@@ -314,60 +377,140 @@ class _PasswordAdminScreenState extends State<PasswordAdminScreen> {
                 },
                 children: [
                   TableRow(
-                    decoration: const BoxDecoration(color: AppColors.surfaceVariant),
-                    children: ['Rol', 'Nombre', 'Documento', 'Curso', 'Usuario', 'Contraseña', '']
-                        .map((c) => Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              child: Text(c, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                            ))
-                        .toList(),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                    ),
+                    children:
+                        [
+                              'Rol',
+                              'Nombre',
+                              'Documento',
+                              'Curso',
+                              'Usuario',
+                              'Contraseña',
+                              '',
+                            ]
+                            .map(
+                              (c) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                child: Text(
+                                  c,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                   ),
                   ...roster.map((e) {
                     final isResetting = _resetting.contains(e.user.id);
-                    return TableRow(children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text(e.roleLabel, style: const TextStyle(fontSize: 13)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text('${e.firstName} ${e.lastName}', style: const TextStyle(fontSize: 13)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text(e.documentId, style: const TextStyle(fontSize: 13)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text(e.courseName, style: const TextStyle(fontSize: 13)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text(e.username, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Text(
-                          e.password ?? 'No disponible',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontFamily: 'monospace',
-                            color: e.password == null ? AppColors.textSecondary : AppColors.textPrimary,
-                            fontStyle: e.password == null ? FontStyle.italic : FontStyle.normal,
+                    return TableRow(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            e.roleLabel,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: isResetting
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : TextButton.icon(
-                                icon: const Icon(Icons.refresh_rounded, size: 16),
-                                label: const Text('Restablecer', style: TextStyle(fontSize: 12)),
-                                onPressed: () => _resetPassword(e),
-                              ),
-                      ),
-                    ]);
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            '${e.firstName} ${e.lastName}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            e.documentId,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            e.courseName,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            e.username,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            e.password ?? 'No disponible',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                              color: e.password == null
+                                  ? AppColors.textSecondary
+                                  : AppColors.textPrimary,
+                              fontStyle: e.password == null
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: isResetting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : TextButton.icon(
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    'Restablecer',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  onPressed: () => _resetPassword(e),
+                                ),
+                        ),
+                      ],
+                    );
                   }),
                 ],
               ),

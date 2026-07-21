@@ -321,32 +321,38 @@ class _CoursesScreenState extends State<CoursesScreen>
         title: const Text('Nuevo Curso / Grupo'),
         content: SizedBox(
           width: 360,
-          child: SingleChildScrollView(child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Grado'),
-                items: ['6', '7', '8', '9', '10', '11']
-                    .map(
-                      (g) =>
-                          DropdownMenuItem(value: g, child: Text('Grado $g°')),
-                    )
-                    .toList(),
-                onChanged: (_) {},
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Sección'),
-                items: ['A', 'B', 'C']
-                    .map(
-                      (s) =>
-                          DropdownMenuItem(value: s, child: Text('Sección $s')),
-                    )
-                    .toList(),
-                onChanged: (_) {},
-              ),
-            ],
-          )),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Grado'),
+                  items: ['6', '7', '8', '9', '10', '11']
+                      .map(
+                        (g) => DropdownMenuItem(
+                          value: g,
+                          child: Text('Grado $g°'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (_) {},
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Sección'),
+                  items: ['A', 'B', 'C']
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text('Sección $s'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (_) {},
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(

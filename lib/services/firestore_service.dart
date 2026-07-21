@@ -49,6 +49,12 @@ class FirestoreService {
   Future<void> updateUserStatus(String uid, {required bool isActive}) =>
       _db.collection(_kUsers).doc(uid).update({'isActive': isActive});
 
+  // Elimina el perfil del usuario en Firestore (bloquea su acceso a la app).
+  // No elimina la cuenta en Firebase Auth — eso requiere el Admin SDK desde
+  // una Cloud Function, no disponible desde el cliente.
+  Future<void> deleteUser(String uid) =>
+      _db.collection(_kUsers).doc(uid).delete();
+
   // ══════════════════════════════════════════════════════════════════════════
   // ESTUDIANTES
   // ══════════════════════════════════════════════════════════════════════════
@@ -142,6 +148,9 @@ class FirestoreService {
       .doc(parent.id)
       .set(_parentToMap(parent), SetOptions(merge: true));
 
+  Future<void> deleteParent(String id) =>
+      _db.collection(_kParents).doc(id).delete();
+
   // ══════════════════════════════════════════════════════════════════════════
   // CURSOS
   // ══════════════════════════════════════════════════════════════════════════
@@ -185,10 +194,11 @@ class FirestoreService {
       .snapshots()
       .map((s) => s.docs.map(_yearFromDoc).toList());
 
-  Future<void> saveAcademicYear(AcademicYear year) => _db
-      .collection(_kYears)
-      .doc(year.id)
-      .set({'year': year.year, 'isActive': year.isActive}, SetOptions(merge: true));
+  Future<void> saveAcademicYear(AcademicYear year) =>
+      _db.collection(_kYears).doc(year.id).set({
+        'year': year.year,
+        'isActive': year.isActive,
+      }, SetOptions(merge: true));
 
   Stream<List<AcademicPeriod>> periodsStream({String? academicYearId}) {
     Query<Map<String, dynamic>> q = _db.collection(_kPeriods);
@@ -274,8 +284,9 @@ class FirestoreService {
   // ══════════════════════════════════════════════════════════════════════════
 
   Stream<List<Observation>> observationsStream({String? studentId}) {
-    Query<Map<String, dynamic>> q =
-        _db.collection(_kObservations).orderBy('date', descending: true);
+    Query<Map<String, dynamic>> q = _db
+        .collection(_kObservations)
+        .orderBy('date', descending: true);
     if (studentId != null) q = q.where('studentId', isEqualTo: studentId);
     return q.snapshots().map((s) => s.docs.map(_observationFromDoc).toList());
   }
@@ -403,12 +414,12 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _userToMap(AppUser u) => {
-        'name': u.name,
-        'email': u.email,
-        'role': u.role.name,
-        'avatar': u.avatar,
-        'isActive': u.isActive,
-      };
+    'name': u.name,
+    'email': u.email,
+    'role': u.role.name,
+    'avatar': u.avatar,
+    'isActive': u.isActive,
+  };
 
   Student _studentFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -425,14 +436,14 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _studentToMap(Student s) => {
-        'userId': s.userId,
-        'firstName': s.firstName,
-        'lastName': s.lastName,
-        'documentId': s.documentId,
-        'birthDate': Timestamp.fromDate(s.birthDate),
-        'courseId': s.courseId,
-        'parentIds': s.parentIds,
-      };
+    'userId': s.userId,
+    'firstName': s.firstName,
+    'lastName': s.lastName,
+    'documentId': s.documentId,
+    'birthDate': Timestamp.fromDate(s.birthDate),
+    'courseId': s.courseId,
+    'parentIds': s.parentIds,
+  };
 
   Teacher _teacherFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -448,13 +459,13 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _teacherToMap(Teacher t) => {
-        'userId': t.userId,
-        'firstName': t.firstName,
-        'lastName': t.lastName,
-        'documentId': t.documentId,
-        'specialization': t.specialization,
-        'subjectIds': t.subjectIds,
-      };
+    'userId': t.userId,
+    'firstName': t.firstName,
+    'lastName': t.lastName,
+    'documentId': t.documentId,
+    'specialization': t.specialization,
+    'subjectIds': t.subjectIds,
+  };
 
   Parent _parentFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -471,14 +482,14 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _parentToMap(Parent p) => {
-        'userId': p.userId,
-        'firstName': p.firstName,
-        'lastName': p.lastName,
-        'documentId': p.documentId,
-        'phone': p.phone,
-        'relationship': p.relationship,
-        'studentIds': p.studentIds,
-      };
+    'userId': p.userId,
+    'firstName': p.firstName,
+    'lastName': p.lastName,
+    'documentId': p.documentId,
+    'phone': p.phone,
+    'relationship': p.relationship,
+    'studentIds': p.studentIds,
+  };
 
   Course _courseFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -493,12 +504,12 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _courseToMap(Course c) => {
-        'name': c.name,
-        'grade': c.grade,
-        'section': c.section,
-        'academicYearId': c.academicYearId,
-        'directorTeacherId': c.directorTeacherId,
-      };
+    'name': c.name,
+    'grade': c.grade,
+    'section': c.section,
+    'academicYearId': c.academicYearId,
+    'directorTeacherId': c.directorTeacherId,
+  };
 
   Subject _subjectFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -513,12 +524,12 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _subjectToMap(Subject s) => {
-        'code': s.code,
-        'name': s.name,
-        'area': s.area,
-        'hoursPerWeek': s.hoursPerWeek,
-        'teacherId': s.teacherId,
-      };
+    'code': s.code,
+    'name': s.name,
+    'area': s.area,
+    'hoursPerWeek': s.hoursPerWeek,
+    'teacherId': s.teacherId,
+  };
 
   AcademicYear _yearFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -543,13 +554,13 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _periodToMap(AcademicPeriod p) => {
-        'academicYearId': p.academicYearId,
-        'name': p.name,
-        'startDate': Timestamp.fromDate(p.startDate),
-        'endDate': Timestamp.fromDate(p.endDate),
-        'weight': p.weight,
-        'isOpen': p.isOpen,
-      };
+    'academicYearId': p.academicYearId,
+    'name': p.name,
+    'startDate': Timestamp.fromDate(p.startDate),
+    'endDate': Timestamp.fromDate(p.endDate),
+    'weight': p.weight,
+    'isOpen': p.isOpen,
+  };
 
   Standard _standardFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -564,12 +575,12 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _standardToMap(Standard s) => {
-        'subjectId': s.subjectId,
-        'periodId': s.periodId,
-        'name': s.name,
-        'description': s.description,
-        'weight': s.weight,
-      };
+    'subjectId': s.subjectId,
+    'periodId': s.periodId,
+    'name': s.name,
+    'description': s.description,
+    'weight': s.weight,
+  };
 
   Grade _gradeFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -588,18 +599,20 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _gradeToMap(Grade g) => {
-        'studentId': g.studentId,
-        'subjectId': g.subjectId,
-        'periodId': g.periodId,
-        'standardId': g.standardId,
-        'indicatorId': g.indicatorId,
-        'slot': g.slot,
-        'value': g.value,
-        'note': g.note,
-        'registeredAt': Timestamp.fromDate(g.registeredAt),
-      };
+    'studentId': g.studentId,
+    'subjectId': g.subjectId,
+    'periodId': g.periodId,
+    'standardId': g.standardId,
+    'indicatorId': g.indicatorId,
+    'slot': g.slot,
+    'value': g.value,
+    'note': g.note,
+    'registeredAt': Timestamp.fromDate(g.registeredAt),
+  };
 
-  AttendanceRecord _attendanceFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  AttendanceRecord _attendanceFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final d = doc.data()!;
     return AttendanceRecord(
       id: doc.id,
@@ -616,13 +629,13 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _attendanceToMap(AttendanceRecord r) => {
-        'studentId': r.studentId,
-        'subjectId': r.subjectId,
-        'periodId': r.periodId,
-        'date': Timestamp.fromDate(r.date),
-        'status': r.status.name,
-        'note': r.note,
-      };
+    'studentId': r.studentId,
+    'subjectId': r.subjectId,
+    'periodId': r.periodId,
+    'date': Timestamp.fromDate(r.date),
+    'status': r.status.name,
+    'note': r.note,
+  };
 
   Observation _observationFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -642,17 +655,18 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _observationToMap(Observation o) => {
-        'studentId': o.studentId,
-        'teacherId': o.teacherId,
-        'subjectId': o.subjectId,
-        'type': o.type.name,
-        'title': o.title,
-        'description': o.description,
-        'date': Timestamp.fromDate(o.date),
-      };
+    'studentId': o.studentId,
+    'teacherId': o.teacherId,
+    'subjectId': o.subjectId,
+    'type': o.type.name,
+    'title': o.title,
+    'description': o.description,
+    'date': Timestamp.fromDate(o.date),
+  };
 
   AppNotification _notificationFromDoc(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final d = doc.data()!;
     return AppNotification(
       id: doc.id,
@@ -669,16 +683,17 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _notificationToMap(AppNotification n) => {
-        'userId': n.userId,
-        'title': n.title,
-        'message': n.message,
-        'type': n.type.name,
-        'createdAt': Timestamp.fromDate(n.createdAt),
-        'isRead': n.isRead,
-      };
+    'userId': n.userId,
+    'title': n.title,
+    'message': n.message,
+    'type': n.type.name,
+    'createdAt': Timestamp.fromDate(n.createdAt),
+    'isRead': n.isRead,
+  };
 
   SubjectAssignment _assignmentFromDoc(
-      DocumentSnapshot<Map<String, dynamic>> doc) {
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final d = doc.data()!;
     return SubjectAssignment(
       id: doc.id,
@@ -690,11 +705,11 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _assignmentToMap(SubjectAssignment a) => {
-        'teacherId': a.teacherId,
-        'subjectId': a.subjectId,
-        'courseId': a.courseId,
-        'academicYearId': a.academicYearId,
-      };
+    'teacherId': a.teacherId,
+    'subjectId': a.subjectId,
+    'courseId': a.courseId,
+    'academicYearId': a.academicYearId,
+  };
 
   Indicator _indicatorFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -708,11 +723,11 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _indicatorToMap(Indicator i) => {
-        'standardId': i.standardId,
-        'name': i.name,
-        'description': i.description,
-        'order': i.order,
-      };
+    'standardId': i.standardId,
+    'name': i.name,
+    'description': i.description,
+    'order': i.order,
+  };
 
   Activity _activityFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -729,16 +744,18 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _activityToMap(Activity a) => {
-        'indicatorId': a.indicatorId,
-        'name': a.name,
-        'description': a.description,
-        'order': a.order,
-        'isProgrammed': a.isProgrammed,
-        'gradeValue': a.gradeValue,
-        'date': a.date == null ? null : Timestamp.fromDate(a.date!),
-      };
+    'indicatorId': a.indicatorId,
+    'name': a.name,
+    'description': a.description,
+    'order': a.order,
+    'isProgrammed': a.isProgrammed,
+    'gradeValue': a.gradeValue,
+    'date': a.date == null ? null : Timestamp.fromDate(a.date!),
+  };
 
-  EvaluationConfig _evalConfigFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  EvaluationConfig _evalConfigFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final d = doc.data()!;
     return EvaluationConfig(
       id: doc.id,
@@ -750,9 +767,9 @@ class FirestoreService {
   }
 
   Map<String, dynamic> _evalConfigToMap(EvaluationConfig ec) => {
-        'subjectId': ec.subjectId,
-        'periodId': ec.periodId,
-        'standardsWeight': ec.standardsWeight,
-        'finalExamWeight': ec.finalExamWeight,
-      };
+    'subjectId': ec.subjectId,
+    'periodId': ec.periodId,
+    'standardsWeight': ec.standardsWeight,
+    'finalExamWeight': ec.finalExamWeight,
+  };
 }

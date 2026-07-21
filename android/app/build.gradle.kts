@@ -1,7 +1,29 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Firma de release opcional: si existe android/key.properties (nunca se
+// commitea, ver .gitignore) se usa para firmar el release de verdad; si no
+// existe, se sigue firmando con las claves debug como hasta ahora, así que
+// `flutter run --release` / `flutter build apk` no se rompen para nadie que
+// aún no haya generado un keystore. Para generar uno:
+//   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 \
+//     -validity 10000 -alias upload
+// y crear android/key.properties con:
+//   storePassword=...
+//   keyPassword=...
+//   keyAlias=upload
+//   storeFile=/ruta/absoluta/a/upload-keystore.jks
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -25,11 +47,27 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Usa la firma real de release si android/key.properties existe;
+            // si no, sigue firmando con las claves debug (comportamiento de
+            // siempre, no rompe `flutter build apk`/`flutter run --release`).
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

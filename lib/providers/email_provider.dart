@@ -9,7 +9,7 @@ class EmailProvider extends ChangeNotifier {
   final EmailService _service;
 
   EmailProvider({EmailService? service})
-      : _service = service ?? MockEmailService();
+    : _service = service ?? MockEmailService();
 
   List<InternalEmail> _inbox = [];
   List<InternalEmail> _sent = [];
@@ -40,9 +40,7 @@ class EmailProvider extends ChangeNotifier {
       case EmailFolder.drafts:
         return _drafts;
       case EmailFolder.starred:
-        return [..._inbox, ..._sent]
-            .where((e) => e.isStarred)
-            .toList()
+        return [..._inbox, ..._sent].where((e) => e.isStarred).toList()
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       case EmailFolder.trash:
         return _trash;
@@ -50,7 +48,9 @@ class EmailProvider extends ChangeNotifier {
   }
 
   Future<void> init(String userId) async {
-    if (_currentUserId == userId && (_inbox.isNotEmpty || _sent.isNotEmpty)) return;
+    if (_currentUserId == userId && (_inbox.isNotEmpty || _sent.isNotEmpty)) {
+      return;
+    }
     _currentUserId = userId;
     await _loadAll(userId);
   }

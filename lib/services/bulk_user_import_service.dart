@@ -48,9 +48,20 @@ class BulkUserImportService {
       backgroundColorHex: ExcelColor.fromHexString('#1E3A8A'),
     );
 
-    const headers = ['nombres', 'apellidos', 'rol', 'documento', 'especializacion', 'curso', 'telefono', 'parentesco'];
+    const headers = [
+      'nombres',
+      'apellidos',
+      'rol',
+      'documento',
+      'especializacion',
+      'curso',
+      'telefono',
+      'parentesco',
+    ];
     for (var c = 0; c < headers.length; c++) {
-      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0));
+      final cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0),
+      );
       cell.value = TextCellValue(headers[c]);
       cell.cellStyle = headerStyle;
       sheet.setColumnWidth(c, 16);
@@ -63,7 +74,9 @@ class BulkUserImportService {
     ];
     for (var r = 0; r < exampleRows.length; r++) {
       for (var c = 0; c < exampleRows[r].length; c++) {
-        final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r + 1));
+        final cell = sheet.cell(
+          CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r + 1),
+        );
         cell.value = TextCellValue(exampleRows[r][c]);
       }
     }
@@ -77,15 +90,22 @@ class BulkUserImportService {
     final sheet = excel.tables[excel.tables.keys.first];
     if (sheet == null) return [];
     final rows = sheet.rows
-        .map((row) => row.map((cell) => cell?.value?.toString().trim() ?? '').toList())
+        .map(
+          (row) =>
+              row.map((cell) => cell?.value?.toString().trim() ?? '').toList(),
+        )
         .toList();
     return _parseRows(rows);
   }
 
   static List<ParsedUserRow> parseCsvBytes(List<int> bytes) {
     final content = utf8.decode(bytes);
-    final rawRows = const CsvToListConverter(eol: '\n').convert(content, shouldParseNumbers: false);
-    final rows = rawRows.map((row) => row.map((c) => c.toString().trim()).toList()).toList();
+    final rawRows = const CsvToListConverter(
+      eol: '\n',
+    ).convert(content, shouldParseNumbers: false);
+    final rows = rawRows
+        .map((row) => row.map((c) => c.toString().trim()).toList())
+        .toList();
     return _parseRows(rows);
   }
 
@@ -104,13 +124,19 @@ class BulkUserImportService {
     final iNombres = colIndex(['nombres', 'nombre']);
     final iApellidos = colIndex(['apellidos', 'apellido']);
     final iRol = colIndex(['rol', 'role']);
-    final iDocumento = colIndex(['documento', 'documentodeidentidad', 'cedula', 'identificacion']);
+    final iDocumento = colIndex([
+      'documento',
+      'documentodeidentidad',
+      'cedula',
+      'identificacion',
+    ]);
     final iEspecializacion = colIndex(['especializacion', 'especialidad']);
     final iCurso = colIndex(['curso', 'grado']);
     final iTelefono = colIndex(['telefono', 'celular']);
     final iParentesco = colIndex(['parentesco']);
 
-    String cell(List<String> row, int i) => (i >= 0 && i < row.length) ? row[i].trim() : '';
+    String cell(List<String> row, int i) =>
+        (i >= 0 && i < row.length) ? row[i].trim() : '';
     String? cellOrNull(List<String> row, int i) {
       final v = cell(row, i);
       return v.isEmpty ? null : v;
@@ -136,18 +162,20 @@ class BulkUserImportService {
         error = 'Documento de identidad vacío';
       }
 
-      result.add(ParsedUserRow(
-        rowNumber: r + 1,
-        firstName: firstName,
-        lastName: lastName,
-        role: role,
-        documentId: documentId,
-        specialization: cellOrNull(row, iEspecializacion),
-        courseName: cellOrNull(row, iCurso),
-        phone: cellOrNull(row, iTelefono),
-        relationship: cellOrNull(row, iParentesco),
-        error: error,
-      ));
+      result.add(
+        ParsedUserRow(
+          rowNumber: r + 1,
+          firstName: firstName,
+          lastName: lastName,
+          role: role,
+          documentId: documentId,
+          specialization: cellOrNull(row, iEspecializacion),
+          courseName: cellOrNull(row, iCurso),
+          phone: cellOrNull(row, iTelefono),
+          relationship: cellOrNull(row, iParentesco),
+          error: error,
+        ),
+      );
     }
     return result;
   }

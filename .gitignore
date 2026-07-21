@@ -53,5 +53,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Firma de release Android (credenciales locales, nunca al repo)
+/android/key.properties
+*.jks
+*.keystore
+
 # Cloud Functions
 functions/node_modules/

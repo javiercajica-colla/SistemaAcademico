@@ -58,19 +58,21 @@ class _MessagingScreenState extends State<MessagingScreen>
     final filtered = _search.isEmpty
         ? allConvs
         : allConvs.where((c) {
-            final title =
-                msgProv.conversationTitle(c, user.id, allUsers).toLowerCase();
+            final title = msgProv
+                .conversationTitle(c, user.id, allUsers)
+                .toLowerCase();
             return title.contains(_search.toLowerCase()) ||
-                (c.lastMessage?.content
-                        .toLowerCase()
-                        .contains(_search.toLowerCase()) ??
+                (c.lastMessage?.content.toLowerCase().contains(
+                      _search.toLowerCase(),
+                    ) ??
                     false);
           }).toList();
 
     final inbox = filtered;
     final sent = filtered
-        .where((c) =>
-            c.lastMessage != null && c.lastMessage!.senderId == user.id)
+        .where(
+          (c) => c.lastMessage != null && c.lastMessage!.senderId == user.id,
+        )
         .toList();
 
     final roleColor = _roleColor(user.role);
@@ -111,14 +113,20 @@ class _MessagingScreenState extends State<MessagingScreen>
         onPressed: () => _openNewMessage(context, user),
         backgroundColor: roleColor,
         icon: const Icon(Icons.edit_rounded, color: Colors.white),
-        label: const Text('Nuevo mensaje',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Nuevo mensaje',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppUser user, Color roleColor,
-      MessageProvider msgProv) {
+  Widget _buildHeader(
+    BuildContext context,
+    AppUser user,
+    Color roleColor,
+    MessageProvider msgProv,
+  ) {
     final unread = msgProv.unreadCount(user.id);
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -141,30 +149,39 @@ class _MessagingScreenState extends State<MessagingScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Mensajería',
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary)),
-                Text('Comunicación interna',
-                    style: TextStyle(
-                        fontSize: 13, color: AppColors.textSecondary)),
+                const Text(
+                  'Mensajería',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Comunicación interna',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
           if (unread > 0)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.error,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text('$unread sin leer',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                '$unread sin leer',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
         ],
       ),
@@ -179,18 +196,25 @@ class _MessagingScreenState extends State<MessagingScreen>
         onChanged: (v) => setState(() => _search = v),
         decoration: InputDecoration(
           hintText: 'Buscar conversaciones...',
-          hintStyle:
-              const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.textSecondary, size: 20),
+          hintStyle: const TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
           filled: true,
           fillColor: AppColors.background,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: 16,
+          ),
         ),
       ),
     );
@@ -204,8 +228,7 @@ class _MessagingScreenState extends State<MessagingScreen>
         labelColor: roleColor,
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: roleColor,
-        labelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         tabs: const [
           Tab(text: 'Bandeja de entrada'),
           Tab(text: 'Enviados'),
@@ -274,9 +297,13 @@ class _ConversationList extends StatelessWidget {
           children: [
             Icon(Icons.inbox_rounded, size: 56, color: Colors.grey.shade300),
             const SizedBox(height: 12),
-            Text(emptyLabel,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 14)),
+            Text(
+              emptyLabel,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       );
@@ -374,13 +401,18 @@ class _ConversationTile extends StatelessWidget {
                         if (isMine)
                           const Padding(
                             padding: EdgeInsets.only(right: 4),
-                            child: Icon(Icons.done_all_rounded,
-                                size: 14, color: AppColors.primary),
+                            child: Icon(
+                              Icons.done_all_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
                           ),
                         Expanded(
                           child: Text(
                             last != null
-                                ? (isMine ? 'Tú: ${last.content}' : last.content)
+                                ? (isMine
+                                      ? 'Tú: ${last.content}'
+                                      : last.content)
                                 : 'Sin mensajes',
                             style: TextStyle(
                               fontSize: 12,
@@ -399,16 +431,21 @@ class _ConversationTile extends StatelessWidget {
                           Container(
                             margin: const EdgeInsets.only(left: 8),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text('$unread',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '$unread',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -447,7 +484,10 @@ class _ConversationTile extends StatelessWidget {
           child: Text(
             title.isNotEmpty ? title[0].toUpperCase() : '?',
             style: TextStyle(
-                color: color, fontWeight: FontWeight.bold, fontSize: 18),
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
         ),
         Positioned(

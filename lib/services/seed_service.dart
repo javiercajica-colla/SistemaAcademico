@@ -14,7 +14,7 @@ class SeedService {
 
   Future<void> seedAll(void Function(String) onProgress) async {
     onProgress('Creando usuarios en Firebase Auth…');
-    await _seedUsers();
+    await _seedUsers(onProgress);
 
     onProgress('Años académicos…');
     await _seedAcademicYears();
@@ -70,7 +70,7 @@ class SeedService {
 
   // ── Auth + perfil en Firestore ──────────────────────────────────────────
 
-  Future<void> _seedUsers() async {
+  Future<void> _seedUsers(void Function(String) onProgress) async {
     for (final user in MockData.users) {
       try {
         final cred = await _auth
@@ -81,7 +81,8 @@ class SeedService {
             .timeout(
               const Duration(seconds: 15),
               onTimeout: () => throw Exception(
-                  'Timeout creando ${user.email} — verifica que Email/Password esté habilitado en Firebase Console → Authentication → Sign-in method'),
+                'Timeout creando ${user.email} — verifica que Email/Password esté habilitado en Firebase Console → Authentication → Sign-in method',
+              ),
             );
         final uid = cred.user!.uid;
         _uidMap[user.id] = uid;
@@ -97,22 +98,31 @@ class SeedService {
         if (e.code == 'email-already-in-use') {
           // Ya existe en Firebase Auth (de un intento anterior). Iniciar
           // sesión para recuperar su UID real y recrear su perfil en Firestore.
-          final cred = await _auth.signInWithEmailAndPassword(
-            email: user.email,
-            password: user.password,
-          );
-          final uid = cred.user!.uid;
-          _uidMap[user.id] = uid;
+          // Si la contraseña ya no coincide (p. ej. fue restablecida desde
+          // "Administración de Contraseñas"), no abortamos todo el proceso:
+          // avisamos y seguimos con el resto de los usuarios.
+          try {
+            final cred = await _auth.signInWithEmailAndPassword(
+              email: user.email,
+              password: user.password,
+            );
+            final uid = cred.user!.uid;
+            _uidMap[user.id] = uid;
 
-          await _db.collection('users').doc(uid).set({
-            'name': user.name,
-            'email': user.email,
-            'role': user.role.name,
-            'avatar': user.avatar,
-            'isActive': user.isActive,
-          });
+            await _db.collection('users').doc(uid).set({
+              'name': user.name,
+              'email': user.email,
+              'role': user.role.name,
+              'avatar': user.avatar,
+              'isActive': user.isActive,
+            });
+          } on fb.FirebaseAuthException catch (e2) {
+            onProgress(
+              '⚠ ${user.email} ya existe con otra contraseña, se omite (${e2.code})',
+            );
+          }
         } else {
-          rethrow;
+          onProgress('⚠ No se pudo crear ${user.email}, se omite (${e.code})');
         }
       }
     }
@@ -123,10 +133,10 @@ class SeedService {
   Future<void> _seedAcademicYears() async {
     final batch = _db.batch();
     for (final y in MockData.academicYears) {
-      batch.set(
-        _db.collection('academic_years').doc(y.id),
-        {'year': y.year, 'isActive': y.isActive},
-      );
+      batch.set(_db.collection('academic_years').doc(y.id), {
+        'year': y.year,
+        'isActive': y.isActive,
+      });
     }
     await batch.commit();
   }
@@ -134,17 +144,14 @@ class SeedService {
   Future<void> _seedAcademicPeriods() async {
     final batch = _db.batch();
     for (final p in MockData.academicPeriods) {
-      batch.set(
-        _db.collection('academic_periods').doc(p.id),
-        {
-          'academicYearId': p.academicYearId,
-          'name': p.name,
-          'startDate': Timestamp.fromDate(p.startDate),
-          'endDate': Timestamp.fromDate(p.endDate),
-          'weight': p.weight,
-          'isOpen': p.isOpen,
-        },
-      );
+      batch.set(_db.collection('academic_periods').doc(p.id), {
+        'academicYearId': p.academicYearId,
+        'name': p.name,
+        'startDate': Timestamp.fromDate(p.startDate),
+        'endDate': Timestamp.fromDate(p.endDate),
+        'weight': p.weight,
+        'isOpen': p.isOpen,
+      });
     }
     await batch.commit();
   }
@@ -152,16 +159,13 @@ class SeedService {
   Future<void> _seedSubjects() async {
     final batch = _db.batch();
     for (final s in MockData.subjects) {
-      batch.set(
-        _db.collection('subjects').doc(s.id),
-        {
-          'code': s.code,
-          'name': s.name,
-          'area': s.area,
-          'hoursPerWeek': s.hoursPerWeek,
-          'teacherId': s.teacherId,
-        },
-      );
+      batch.set(_db.collection('subjects').doc(s.id), {
+        'code': s.code,
+        'name': s.name,
+        'area': s.area,
+        'hoursPerWeek': s.hoursPerWeek,
+        'teacherId': s.teacherId,
+      });
     }
     await batch.commit();
   }
@@ -169,16 +173,13 @@ class SeedService {
   Future<void> _seedCourses() async {
     final batch = _db.batch();
     for (final c in MockData.courses) {
-      batch.set(
-        _db.collection('courses').doc(c.id),
-        {
-          'name': c.name,
-          'grade': c.grade,
-          'section': c.section,
-          'academicYearId': c.academicYearId,
-          'directorTeacherId': c.directorTeacherId,
-        },
-      );
+      batch.set(_db.collection('courses').doc(c.id), {
+        'name': c.name,
+        'grade': c.grade,
+        'section': c.section,
+        'academicYearId': c.academicYearId,
+        'directorTeacherId': c.directorTeacherId,
+      });
     }
     await batch.commit();
   }
@@ -186,16 +187,13 @@ class SeedService {
   Future<void> _seedStandards() async {
     final batch = _db.batch();
     for (final s in MockData.standards) {
-      batch.set(
-        _db.collection('standards').doc(s.id),
-        {
-          'subjectId': s.subjectId,
-          'periodId': s.periodId,
-          'name': s.name,
-          'description': s.description,
-          'weight': s.weight,
-        },
-      );
+      batch.set(_db.collection('standards').doc(s.id), {
+        'subjectId': s.subjectId,
+        'periodId': s.periodId,
+        'name': s.name,
+        'description': s.description,
+        'weight': s.weight,
+      });
     }
     await batch.commit();
   }
@@ -203,17 +201,14 @@ class SeedService {
   Future<void> _seedTeachers() async {
     final batch = _db.batch();
     for (final t in MockData.teachers) {
-      batch.set(
-        _db.collection('teachers').doc(t.id),
-        {
-          'userId': _uidMap[t.userId] ?? t.userId,
-          'firstName': t.firstName,
-          'lastName': t.lastName,
-          'documentId': t.documentId,
-          'specialization': t.specialization,
-          'subjectIds': t.subjectIds,
-        },
-      );
+      batch.set(_db.collection('teachers').doc(t.id), {
+        'userId': _uidMap[t.userId] ?? t.userId,
+        'firstName': t.firstName,
+        'lastName': t.lastName,
+        'documentId': t.documentId,
+        'specialization': t.specialization,
+        'subjectIds': t.subjectIds,
+      });
     }
     await batch.commit();
   }
@@ -221,18 +216,15 @@ class SeedService {
   Future<void> _seedStudents() async {
     final batch = _db.batch();
     for (final s in MockData.students) {
-      batch.set(
-        _db.collection('students').doc(s.id),
-        {
-          'userId': _uidMap[s.userId] ?? s.userId,
-          'firstName': s.firstName,
-          'lastName': s.lastName,
-          'documentId': s.documentId,
-          'birthDate': Timestamp.fromDate(s.birthDate),
-          'courseId': s.courseId,
-          'parentIds': s.parentIds,
-        },
-      );
+      batch.set(_db.collection('students').doc(s.id), {
+        'userId': _uidMap[s.userId] ?? s.userId,
+        'firstName': s.firstName,
+        'lastName': s.lastName,
+        'documentId': s.documentId,
+        'birthDate': Timestamp.fromDate(s.birthDate),
+        'courseId': s.courseId,
+        'parentIds': s.parentIds,
+      });
     }
     await batch.commit();
   }
@@ -240,18 +232,15 @@ class SeedService {
   Future<void> _seedParents() async {
     final batch = _db.batch();
     for (final p in MockData.parents) {
-      batch.set(
-        _db.collection('parents').doc(p.id),
-        {
-          'userId': _uidMap[p.userId] ?? p.userId,
-          'firstName': p.firstName,
-          'lastName': p.lastName,
-          'documentId': p.documentId,
-          'phone': p.phone,
-          'relationship': p.relationship,
-          'studentIds': p.studentIds,
-        },
-      );
+      batch.set(_db.collection('parents').doc(p.id), {
+        'userId': _uidMap[p.userId] ?? p.userId,
+        'firstName': p.firstName,
+        'lastName': p.lastName,
+        'documentId': p.documentId,
+        'phone': p.phone,
+        'relationship': p.relationship,
+        'studentIds': p.studentIds,
+      });
     }
     await batch.commit();
   }
@@ -259,15 +248,12 @@ class SeedService {
   Future<void> _seedAssignments() async {
     final batch = _db.batch();
     for (final a in MockData.assignments) {
-      batch.set(
-        _db.collection('subject_assignments').doc(a.id),
-        {
-          'teacherId': a.teacherId,
-          'subjectId': a.subjectId,
-          'courseId': a.courseId,
-          'academicYearId': a.academicYearId,
-        },
-      );
+      batch.set(_db.collection('subject_assignments').doc(a.id), {
+        'teacherId': a.teacherId,
+        'subjectId': a.subjectId,
+        'courseId': a.courseId,
+        'academicYearId': a.academicYearId,
+      });
     }
     await batch.commit();
   }
@@ -275,18 +261,15 @@ class SeedService {
   Future<void> _seedGrades() async {
     final batch = _db.batch();
     for (final g in MockData.grades) {
-      batch.set(
-        _db.collection('grades').doc(g.id),
-        {
-          'studentId': g.studentId,
-          'subjectId': g.subjectId,
-          'periodId': g.periodId,
-          'standardId': g.standardId,
-          'value': g.value,
-          'note': g.note,
-          'registeredAt': Timestamp.fromDate(g.registeredAt),
-        },
-      );
+      batch.set(_db.collection('grades').doc(g.id), {
+        'studentId': g.studentId,
+        'subjectId': g.subjectId,
+        'periodId': g.periodId,
+        'standardId': g.standardId,
+        'value': g.value,
+        'note': g.note,
+        'registeredAt': Timestamp.fromDate(g.registeredAt),
+      });
     }
     await batch.commit();
   }
@@ -294,17 +277,14 @@ class SeedService {
   Future<void> _seedAttendance() async {
     final batch = _db.batch();
     for (final r in MockData.attendance) {
-      batch.set(
-        _db.collection('attendance').doc(r.id),
-        {
-          'studentId': r.studentId,
-          'subjectId': r.subjectId,
-          'periodId': r.periodId,
-          'date': Timestamp.fromDate(r.date),
-          'status': r.status.name,
-          'note': r.note,
-        },
-      );
+      batch.set(_db.collection('attendance').doc(r.id), {
+        'studentId': r.studentId,
+        'subjectId': r.subjectId,
+        'periodId': r.periodId,
+        'date': Timestamp.fromDate(r.date),
+        'status': r.status.name,
+        'note': r.note,
+      });
     }
     await batch.commit();
   }
@@ -312,18 +292,15 @@ class SeedService {
   Future<void> _seedObservations() async {
     final batch = _db.batch();
     for (final o in MockData.observations) {
-      batch.set(
-        _db.collection('observations').doc(o.id),
-        {
-          'studentId': o.studentId,
-          'teacherId': o.teacherId,
-          'subjectId': o.subjectId,
-          'type': o.type.name,
-          'title': o.title,
-          'description': o.description,
-          'date': Timestamp.fromDate(o.date),
-        },
-      );
+      batch.set(_db.collection('observations').doc(o.id), {
+        'studentId': o.studentId,
+        'teacherId': o.teacherId,
+        'subjectId': o.subjectId,
+        'type': o.type.name,
+        'title': o.title,
+        'description': o.description,
+        'date': Timestamp.fromDate(o.date),
+      });
     }
     await batch.commit();
   }
@@ -337,28 +314,25 @@ class SeedService {
           .collection('items')
           .doc(n.id)
           .set({
-        'userId': realUserId,
-        'title': n.title,
-        'message': n.message,
-        'type': n.type.name,
-        'createdAt': Timestamp.fromDate(n.createdAt),
-        'isRead': n.isRead,
-      });
+            'userId': realUserId,
+            'title': n.title,
+            'message': n.message,
+            'type': n.type.name,
+            'createdAt': Timestamp.fromDate(n.createdAt),
+            'isRead': n.isRead,
+          });
     }
   }
 
   Future<void> _seedEvalConfigs() async {
     final batch = _db.batch();
     for (final ec in MockData.evalConfigs) {
-      batch.set(
-        _db.collection('evaluation_configs').doc(ec.id),
-        {
-          'subjectId': ec.subjectId,
-          'periodId': ec.periodId,
-          'standardsWeight': ec.standardsWeight,
-          'finalExamWeight': ec.finalExamWeight,
-        },
-      );
+      batch.set(_db.collection('evaluation_configs').doc(ec.id), {
+        'subjectId': ec.subjectId,
+        'periodId': ec.periodId,
+        'standardsWeight': ec.standardsWeight,
+        'finalExamWeight': ec.finalExamWeight,
+      });
     }
     await batch.commit();
   }

@@ -159,7 +159,10 @@ class AppSidebar extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
           leading: const Icon(
             Icons.logout_rounded,
             color: Color(0xFF64748B),
@@ -215,23 +218,56 @@ class AppSidebar extends StatelessWidget {
       case UserRole.coordinator:
       case UserRole.admin:
         return [
-          _NavItem('Dashboard', Icons.dashboard_rounded, '/coordinator/dashboard'),
+          _NavItem(
+            'Dashboard',
+            Icons.dashboard_rounded,
+            '/coordinator/dashboard',
+          ),
           null,
           _NavItem('Usuarios', Icons.people_rounded, '/coordinator/users'),
           _NavItem('Docentes', Icons.person_rounded, '/coordinator/users'),
           null,
-          _NavItem('Config. Académica', Icons.calendar_month_rounded, '/coordinator/academic-config'),
+          _NavItem(
+            'Config. Académica',
+            Icons.calendar_month_rounded,
+            '/coordinator/academic-config',
+          ),
           _NavItem('Asignaturas', Icons.book_rounded, '/coordinator/subjects'),
-          _NavItem('Cursos / Grupos', Icons.class_rounded, '/coordinator/courses'),
-          _NavItem('Config. Evaluación', Icons.assessment_rounded, '/coordinator/grades-config'),
+          _NavItem(
+            'Cursos / Grupos',
+            Icons.class_rounded,
+            '/coordinator/courses',
+          ),
+          _NavItem(
+            'Config. Evaluación',
+            Icons.assessment_rounded,
+            '/coordinator/grades-config',
+          ),
           null,
-          _NavItem('Reportes y Boletines', Icons.summarize_rounded, '/coordinator/reports'),
-          _NavItem('Planilla de Notas', Icons.table_view_rounded, '/coordinator/grade-sheet'),
+          _NavItem(
+            'Reportes y Boletines',
+            Icons.summarize_rounded,
+            '/coordinator/reports',
+          ),
+          _NavItem(
+            'Planilla de Notas',
+            Icons.table_view_rounded,
+            '/coordinator/grade-sheet',
+          ),
           null,
           if (role == UserRole.admin)
-            _NavItem('Administración de Contraseñas', Icons.password_rounded, '/coordinator/password-admin'),
+            _NavItem(
+              'Administración de Contraseñas',
+              Icons.password_rounded,
+              '/coordinator/password-admin',
+            ),
           if (role == UserRole.admin) null,
-          _NavItem('Correo Interno', Icons.email_rounded, '/coordinator/email', emailUnread),
+          _NavItem(
+            'Correo Interno',
+            Icons.email_rounded,
+            '/coordinator/email',
+            emailUnread,
+          ),
         ];
       case UserRole.teacher:
         return [
@@ -239,36 +275,91 @@ class AppSidebar extends StatelessWidget {
           null,
           _NavItem('Mis Cursos', Icons.class_rounded, '/teacher/courses'),
           _NavItem('Calificaciones', Icons.grade_rounded, '/teacher/grades'),
-          _NavItem('Asistencia', Icons.fact_check_rounded, '/teacher/attendance'),
-          _NavItem('Observaciones', Icons.edit_note_rounded, '/teacher/observations'),
+          _NavItem(
+            'Asistencia',
+            Icons.fact_check_rounded,
+            '/teacher/attendance',
+          ),
+          _NavItem(
+            'Observaciones',
+            Icons.edit_note_rounded,
+            '/teacher/observations',
+          ),
           null,
           _NavItem('Estándares', Icons.checklist_rounded, '/teacher/standards'),
-          _NavItem('Planilla de Notas', Icons.table_view_rounded, '/teacher/grade-sheet'),
-          _NavItem('Formato de Notas', Icons.print_rounded, '/teacher/grade-format'),
+          _NavItem(
+            'Planilla de Notas',
+            Icons.table_view_rounded,
+            '/teacher/grade-sheet',
+          ),
+          _NavItem(
+            'Formato de Notas',
+            Icons.print_rounded,
+            '/teacher/grade-format',
+          ),
           null,
-          _NavItem('Hoja de Vida', Icons.badge_rounded, '/teacher/hoja-de-vida'),
+          _NavItem(
+            'Hoja de Vida',
+            Icons.badge_rounded,
+            '/teacher/hoja-de-vida',
+          ),
           null,
-          _NavItem('Correo Interno', Icons.email_rounded, '/teacher/email', emailUnread),
+          _NavItem(
+            'Correo Interno',
+            Icons.email_rounded,
+            '/teacher/email',
+            emailUnread,
+          ),
         ];
       case UserRole.student:
         return [
-          _NavItem('Mi Dashboard', Icons.dashboard_rounded, '/student/dashboard'),
+          _NavItem(
+            'Mi Dashboard',
+            Icons.dashboard_rounded,
+            '/student/dashboard',
+          ),
           null,
           _NavItem('Calificaciones', Icons.grade_rounded, '/student/grades'),
-          _NavItem('Asistencia', Icons.fact_check_rounded, '/student/attendance'),
+          _NavItem(
+            'Asistencia',
+            Icons.fact_check_rounded,
+            '/student/attendance',
+          ),
           null,
-          _NavItem('Hoja de Vida', Icons.badge_rounded, '/student/hoja-de-vida'),
+          _NavItem(
+            'Hoja de Vida',
+            Icons.badge_rounded,
+            '/student/hoja-de-vida',
+          ),
           null,
-          _NavItem('Correo Interno', Icons.email_rounded, '/student/email', emailUnread),
+          _NavItem(
+            'Correo Interno',
+            Icons.email_rounded,
+            '/student/email',
+            emailUnread,
+          ),
         ];
       case UserRole.parent:
         return [
           _NavItem('Dashboard', Icons.dashboard_rounded, '/parent/dashboard'),
           null,
-          _NavItem('Mis Hijos', Icons.family_restroom_rounded, '/parent/children'),
-          _NavItem('Boletín de Notas', Icons.article_rounded, '/parent/bulletin'),
+          _NavItem(
+            'Mis Hijos',
+            Icons.family_restroom_rounded,
+            '/parent/children',
+          ),
+          _NavItem(
+            'Boletín de Notas',
+            Icons.article_rounded,
+            '/parent/bulletin',
+          ),
           null,
-          _NavItem('Correo Interno', Icons.email_rounded, '/parent/email', emailUnread),
+          _NavItem(
+            'Correo Interno',
+            Icons.email_rounded,
+            '/parent/email',
+            emailUnread,
+          ),
         ];
     }
   }
@@ -338,7 +429,10 @@ class _NavTileState extends State<_NavTile> {
               ),
               if (widget.item.badge > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.error,
                     borderRadius: BorderRadius.circular(10),

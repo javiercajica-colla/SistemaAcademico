@@ -1,12 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:firebase_core/firebase_core.dart';
 import '../models/models.dart';
+import '../repositories/auth_repository.dart' show AuthException;
 import 'firestore_service.dart';
 
-class AuthException implements Exception {
-  final String message;
-  AuthException(this.message);
-}
+// AuthException vive en lib/repositories/auth_repository.dart (compartida
+// con la capa de abstracción de repositorios). Se re-exporta aquí para no
+// romper el código existente que la importaba desde este archivo.
+export '../repositories/auth_repository.dart' show AuthException;
 
 class FirebaseAuthService {
   static final FirebaseAuthService _instance = FirebaseAuthService._internal();
@@ -26,7 +27,9 @@ class FirebaseAuthService {
       if (uid == null) throw AuthException('Error al iniciar sesión');
 
       final user = await _store.getUser(uid);
-      if (user == null) throw AuthException('Usuario no encontrado en el sistema');
+      if (user == null) {
+        throw AuthException('Usuario no encontrado en el sistema');
+      }
       if (!user.isActive) throw AuthException('Cuenta desactivada');
       return user;
     } on fb.FirebaseAuthException catch (e) {

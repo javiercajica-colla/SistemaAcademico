@@ -2,7 +2,12 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
+import 'core/config/env.dart';
 
+// Los valores por defecto (proyecto Firebase "sistema-academico-81c58")
+// viven en lib/core/config/env.dart y se pueden sobreescribir en build time
+// con --dart-define, por ejemplo para apuntar a otro proyecto de Firebase
+// sin tocar código (ver Dockerfile).
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -19,20 +24,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDHBY1kKqMkWylQMTFVwzJEi674qAhz_gw',
-    appId: '1:651724277271:web:337186d40512348490be52',
-    messagingSenderId: '651724277271',
-    projectId: 'sistema-academico-81c58',
-    authDomain: 'sistema-academico-81c58.firebaseapp.com',
-    storageBucket: 'sistema-academico-81c58.firebasestorage.app',
-    measurementId: 'G-31LRRFE2PS',
+    apiKey: Env.firebaseApiKey,
+    appId: Env.firebaseAppId,
+    messagingSenderId: Env.firebaseMessagingSenderId,
+    projectId: Env.firebaseProjectId,
+    authDomain: Env.firebaseAuthDomain,
+    storageBucket: Env.firebaseStorageBucket,
+    measurementId: Env.firebaseMeasurementId,
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDHBY1kKqMkWylQMTFVwzJEi674qAhz_gw',
-    appId: '1:651724277271:web:337186d40512348490be52',
-    messagingSenderId: '651724277271',
-    projectId: 'sistema-academico-81c58',
-    storageBucket: 'sistema-academico-81c58.firebasestorage.app',
+    apiKey: Env.firebaseApiKey,
+    appId: Env.firebaseAppId,
+    messagingSenderId: Env.firebaseMessagingSenderId,
+    projectId: Env.firebaseProjectId,
+    storageBucket: Env.firebaseStorageBucket,
   );
 }

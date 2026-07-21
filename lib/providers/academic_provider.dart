@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
-import '../services/firestore_service.dart';
+import '../repositories/repository_provider.dart';
 
 class AcademicProvider extends ChangeNotifier {
-  final FirestoreService _store = FirestoreService();
+  final _store = dataRepository;
 
   List<AcademicYear> _years = [];
   List<AcademicPeriod> _periods = [];
@@ -32,22 +32,70 @@ class AcademicProvider extends ChangeNotifier {
 
   AcademicProvider() {
     _subs.addAll([
-      _store.academicYearsStream().listen((v) { _years = v; notifyListeners(); }),
-      _store.periodsStream().listen((v) { _periods = v; notifyListeners(); }),
-      _store.subjectsStream().listen((v) { _subjects = v; notifyListeners(); }),
-      _store.standardsStream().listen((v) { _standards = v; notifyListeners(); }),
-      _store.coursesStream().listen((v) { _courses = v; notifyListeners(); }),
-      _store.teachersStream().listen((v) { _teachers = v; notifyListeners(); }),
-      _store.studentsStream().listen((v) { _students = v; notifyListeners(); }),
-      _store.parentsStream().listen((v) { _parents = v; notifyListeners(); }),
-      _store.gradesStream().listen((v) { _grades = v; notifyListeners(); }),
-      _store.attendanceStream().listen((v) { _attendance = v; notifyListeners(); }),
-      _store.observationsStream().listen((v) { _observations = v; notifyListeners(); }),
-      _store.assignmentsStream().listen((v) { _assignments = v; notifyListeners(); }),
-      _store.evalConfigsStream().listen((v) { _evalConfigs = v; notifyListeners(); }),
-      _store.usersStream().listen((v) { _users = v; notifyListeners(); }),
-      _store.indicatorsStream().listen((v) { _indicators = v; notifyListeners(); }),
-      _store.activitiesStream().listen((v) { _activities = v; notifyListeners(); }),
+      _store.academicYearsStream().listen((v) {
+        _years = v;
+        notifyListeners();
+      }),
+      _store.periodsStream().listen((v) {
+        _periods = v;
+        notifyListeners();
+      }),
+      _store.subjectsStream().listen((v) {
+        _subjects = v;
+        notifyListeners();
+      }),
+      _store.standardsStream().listen((v) {
+        _standards = v;
+        notifyListeners();
+      }),
+      _store.coursesStream().listen((v) {
+        _courses = v;
+        notifyListeners();
+      }),
+      _store.teachersStream().listen((v) {
+        _teachers = v;
+        notifyListeners();
+      }),
+      _store.studentsStream().listen((v) {
+        _students = v;
+        notifyListeners();
+      }),
+      _store.parentsStream().listen((v) {
+        _parents = v;
+        notifyListeners();
+      }),
+      _store.gradesStream().listen((v) {
+        _grades = v;
+        notifyListeners();
+      }),
+      _store.attendanceStream().listen((v) {
+        _attendance = v;
+        notifyListeners();
+      }),
+      _store.observationsStream().listen((v) {
+        _observations = v;
+        notifyListeners();
+      }),
+      _store.assignmentsStream().listen((v) {
+        _assignments = v;
+        notifyListeners();
+      }),
+      _store.evalConfigsStream().listen((v) {
+        _evalConfigs = v;
+        notifyListeners();
+      }),
+      _store.usersStream().listen((v) {
+        _users = v;
+        notifyListeners();
+      }),
+      _store.indicatorsStream().listen((v) {
+        _indicators = v;
+        notifyListeners();
+      }),
+      _store.activitiesStream().listen((v) {
+        _activities = v;
+        notifyListeners();
+      }),
     ]);
   }
 
@@ -102,7 +150,8 @@ class AcademicProvider extends ChangeNotifier {
     // Preferir el período abierto cuyas fechas incluyan la fecha actual
     try {
       return activePeriods.firstWhere(
-        (p) => p.isOpen && !p.startDate.isAfter(now) && !p.endDate.isBefore(now),
+        (p) =>
+            p.isOpen && !p.startDate.isAfter(now) && !p.endDate.isBefore(now),
       );
     } catch (_) {}
     // Fallback: cualquier período abierto
@@ -145,7 +194,10 @@ class AcademicProvider extends ChangeNotifier {
       _assignments.where((a) => a.teacherId == teacherId).toList();
 
   List<Subject> subjectsForCourse(String courseId) {
-    final ids = _assignments.where((a) => a.courseId == courseId).map((a) => a.subjectId).toSet();
+    final ids = _assignments
+        .where((a) => a.courseId == courseId)
+        .map((a) => a.subjectId)
+        .toSet();
     return _subjects.where((s) => ids.contains(s.id)).toList();
   }
 
@@ -177,10 +229,16 @@ class AcademicProvider extends ChangeNotifier {
 
   double? calculateIndicatorGrade(String indicatorId) {
     final programmed = _activities
-        .where((a) => a.indicatorId == indicatorId && a.isProgrammed && a.gradeValue != null)
+        .where(
+          (a) =>
+              a.indicatorId == indicatorId &&
+              a.isProgrammed &&
+              a.gradeValue != null,
+        )
         .toList();
     if (programmed.isEmpty) return null;
-    return programmed.map((a) => a.gradeValue!).reduce((a, b) => a + b) / programmed.length;
+    return programmed.map((a) => a.gradeValue!).reduce((a, b) => a + b) /
+        programmed.length;
   }
 
   // Promedio de las notas (hasta 3 casillas) que un estudiante tiene
@@ -230,31 +288,60 @@ class AcademicProvider extends ChangeNotifier {
     _store.saveStandard(s);
   }
 
-  void updateStandard(String id, {required String name, required String description, required double weight}) {
-    final old = _standards.firstWhere((s) => s.id == id, orElse: () => Standard(id: id, subjectId: '', name: '', description: '', weight: 0));
-    _store.saveStandard(Standard(
-      id: old.id,
-      subjectId: old.subjectId,
-      periodId: old.periodId,
-      name: name,
-      description: description,
-      weight: weight,
-    ));
+  void updateStandard(
+    String id, {
+    required String name,
+    required String description,
+    required double weight,
+  }) {
+    final old = _standards.firstWhere(
+      (s) => s.id == id,
+      orElse: () =>
+          Standard(id: id, subjectId: '', name: '', description: '', weight: 0),
+    );
+    _store.saveStandard(
+      Standard(
+        id: old.id,
+        subjectId: old.subjectId,
+        periodId: old.periodId,
+        name: name,
+        description: description,
+        weight: weight,
+      ),
+    );
   }
 
-  void updateIndicator(String id, {required String name, required String description}) {
-    final old = _indicators.firstWhere((i) => i.id == id, orElse: () => Indicator(id: id, standardId: '', name: '', description: '', order: 0));
-    _store.saveIndicator(Indicator(
-      id: old.id,
-      standardId: old.standardId,
-      name: name,
-      description: description,
-      order: old.order,
-    ));
+  void updateIndicator(
+    String id, {
+    required String name,
+    required String description,
+  }) {
+    final old = _indicators.firstWhere(
+      (i) => i.id == id,
+      orElse: () => Indicator(
+        id: id,
+        standardId: '',
+        name: '',
+        description: '',
+        order: 0,
+      ),
+    );
+    _store.saveIndicator(
+      Indicator(
+        id: old.id,
+        standardId: old.standardId,
+        name: name,
+        description: description,
+        order: old.order,
+      ),
+    );
   }
 
   void deleteStandard(String id) {
-    final indicatorIds = _indicators.where((i) => i.standardId == id).map((i) => i.id).toList();
+    final indicatorIds = _indicators
+        .where((i) => i.standardId == id)
+        .map((i) => i.id)
+        .toList();
     for (final indId in indicatorIds) {
       for (final act in _activities.where((a) => a.indicatorId == indId)) {
         _store.deleteActivity(act.id);
@@ -286,28 +373,32 @@ class AcademicProvider extends ChangeNotifier {
   void toggleActivityProgrammed(String id) {
     final act = _activities.firstWhere((a) => a.id == id);
     final newProgrammed = !act.isProgrammed;
-    _store.saveActivity(Activity(
-      id: act.id,
-      indicatorId: act.indicatorId,
-      name: act.name,
-      description: act.description,
-      order: act.order,
-      isProgrammed: newProgrammed,
-      gradeValue: newProgrammed ? act.gradeValue : null,
-    ));
+    _store.saveActivity(
+      Activity(
+        id: act.id,
+        indicatorId: act.indicatorId,
+        name: act.name,
+        description: act.description,
+        order: act.order,
+        isProgrammed: newProgrammed,
+        gradeValue: newProgrammed ? act.gradeValue : null,
+      ),
+    );
   }
 
   void setActivityGrade(String id, double? grade) {
     final act = _activities.firstWhere((a) => a.id == id);
-    _store.saveActivity(Activity(
-      id: act.id,
-      indicatorId: act.indicatorId,
-      name: act.name,
-      description: act.description,
-      order: act.order,
-      isProgrammed: act.isProgrammed,
-      gradeValue: grade,
-    ));
+    _store.saveActivity(
+      Activity(
+        id: act.id,
+        indicatorId: act.indicatorId,
+        name: act.name,
+        description: act.description,
+        order: act.order,
+        isProgrammed: act.isProgrammed,
+        gradeValue: grade,
+      ),
+    );
   }
 
   EvaluationConfig? evalConfigFor(String subjectId, String periodId) {
@@ -440,7 +531,11 @@ class AcademicProvider extends ChangeNotifier {
     return idx < 0 ? courseStudents.length : idx + 1;
   }
 
-  double overallAverageForPeriod(String studentId, String courseId, String periodId) {
+  double overallAverageForPeriod(
+    String studentId,
+    String courseId,
+    String periodId,
+  ) {
     final subjects = subjectsForCourse(courseId);
     final gs = subjects
         .map((s) => calculateSubjectPeriodGrade(studentId, s.id, periodId))
@@ -472,7 +567,11 @@ class AcademicProvider extends ChangeNotifier {
     int count = 0;
     for (final student in _students) {
       if (student.courseId == null) continue;
-      final avg = overallAverageForPeriod(student.id, student.courseId!, period.id);
+      final avg = overallAverageForPeriod(
+        student.id,
+        student.courseId!,
+        period.id,
+      );
       if (avg > 0) {
         total += avg;
         count++;
@@ -505,14 +604,16 @@ class AcademicProvider extends ChangeNotifier {
   void setCourseDirector(String courseId, String? teacherId) {
     final course = courseById(courseId);
     if (course == null) return;
-    _store.saveCourse(Course(
-      id: course.id,
-      name: course.name,
-      grade: course.grade,
-      section: course.section,
-      academicYearId: course.academicYearId,
-      directorTeacherId: teacherId,
-    ));
+    _store.saveCourse(
+      Course(
+        id: course.id,
+        name: course.name,
+        grade: course.grade,
+        section: course.section,
+        academicYearId: course.academicYearId,
+        directorTeacherId: teacherId,
+      ),
+    );
   }
 
   void addStudent(Student student) {
@@ -521,6 +622,79 @@ class AcademicProvider extends ChangeNotifier {
 
   void addParent(Parent parent) {
     _store.saveParent(parent);
+  }
+
+  void deleteParent(String id) {
+    _store.deleteParent(id);
+  }
+
+  // Elimina por completo el perfil de un usuario: su registro específico de
+  // rol (docente/estudiante/padre, con limpieza de referencias cruzadas) y
+  // su documento en la colección users. No elimina la cuenta en Firebase
+  // Auth (ver comentario en FirestoreService.deleteUser), así que la cuenta
+  // queda inutilizable pero no borrada del todo del lado de autenticación.
+  void deleteUserAccount(AppUser user) {
+    switch (user.role) {
+      case UserRole.teacher:
+        final t = teacherByUserId(user.id);
+        if (t != null) {
+          for (final a in _assignments.where((a) => a.teacherId == t.id)) {
+            _store.deleteAssignment(a.id);
+          }
+          for (final c in _courses.where((c) => c.directorTeacherId == t.id)) {
+            setCourseDirector(c.id, null);
+          }
+          _store.deleteTeacher(t.id);
+        }
+      case UserRole.student:
+        final s = studentByUserId(user.id);
+        if (s != null) {
+          for (final parentId in s.parentIds) {
+            final p = parentById(parentId);
+            if (p != null) {
+              _store.saveParent(
+                Parent(
+                  id: p.id,
+                  userId: p.userId,
+                  firstName: p.firstName,
+                  lastName: p.lastName,
+                  documentId: p.documentId,
+                  phone: p.phone,
+                  relationship: p.relationship,
+                  studentIds: p.studentIds.where((id) => id != s.id).toList(),
+                ),
+              );
+            }
+          }
+          _store.deleteStudent(s.id);
+        }
+      case UserRole.parent:
+        final p = parentByUserId(user.id);
+        if (p != null) {
+          for (final studentId in p.studentIds) {
+            final s = studentById(studentId);
+            if (s != null) {
+              _store.saveStudent(
+                Student(
+                  id: s.id,
+                  userId: s.userId,
+                  firstName: s.firstName,
+                  lastName: s.lastName,
+                  documentId: s.documentId,
+                  birthDate: s.birthDate,
+                  courseId: s.courseId,
+                  parentIds: s.parentIds.where((id) => id != p.id).toList(),
+                ),
+              );
+            }
+          }
+          _store.deleteParent(p.id);
+        }
+      case UserRole.coordinator:
+      case UserRole.admin:
+        break;
+    }
+    _store.deleteUser(user.id);
   }
 
   Student? studentById(String id) {
@@ -553,28 +727,32 @@ class AcademicProvider extends ChangeNotifier {
     final parent = parentById(parentId);
     if (student == null || parent == null) return;
     if (!student.parentIds.contains(parentId)) {
-      _store.saveStudent(Student(
-        id: student.id,
-        userId: student.userId,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        documentId: student.documentId,
-        birthDate: student.birthDate,
-        courseId: student.courseId,
-        parentIds: [...student.parentIds, parentId],
-      ));
+      _store.saveStudent(
+        Student(
+          id: student.id,
+          userId: student.userId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          documentId: student.documentId,
+          birthDate: student.birthDate,
+          courseId: student.courseId,
+          parentIds: [...student.parentIds, parentId],
+        ),
+      );
     }
     if (!parent.studentIds.contains(studentId)) {
-      _store.saveParent(Parent(
-        id: parent.id,
-        userId: parent.userId,
-        firstName: parent.firstName,
-        lastName: parent.lastName,
-        documentId: parent.documentId,
-        phone: parent.phone,
-        relationship: parent.relationship,
-        studentIds: [...parent.studentIds, studentId],
-      ));
+      _store.saveParent(
+        Parent(
+          id: parent.id,
+          userId: parent.userId,
+          firstName: parent.firstName,
+          lastName: parent.lastName,
+          documentId: parent.documentId,
+          phone: parent.phone,
+          relationship: parent.relationship,
+          studentIds: [...parent.studentIds, studentId],
+        ),
+      );
     }
   }
 
@@ -582,41 +760,47 @@ class AcademicProvider extends ChangeNotifier {
     final student = studentById(studentId);
     final parent = parentById(parentId);
     if (student != null && student.parentIds.contains(parentId)) {
-      _store.saveStudent(Student(
-        id: student.id,
-        userId: student.userId,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        documentId: student.documentId,
-        birthDate: student.birthDate,
-        courseId: student.courseId,
-        parentIds: student.parentIds.where((id) => id != parentId).toList(),
-      ));
+      _store.saveStudent(
+        Student(
+          id: student.id,
+          userId: student.userId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          documentId: student.documentId,
+          birthDate: student.birthDate,
+          courseId: student.courseId,
+          parentIds: student.parentIds.where((id) => id != parentId).toList(),
+        ),
+      );
     }
     if (parent != null && parent.studentIds.contains(studentId)) {
-      _store.saveParent(Parent(
-        id: parent.id,
-        userId: parent.userId,
-        firstName: parent.firstName,
-        lastName: parent.lastName,
-        documentId: parent.documentId,
-        phone: parent.phone,
-        relationship: parent.relationship,
-        studentIds: parent.studentIds.where((id) => id != studentId).toList(),
-      ));
+      _store.saveParent(
+        Parent(
+          id: parent.id,
+          userId: parent.userId,
+          firstName: parent.firstName,
+          lastName: parent.lastName,
+          documentId: parent.documentId,
+          phone: parent.phone,
+          relationship: parent.relationship,
+          studentIds: parent.studentIds.where((id) => id != studentId).toList(),
+        ),
+      );
     }
   }
 
   void addGrade(Grade grade) {
-    final existing = _grades.where(
-      (g) =>
-          g.studentId == grade.studentId &&
-          g.subjectId == grade.subjectId &&
-          g.periodId == grade.periodId &&
-          g.standardId == grade.standardId &&
-          g.indicatorId == grade.indicatorId &&
-          g.slot == grade.slot,
-    ).toList();
+    final existing = _grades
+        .where(
+          (g) =>
+              g.studentId == grade.studentId &&
+              g.subjectId == grade.subjectId &&
+              g.periodId == grade.periodId &&
+              g.standardId == grade.standardId &&
+              g.indicatorId == grade.indicatorId &&
+              g.slot == grade.slot,
+        )
+        .toList();
     for (final g in existing) {
       if (g.id != grade.id) _store.deleteGrade(g.id);
     }
@@ -632,7 +816,17 @@ class AcademicProvider extends ChangeNotifier {
   }
 
   void markNotificationRead(String notificationId) {
-    final n = _notifications.firstWhere((n) => n.id == notificationId, orElse: () => AppNotification(id: '', userId: '', title: '', message: '', type: NotificationType.general, createdAt: DateTime.now()));
+    final n = _notifications.firstWhere(
+      (n) => n.id == notificationId,
+      orElse: () => AppNotification(
+        id: '',
+        userId: '',
+        title: '',
+        message: '',
+        type: NotificationType.general,
+        createdAt: DateTime.now(),
+      ),
+    );
     if (n.id.isEmpty) return;
     n.isRead = true;
     notifyListeners();

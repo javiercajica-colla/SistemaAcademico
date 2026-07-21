@@ -25,7 +25,11 @@ class AcademicYear {
   final int year;
   final bool isActive;
 
-  const AcademicYear({required this.id, required this.year, this.isActive = true});
+  const AcademicYear({
+    required this.id,
+    required this.year,
+    this.isActive = true,
+  });
 }
 
 class AcademicPeriod {
@@ -304,7 +308,14 @@ class AppNotification {
   });
 }
 
-enum NotificationType { grade, attendance, observation, period, report, general }
+enum NotificationType {
+  grade,
+  attendance,
+  observation,
+  period,
+  report,
+  general,
+}
 
 class SubjectAssignment {
   final String id;

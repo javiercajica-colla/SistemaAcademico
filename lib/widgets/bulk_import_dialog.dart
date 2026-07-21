@@ -9,8 +9,8 @@ import '../core/utils/download_helper.dart';
 import '../models/models.dart';
 import '../providers/academic_provider.dart';
 import '../services/bulk_user_import_service.dart';
+import '../repositories/repository_provider.dart';
 import '../services/credential_log_service.dart';
-import '../services/firebase_auth_service.dart';
 import '../services/user_credential_generator.dart';
 
 enum _Stage { idle, preview, processing, done }
@@ -77,7 +77,9 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
   Future<void> _processImport() async {
     final academic = context.read<AcademicProvider>();
     final validRows = _rows.where((r) => r.isValid).toList();
-    final usedUsernames = academic.users.map((u) => u.email.split('@').first.toLowerCase()).toSet();
+    final usedUsernames = academic.users
+        .map((u) => u.email.split('@').first.toLowerCase())
+        .toSet();
     const uuid = Uuid();
 
     setState(() {
@@ -89,14 +91,23 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
 
     for (var i = 0; i < validRows.length; i++) {
       final row = validRows[i];
-      if (mounted) setState(() => _status = 'Procesando fila ${i + 1} de ${validRows.length}: ${row.fullName}');
+      if (mounted) {
+        setState(
+          () => _status =
+              'Procesando fila ${i + 1} de ${validRows.length}: ${row.fullName}',
+        );
+      }
 
       try {
-        final username = UserCredentialGenerator.generateUsername(row.firstName, row.lastName, usedUsernames);
+        final username = UserCredentialGenerator.generateUsername(
+          row.firstName,
+          row.lastName,
+          usedUsernames,
+        );
         usedUsernames.add(username.toLowerCase());
         final password = UserCredentialGenerator.generatePassword();
 
-        final newUser = await FirebaseAuthService().createUser(
+        final newUser = await authRepository.createUser(
           email: '$username@colegio.edu.co',
           password: password,
           name: row.fullName,
@@ -106,35 +117,43 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
 
         switch (row.role!) {
           case UserRole.teacher:
-            academic.addTeacher(Teacher(
-              id: uuid.v4(),
-              userId: userId,
-              firstName: row.firstName,
-              lastName: row.lastName,
-              documentId: row.documentId,
-              specialization: row.specialization ?? '',
-            ));
+            academic.addTeacher(
+              Teacher(
+                id: uuid.v4(),
+                userId: userId,
+                firstName: row.firstName,
+                lastName: row.lastName,
+                documentId: row.documentId,
+                specialization: row.specialization ?? '',
+              ),
+            );
           case UserRole.student:
-            final course = row.courseName == null ? null : _matchCourse(academic, row.courseName!);
-            academic.addStudent(Student(
-              id: uuid.v4(),
-              userId: userId,
-              firstName: row.firstName,
-              lastName: row.lastName,
-              documentId: row.documentId,
-              birthDate: DateTime(2010),
-              courseId: course?.id,
-            ));
+            final course = row.courseName == null
+                ? null
+                : _matchCourse(academic, row.courseName!);
+            academic.addStudent(
+              Student(
+                id: uuid.v4(),
+                userId: userId,
+                firstName: row.firstName,
+                lastName: row.lastName,
+                documentId: row.documentId,
+                birthDate: DateTime(2010),
+                courseId: course?.id,
+              ),
+            );
           case UserRole.parent:
-            academic.addParent(Parent(
-              id: uuid.v4(),
-              userId: userId,
-              firstName: row.firstName,
-              lastName: row.lastName,
-              documentId: row.documentId,
-              phone: row.phone ?? '',
-              relationship: row.relationship ?? 'Acudiente',
-            ));
+            academic.addParent(
+              Parent(
+                id: uuid.v4(),
+                userId: userId,
+                firstName: row.firstName,
+                lastName: row.lastName,
+                documentId: row.documentId,
+                phone: row.phone ?? '',
+                relationship: row.relationship ?? 'Acudiente',
+              ),
+            );
           case UserRole.coordinator:
           case UserRole.admin:
             break;
@@ -178,18 +197,25 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
 
   String _roleLabel(UserRole r) {
     switch (r) {
-      case UserRole.coordinator: return 'Coordinador';
-      case UserRole.admin: return 'Administrador';
-      case UserRole.teacher: return 'Docente';
-      case UserRole.student: return 'Estudiante';
-      case UserRole.parent: return 'Padre de Familia';
+      case UserRole.coordinator:
+        return 'Coordinador';
+      case UserRole.admin:
+        return 'Administrador';
+      case UserRole.teacher:
+        return 'Docente';
+      case UserRole.student:
+        return 'Estudiante';
+      case UserRole.parent:
+        return 'Padre de Familia';
     }
   }
 
   void _copyAllToClipboard() {
     final lines = ['Nombre\tApellido\tDocumento\tRol\tUsuario\tContraseña'];
     for (final e in _createdEntries) {
-      lines.add('${e.firstName}\t${e.lastName}\t${e.documentId}\t${e.roleLabel}\t${e.username}\t${e.password}');
+      lines.add(
+        '${e.firstName}\t${e.lastName}\t${e.documentId}\t${e.roleLabel}\t${e.username}\t${e.password}',
+      );
     }
     Clipboard.setData(ClipboardData(text: lines.join('\n')));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -248,7 +274,10 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
             ),
-            child: Text(_pickError!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+            child: Text(
+              _pickError!,
+              style: const TextStyle(color: AppColors.error, fontSize: 12),
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -282,18 +311,28 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Archivo: $_fileName', style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          'Archivo: $_fileName',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 16),
+            Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.secondary,
+              size: 16,
+            ),
             const SizedBox(width: 4),
             Text('$validCount válidos', style: const TextStyle(fontSize: 13)),
             const SizedBox(width: 16),
             if (errorCount > 0) ...[
               const Icon(Icons.error_rounded, color: AppColors.error, size: 16),
               const SizedBox(width: 4),
-              Text('$errorCount con error', style: const TextStyle(fontSize: 13)),
+              Text(
+                '$errorCount con error',
+                style: const TextStyle(fontSize: 13),
+              ),
             ],
           ],
         ),
@@ -314,14 +353,24 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
               return ListTile(
                 dense: true,
                 leading: Icon(
-                  row.isValid ? Icons.check_circle_rounded : Icons.error_rounded,
+                  row.isValid
+                      ? Icons.check_circle_rounded
+                      : Icons.error_rounded,
                   color: row.isValid ? AppColors.secondary : AppColors.error,
                   size: 18,
                 ),
-                title: Text('Fila ${row.rowNumber}: ${row.fullName}', style: const TextStyle(fontSize: 13)),
+                title: Text(
+                  'Fila ${row.rowNumber}: ${row.fullName}',
+                  style: const TextStyle(fontSize: 13),
+                ),
                 subtitle: Text(
                   row.isValid ? _roleLabel(row.role!) : row.error!,
-                  style: TextStyle(fontSize: 12, color: row.isValid ? AppColors.textSecondary : AppColors.error),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: row.isValid
+                        ? AppColors.textSecondary
+                        : AppColors.error,
+                  ),
                 ),
               );
             },
@@ -353,7 +402,9 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
                 style: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 12,
-                  color: _log[i].startsWith('✓') ? Colors.greenAccent : Colors.redAccent,
+                  color: _log[i].startsWith('✓')
+                      ? Colors.greenAccent
+                      : Colors.redAccent,
                 ),
               ),
             ),
@@ -362,9 +413,15 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
         const SizedBox(height: 12),
         Row(
           children: [
-            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: Text(_status, style: const TextStyle(fontSize: 12))),
+            Expanded(
+              child: Text(_status, style: const TextStyle(fontSize: 12)),
+            ),
           ],
         ),
       ],
@@ -378,7 +435,11 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
       children: [
         Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 20),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.secondary,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               '${_createdEntries.length} usuario(s) creados correctamente'
@@ -391,7 +452,10 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
         if (_createdEntries.isNotEmpty) ...[
           Container(
             constraints: const BoxConstraints(maxHeight: 220),
-            decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: _createdEntries.length,
@@ -400,10 +464,16 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
                 final e = _createdEntries[i];
                 return ListTile(
                   dense: true,
-                  title: Text('${e.firstName} ${e.lastName} (${e.roleLabel})', style: const TextStyle(fontSize: 13)),
+                  title: Text(
+                    '${e.firstName} ${e.lastName} (${e.roleLabel})',
+                    style: const TextStyle(fontSize: 13),
+                  ),
                   subtitle: Text(
                     'Usuario: ${e.username}  ·  Contraseña: ${e.password}',
-                    style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 );
               },
@@ -434,15 +504,24 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
         ],
         if (_failedRows.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const Text('Filas con error:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.error)),
+          const Text(
+            'Filas con error:',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: AppColors.error,
+            ),
+          ),
           const SizedBox(height: 6),
-          ..._failedRows.map((f) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  'Fila ${f.$1.rowNumber}: ${f.$1.fullName} — ${f.$2}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.error),
-                ),
-              )),
+          ..._failedRows.map(
+            (f) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                'Fila ${f.$1.rowNumber}: ${f.$1.fullName} — ${f.$2}',
+                style: const TextStyle(fontSize: 12, color: AppColors.error),
+              ),
+            ),
+          ),
         ],
       ],
     );
@@ -452,12 +531,18 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
     switch (_stage) {
       case _Stage.idle:
         return [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
         ];
       case _Stage.preview:
         final validCount = _rows.where((r) => r.isValid).length;
         return [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
           FilledButton.icon(
             icon: const Icon(Icons.play_arrow_rounded, size: 16),
             label: const Text('Procesar e importar'),
@@ -468,7 +553,10 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
         return [];
       case _Stage.done:
         return [
-          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
         ];
     }
   }

@@ -28,7 +28,9 @@ class UserCredentialGenerator {
   ) {
     final firstWord = _clean(firstName.trim().split(' ').first);
     final lastWordRaw = lastName.trim();
-    final lastWord = lastWordRaw.isEmpty ? '' : _clean(lastWordRaw.split(' ').first);
+    final lastWord = lastWordRaw.isEmpty
+        ? ''
+        : _clean(lastWordRaw.split(' ').first);
 
     final base = lastWord.isEmpty
         ? (firstWord.isEmpty ? 'usuario' : firstWord)
@@ -70,9 +72,15 @@ class UserCredentialGenerator {
   // error describiendo el primer requisito que falta.
   static String? validatePasswordStrength(String password) {
     if (password.length < 10) return 'Debe tener al menos 10 caracteres';
-    if (!RegExp(r'[A-Z]').hasMatch(password)) return 'Debe incluir al menos una mayúscula';
-    if (!RegExp(r'[a-z]').hasMatch(password)) return 'Debe incluir al menos una minúscula';
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Debe incluir al menos un número';
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'Debe incluir al menos una mayúscula';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'Debe incluir al menos una minúscula';
+    }
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return 'Debe incluir al menos un número';
+    }
     if (!RegExp(r'[!@#$%^&*()_+\-=\[\]{};:,.<>?]').hasMatch(password)) {
       return 'Debe incluir al menos un carácter especial (!@#%&*+-...)';
     }

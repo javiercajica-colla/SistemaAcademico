@@ -22,7 +22,9 @@ class _StandardsScreenState extends State<StandardsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final academic = context.read<AcademicProvider>();
-    _selectedPeriodId ??= academic.currentOpenPeriod?.id ?? academic.activePeriods.firstOrNull?.id;
+    _selectedPeriodId ??=
+        academic.currentOpenPeriod?.id ??
+        academic.activePeriods.firstOrNull?.id;
   }
 
   @override
@@ -38,7 +40,9 @@ class _StandardsScreenState extends State<StandardsScreen> {
     final periods = academic.activePeriods;
     final assignments = academic.assignmentsForTeacher(teacher.id);
     final subjectIds = assignments.map((a) => a.subjectId).toSet().toList();
-    final subjects = academic.subjects.where((s) => subjectIds.contains(s.id)).toList();
+    final subjects = academic.subjects
+        .where((s) => subjectIds.contains(s.id))
+        .toList();
 
     if (_selectedSubjectId == null && subjects.isNotEmpty) {
       _selectedSubjectId = subjects.first.id;
@@ -51,7 +55,9 @@ class _StandardsScreenState extends State<StandardsScreen> {
         const Divider(height: 1),
         Expanded(
           child: _selectedPeriodId == null || _selectedSubjectId == null
-              ? const Center(child: Text('Seleccione un periodo y una asignatura.'))
+              ? const Center(
+                  child: Text('Seleccione un periodo y una asignatura.'),
+                )
               : _buildStandardsList(academic, teacher.id),
         ),
       ],
@@ -65,7 +71,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Periodo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          const Text(
+            'Periodo',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -76,12 +89,22 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 selected: selected,
                 onSelected: (_) => setState(() => _selectedPeriodId = p.id),
                 selectedColor: AppColors.primary,
-                labelStyle: TextStyle(color: selected ? Colors.white : AppColors.textPrimary, fontSize: 13),
+                labelStyle: TextStyle(
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                  fontSize: 13,
+                ),
               );
             }).toList(),
           ),
           const SizedBox(height: 12),
-          const Text('Asignatura', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          const Text(
+            'Asignatura',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -92,7 +115,10 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 selected: selected,
                 onSelected: (_) => setState(() => _selectedSubjectId = s.id),
                 selectedColor: AppColors.primary,
-                labelStyle: TextStyle(color: selected ? Colors.white : AppColors.textPrimary, fontSize: 13),
+                labelStyle: TextStyle(
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                  fontSize: 13,
+                ),
               );
             }).toList(),
           ),
@@ -116,7 +142,10 @@ class _StandardsScreenState extends State<StandardsScreen> {
             children: [
               Text(
                 'Estándares (${standards.length})',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const Spacer(),
               FilledButton.icon(
@@ -138,13 +167,24 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
               child: const Column(
                 children: [
-                  Icon(Icons.checklist_rounded, size: 48, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.checklist_rounded,
+                    size: 48,
+                    color: AppColors.textSecondary,
+                  ),
                   SizedBox(height: 12),
-                  Text('No hay estándares para este periodo y asignatura.',
-                      style: TextStyle(color: AppColors.textSecondary)),
+                  Text(
+                    'No hay estándares para este periodo y asignatura.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                   SizedBox(height: 4),
-                  Text('Presiona "Agregar Estándar" para comenzar.',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  Text(
+                    'Presiona "Agregar Estándar" para comenzar.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -174,10 +214,20 @@ class _StandardsScreenState extends State<StandardsScreen> {
             color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.star_outline_rounded, color: AppColors.primary, size: 20),
+          child: const Icon(
+            Icons.star_outline_rounded,
+            color: AppColors.primary,
+            size: 20,
+          ),
         ),
-        title: Text(standard.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        subtitle: Text(standard.description, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        title: Text(
+          standard.name,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        subtitle: Text(
+          standard.description,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -187,17 +237,31 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 color: AppColors.secondary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text('Peso: ${standard.weight.toStringAsFixed(0)}%',
-                  style: const TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600)),
+              child: Text(
+                'Peso: ${standard.weight.toStringAsFixed(0)}%',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               onPressed: () => _showEditStandardDialog(academic, standard),
               tooltip: 'Editar estándar',
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 18,
+                color: AppColors.error,
+              ),
               onPressed: () => _confirmDeleteStandard(academic, standard),
               tooltip: 'Eliminar estándar',
             ),
@@ -209,21 +273,33 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ...indicators.map((ind) => _buildIndicatorCard(academic, ind)),
           if (indicators.length < 3)
             TextButton.icon(
-              onPressed: () => _showAddIndicatorDialog(academic, standard.id, indicators.length + 1),
+              onPressed: () => _showAddIndicatorDialog(
+                academic,
+                standard.id,
+                indicators.length + 1,
+              ),
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Agregar Competencia'),
             ),
           if (indicators.length >= 3)
             const Padding(
               padding: EdgeInsets.only(top: 4),
-              child: Text('Máximo 3 competencias por estándar.',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              child: Text(
+                'Máximo 3 competencias por estándar.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
             ),
           if (indicators.length < 2)
             const Padding(
               padding: EdgeInsets.only(top: 4),
-              child: Text('Debe registrar al menos 2 competencias para poder evaluar este estándar.',
-                  style: TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w500)),
+              child: Text(
+                'Debe registrar al menos 2 competencias para poder evaluar este estándar.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
         ],
       ),
@@ -233,7 +309,9 @@ class _StandardsScreenState extends State<StandardsScreen> {
   Widget _buildIndicatorCard(AcademicProvider academic, Indicator indicator) {
     final activities = academic.activitiesForIndicator(indicator.id);
     final grade = academic.calculateIndicatorGrade(indicator.id);
-    final siblingCount = academic.indicatorsForStandard(indicator.standardId).length;
+    final siblingCount = academic
+        .indicatorsForStandard(indicator.standardId)
+        .length;
     final canDeleteIndicator = siblingCount > 2;
 
     return Container(
@@ -251,25 +329,48 @@ class _StandardsScreenState extends State<StandardsScreen> {
           backgroundColor: AppColors.purple.withValues(alpha: 0.15),
           child: Text(
             '${indicator.order}',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.purple),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.purple,
+            ),
           ),
         ),
-        title: Text(indicator.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+        title: Text(
+          indicator.name,
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        ),
         subtitle: grade != null
-            ? Text('Promedio: ${grade.toStringAsFixed(1)}',
-                style: const TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600))
-            : const Text('Sin calificaciones programadas', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ? Text(
+                'Promedio: ${grade.toStringAsFixed(1)}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            : const Text(
+                'Sin calificaciones programadas',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('${activities.length}/3 actividades',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text(
+              '${activities.length}/3 actividades',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
             const SizedBox(width: 4),
             IconButton(
               icon: Icon(
                 Icons.delete_outline,
                 size: 16,
-                color: canDeleteIndicator ? AppColors.error : AppColors.textTertiary,
+                color: canDeleteIndicator
+                    ? AppColors.error
+                    : AppColors.textTertiary,
               ),
               onPressed: canDeleteIndicator
                   ? () => academic.deleteIndicator(indicator.id)
@@ -294,7 +395,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
             padding: EdgeInsets.only(top: 8),
             child: Text(
               'Las actividades (fecha, nombre y descripción) se registran desde el módulo de Calificaciones al momento de evaluarlas.',
-              style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textTertiary,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
         ],
@@ -319,8 +424,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Center(
-              child: Text('${activity.order}',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.info)),
+              child: Text(
+                '${activity.order}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.info,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -328,14 +439,29 @@ class _StandardsScreenState extends State<StandardsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(activity.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                Text(
+                  activity.name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 if (activity.date != null)
                   Text(
                     DateFormat('dd/MM/yyyy').format(activity.date!),
-                    style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 if (activity.description.isNotEmpty)
-                  Text(activity.description, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  Text(
+                    activity.description,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -343,10 +469,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Programada', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              const Text(
+                'Programada',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
               Switch(
                 value: activity.isProgrammed,
-                onChanged: (_) => academic.toggleActivityProgrammed(activity.id),
+                onChanged: (_) =>
+                    academic.toggleActivityProgrammed(activity.id),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ],
@@ -357,11 +487,16 @@ class _StandardsScreenState extends State<StandardsScreen> {
               width: 80,
               child: TextField(
                 controller: gradeCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Nota',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   isDense: true,
                 ),
                 style: const TextStyle(fontSize: 13),
@@ -374,7 +509,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ],
           const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 16,
+              color: AppColors.error,
+            ),
             onPressed: () => academic.deleteActivity(activity.id),
             tooltip: 'Eliminar actividad',
             padding: EdgeInsets.zero,
@@ -394,11 +533,13 @@ class _StandardsScreenState extends State<StandardsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.star_outline_rounded, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('Nuevo Estándar'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.star_outline_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Nuevo Estándar'),
+          ],
+        ),
         content: SizedBox(
           width: 400,
           child: Form(
@@ -408,23 +549,38 @@ class _StandardsScreenState extends State<StandardsScreen> {
               children: [
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre del estándar', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del estándar',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Peso (%)', border: OutlineInputBorder(), suffixText: '%'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Peso (%)',
+                    border: OutlineInputBorder(),
+                    suffixText: '%',
+                  ),
                   validator: (v) {
                     final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
+                    if (d == null || d <= 0 || d > 100) {
+                      return 'Valor entre 1 y 100';
+                    }
                     return null;
                   },
                 ),
@@ -433,18 +589,23 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
-              academic.addStandard(Standard(
-                id: const Uuid().v4(),
-                subjectId: _selectedSubjectId!,
-                periodId: _selectedPeriodId!,
-                name: nameCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                weight: double.parse(weightCtrl.text),
-              ));
+              academic.addStandard(
+                Standard(
+                  id: const Uuid().v4(),
+                  subjectId: _selectedSubjectId!,
+                  periodId: _selectedPeriodId!,
+                  name: nameCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  weight: double.parse(weightCtrl.text),
+                ),
+              );
               Navigator.pop(ctx);
             },
             child: const Text('Guardar'),
@@ -457,17 +618,21 @@ class _StandardsScreenState extends State<StandardsScreen> {
   void _showEditStandardDialog(AcademicProvider academic, Standard standard) {
     final nameCtrl = TextEditingController(text: standard.name);
     final descCtrl = TextEditingController(text: standard.description);
-    final weightCtrl = TextEditingController(text: standard.weight.toStringAsFixed(0));
+    final weightCtrl = TextEditingController(
+      text: standard.weight.toStringAsFixed(0),
+    );
     final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.edit_outlined, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text('Editar Estándar'),
-        ]),
+        title: const Row(
+          children: [
+            Icon(Icons.edit_outlined, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Editar Estándar'),
+          ],
+        ),
         content: SizedBox(
           width: 400,
           child: Form(
@@ -477,23 +642,38 @@ class _StandardsScreenState extends State<StandardsScreen> {
               children: [
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre del estándar', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del estándar',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Peso (%)', border: OutlineInputBorder(), suffixText: '%'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Peso (%)',
+                    border: OutlineInputBorder(),
+                    suffixText: '%',
+                  ),
                   validator: (v) {
                     final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
+                    if (d == null || d <= 0 || d > 100) {
+                      return 'Valor entre 1 y 100';
+                    }
                     return null;
                   },
                 ),
@@ -502,7 +682,10 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
@@ -521,7 +704,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddIndicatorDialog(AcademicProvider academic, String standardId, int order) {
+  void _showAddIndicatorDialog(
+    AcademicProvider academic,
+    String standardId,
+    int order,
+  ) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -529,15 +716,24 @@ class _StandardsScreenState extends State<StandardsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Row(children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: AppColors.purple.withValues(alpha: 0.15),
-            child: Text('$order', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.purple)),
-          ),
-          const SizedBox(width: 8),
-          Text('Competencia $order'),
-        ]),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: AppColors.purple.withValues(alpha: 0.15),
+              child: Text(
+                '$order',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.purple,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text('Competencia $order'),
+          ],
+        ),
         content: SizedBox(
           width: 400,
           child: Form(
@@ -547,13 +743,20 @@ class _StandardsScreenState extends State<StandardsScreen> {
               children: [
                 TextFormField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre de la competencia', border: OutlineInputBorder()),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre de la competencia',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 2,
                 ),
               ],
@@ -561,17 +764,22 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
-              academic.addIndicator(Indicator(
-                id: const Uuid().v4(),
-                standardId: standardId,
-                name: nameCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                order: order,
-              ));
+              academic.addIndicator(
+                Indicator(
+                  id: const Uuid().v4(),
+                  standardId: standardId,
+                  name: nameCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  order: order,
+                ),
+              );
               Navigator.pop(ctx);
             },
             child: const Text('Guardar'),
@@ -586,9 +794,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar Estándar'),
-        content: Text('¿Eliminar "${standard.name}"? Se eliminarán también sus competencias y actividades.'),
+        content: Text(
+          '¿Eliminar "${standard.name}"? Se eliminarán también sus competencias y actividades.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () {

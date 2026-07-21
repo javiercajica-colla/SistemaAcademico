@@ -16,7 +16,9 @@ class StudentDashboard extends StatelessWidget {
     final academic = context.watch<AcademicProvider>();
     final student = academic.studentByUserId(auth.currentUser!.id);
 
-    if (student == null) return const Center(child: Text('Perfil de estudiante no encontrado'));
+    if (student == null) {
+      return const Center(child: Text('Perfil de estudiante no encontrado'));
+    }
 
     final course = academic.courseById(student.courseId ?? '');
     final avgP1 = academic.calculateOverallAverage(student.id, 'ap1');
@@ -24,14 +26,20 @@ class StudentDashboard extends StatelessWidget {
     final myGrades = academic.gradesForStudent(student.id);
     final myAttendance = academic.attendanceForStudent(student.id);
     final myObs = academic.observationsForStudent(student.id);
-    final absents = myAttendance.where((a) => a.status == AttendanceStatus.absent).length;
+    final absents = myAttendance
+        .where((a) => a.status == AttendanceStatus.absent)
+        .length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildWelcomeCard(student.fullName, course?.name ?? 'Sin curso', avgP1),
+          _buildWelcomeCard(
+            student.fullName,
+            course?.name ?? 'Sin curso',
+            avgP1,
+          ),
           const SizedBox(height: 20),
           _buildStatCards(avgP1, myGrades.length, myAttendance.length, absents),
           const SizedBox(height: 20),
@@ -49,7 +57,9 @@ class StudentDashboard extends StatelessWidget {
             children: [
               Expanded(child: _buildRecentObs(myObs)),
               const SizedBox(width: 16),
-              Expanded(child: _buildAttendanceSummary(myAttendance.length, absents)),
+              Expanded(
+                child: _buildAttendanceSummary(myAttendance.length, absents),
+              ),
             ],
           ),
         ],
@@ -63,7 +73,8 @@ class StudentDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.student, AppColors.student.withValues(alpha: 0.7)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -73,21 +84,47 @@ class StudentDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hola, ${name.split(' ').first}!', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(
+                  'Hola, ${name.split(' ').first}!',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Curso: $course • Año lectivo 2026', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(
+                  'Curso: $course • Año lectivo 2026',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
                 const SizedBox(height: 12),
-                const Text('¡Sigue esforzándote para alcanzar tus metas!', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Text(
+                  '¡Sigue esforzándote para alcanzar tus metas!',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Column(
               children: [
-                Text(avg > 0 ? avg.toStringAsFixed(1) : '-', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800)),
-                const Text('Promedio', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(
+                  avg > 0 ? avg.toStringAsFixed(1) : '-',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Text(
+                  'Promedio',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -108,10 +145,33 @@ class StudentDashboard extends StatelessWidget {
         mainAxisExtent: 90,
       ),
       children: [
-        StatCard(title: 'Promedio General', value: avg > 0 ? avg.toStringAsFixed(1) : '-', icon: Icons.bar_chart_rounded, color: avg >= 4.0 ? AppColors.secondary : AppColors.warning),
-        StatCard(title: 'Calificaciones', value: '$grades', subtitle: 'registradas', icon: Icons.grade_rounded, color: AppColors.primary),
-        StatCard(title: 'Asistencia', value: '${pct.toStringAsFixed(0)}%', subtitle: '$absents inasistencias', icon: Icons.fact_check_rounded, color: pct >= 90 ? AppColors.secondary : AppColors.warning),
-        StatCard(title: 'Período Activo', value: 'P2', subtitle: 'En curso', icon: Icons.calendar_today_rounded, color: AppColors.purple),
+        StatCard(
+          title: 'Promedio General',
+          value: avg > 0 ? avg.toStringAsFixed(1) : '-',
+          icon: Icons.bar_chart_rounded,
+          color: avg >= 4.0 ? AppColors.secondary : AppColors.warning,
+        ),
+        StatCard(
+          title: 'Calificaciones',
+          value: '$grades',
+          subtitle: 'registradas',
+          icon: Icons.grade_rounded,
+          color: AppColors.primary,
+        ),
+        StatCard(
+          title: 'Asistencia',
+          value: '${pct.toStringAsFixed(0)}%',
+          subtitle: '$absents inasistencias',
+          icon: Icons.fact_check_rounded,
+          color: pct >= 90 ? AppColors.secondary : AppColors.warning,
+        ),
+        StatCard(
+          title: 'Período Activo',
+          value: 'P2',
+          subtitle: 'En curso',
+          icon: Icons.calendar_today_rounded,
+          color: AppColors.purple,
+        ),
       ],
     );
   }
@@ -123,20 +183,51 @@ class StudentDashboard extends StatelessWidget {
         height: 200,
         child: LineChart(
           LineChartData(
-            gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: AppColors.border, strokeWidth: 1)),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (v) =>
+                  FlLine(color: AppColors.border, strokeWidth: 1),
+            ),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) {
-                final labels = ['P1', 'P2', 'P3', 'P4'];
-                final i = v.toInt();
-                if (i >= labels.length) return const SizedBox.shrink();
-                return Padding(padding: const EdgeInsets.only(top: 4), child: Text(labels[i], style: const TextStyle(fontSize: 11)));
-              })),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 1, reservedSize: 28, getTitlesWidget: (v, m) => Text(v.toStringAsFixed(0), style: const TextStyle(fontSize: 10)))),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (v, m) {
+                    final labels = ['P1', 'P2', 'P3', 'P4'];
+                    final i = v.toInt();
+                    if (i >= labels.length) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        labels[i],
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 1,
+                  reservedSize: 28,
+                  getTitlesWidget: (v, m) => Text(
+                    v.toStringAsFixed(0),
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             borderData: FlBorderData(show: false),
-            minY: 0, maxY: 5,
+            minY: 0,
+            maxY: 5,
             lineBarsData: [
               LineChartBarData(
                 spots: [
@@ -149,10 +240,18 @@ class StudentDashboard extends StatelessWidget {
                 color: AppColors.student,
                 barWidth: 3,
                 dotData: const FlDotData(show: true),
-                belowBarData: BarAreaData(show: true, color: AppColors.student.withValues(alpha: 0.1)),
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: AppColors.student.withValues(alpha: 0.1),
+                ),
               ),
               LineChartBarData(
-                spots: const [FlSpot(0, 3.0), FlSpot(1, 3.0), FlSpot(2, 3.0), FlSpot(3, 3.0)],
+                spots: const [
+                  FlSpot(0, 3.0),
+                  FlSpot(1, 3.0),
+                  FlSpot(2, 3.0),
+                  FlSpot(3, 3.0),
+                ],
                 isCurved: false,
                 color: AppColors.error.withValues(alpha: 0.4),
                 barWidth: 1,
@@ -172,25 +271,51 @@ class StudentDashboard extends StatelessWidget {
       title: 'Por Asignatura',
       child: Column(
         children: subjects.map((s) {
-          final avg = academic.calculateSubjectPeriodGrade(studentId, s.id, 'ap1');
+          final avg = academic.calculateSubjectPeriodGrade(
+            studentId,
+            s.id,
+            'ap1',
+          );
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                Expanded(child: Text(s.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+                Expanded(
+                  child: Text(
+                    s.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 80,
                   child: LinearProgressIndicator(
                     value: avg / 5,
-                    color: avg >= 4.0 ? AppColors.secondary : avg >= 3.0 ? AppColors.warning : AppColors.error,
+                    color: avg >= 4.0
+                        ? AppColors.secondary
+                        : avg >= 3.0
+                        ? AppColors.warning
+                        : AppColors.error,
                     backgroundColor: AppColors.border,
                     borderRadius: BorderRadius.circular(4),
                     minHeight: 6,
                   ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(width: 32, child: Text(avg > 0 ? avg.toStringAsFixed(1) : '-', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), textAlign: TextAlign.right)),
+                SizedBox(
+                  width: 32,
+                  child: Text(
+                    avg > 0 ? avg.toStringAsFixed(1) : '-',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
           );
@@ -203,24 +328,64 @@ class StudentDashboard extends StatelessWidget {
     return AppCard(
       title: 'Observaciones',
       child: observations.isEmpty
-          ? const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Sin observaciones', style: TextStyle(color: AppColors.textSecondary))))
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'Sin observaciones',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+            )
           : Column(
               children: observations.take(3).map((o) {
-                final Color c = o.type == ObservationType.positive ? AppColors.secondary : o.type == ObservationType.disciplinary ? AppColors.error : AppColors.warning;
-                final IconData ic = o.type == ObservationType.positive ? Icons.thumb_up_rounded : o.type == ObservationType.disciplinary ? Icons.warning_rounded : Icons.book_rounded;
+                final Color c = o.type == ObservationType.positive
+                    ? AppColors.secondary
+                    : o.type == ObservationType.disciplinary
+                    ? AppColors.error
+                    : AppColors.warning;
+                final IconData ic = o.type == ObservationType.positive
+                    ? Icons.thumb_up_rounded
+                    : o.type == ObservationType.disciplinary
+                    ? Icons.warning_rounded
+                    : Icons.book_rounded;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(width: 28, height: 28, decoration: BoxDecoration(color: c.withValues(alpha: 0.1), shape: BoxShape.circle),
-                          child: Icon(ic, color: c, size: 14)),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: c.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(ic, color: c, size: 14),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(o.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                          Text(o.description, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        ]),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              o.title,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              o.description,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -255,17 +420,34 @@ class StudentDashboard extends StatelessWidget {
             minHeight: 10,
           ),
           const SizedBox(height: 6),
-          Text('${pct.toStringAsFixed(0)}% de asistencia',
-              style: TextStyle(color: pct >= 80 ? AppColors.secondary : AppColors.warning, fontWeight: FontWeight.w600)),
+          Text(
+            '${pct.toStringAsFixed(0)}% de asistencia',
+            style: TextStyle(
+              color: pct >= 80 ? AppColors.secondary : AppColors.warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _attItem(String label, String val, Color color) {
-    return Column(children: [
-      Text(val, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w700)),
-      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-    ]);
+    return Column(
+      children: [
+        Text(
+          val,
+          style: TextStyle(
+            color: color,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+      ],
+    );
   }
 }

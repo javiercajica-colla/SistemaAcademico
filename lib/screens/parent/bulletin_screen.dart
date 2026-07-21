@@ -26,7 +26,8 @@ class _BulletinScreenState extends State<BulletinScreen> {
     super.didChangeDependencies();
     final academic = context.read<AcademicProvider>();
     _selectedPeriodId ??=
-        academic.currentOpenPeriod?.id ?? academic.activePeriods.firstOrNull?.id;
+        academic.currentOpenPeriod?.id ??
+        academic.activePeriods.firstOrNull?.id;
   }
 
   @override
@@ -36,7 +37,9 @@ class _BulletinScreenState extends State<BulletinScreen> {
     final parent = academic.parentByUserId(auth.currentUser!.id);
 
     if (parent == null) {
-      return const Center(child: Text('No se encontró el perfil de padre/madre.'));
+      return const Center(
+        child: Text('No se encontró el perfil de padre/madre.'),
+      );
     }
 
     final children = academic.studentsForParent(parent.id);
@@ -54,7 +57,12 @@ class _BulletinScreenState extends State<BulletinScreen> {
                   itemCount: children.length,
                   itemBuilder: (_, i) => Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildStudentCard(context, academic, parent, children[i]),
+                    child: _buildStudentCard(
+                      context,
+                      academic,
+                      parent,
+                      children[i],
+                    ),
                   ),
                 ),
         ),
@@ -101,8 +109,10 @@ class _BulletinScreenState extends State<BulletinScreen> {
         children: [
           Icon(Icons.people_outline, size: 56, color: AppColors.textTertiary),
           SizedBox(height: 12),
-          Text('No tiene estudiantes registrados.',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text(
+            'No tiene estudiantes registrados.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ],
       ),
     );
@@ -127,7 +137,10 @@ class _BulletinScreenState extends State<BulletinScreen> {
 
     final avg = (course != null && _selectedPeriodId != null)
         ? academic.overallAverageForPeriod(
-            student.id, course.id, _selectedPeriodId!)
+            student.id,
+            course.id,
+            _selectedPeriodId!,
+          )
         : 0.0;
     final rank = (course != null && _selectedPeriodId != null)
         ? academic.rankInCourse(student.id, course.id, _selectedPeriodId!)
@@ -149,10 +162,10 @@ class _BulletinScreenState extends State<BulletinScreen> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
               color: AppColors.parent.withValues(alpha: 0.06),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              border: const Border(
-                  bottom: BorderSide(color: AppColors.border)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+              border: const Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               children: [
@@ -162,9 +175,10 @@ class _BulletinScreenState extends State<BulletinScreen> {
                   child: Text(
                     student.firstName.substring(0, 1).toUpperCase(),
                     style: const TextStyle(
-                        color: AppColors.parent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16),
+                      color: AppColors.parent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -172,46 +186,54 @@ class _BulletinScreenState extends State<BulletinScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(student.fullName,
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text(
+                        student.fullName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         '${course?.name ?? "Sin curso"} · ${period?.name ?? "—"}',
                         style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary),
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 // Summary chips
                 if (avg > 0) ...[
-                  _summaryChip(avg.toStringAsFixed(1), 'Promedio',
-                      _performanceColor(avg)),
+                  _summaryChip(
+                    avg.toStringAsFixed(1),
+                    'Promedio',
+                    _performanceColor(avg),
+                  ),
                   const SizedBox(width: 8),
-                  _summaryChip('$rank°', 'Puesto',
-                      AppColors.parent),
+                  _summaryChip('$rank°', 'Puesto', AppColors.parent),
                 ],
                 const SizedBox(width: 12),
                 FilledButton.icon(
                   icon: const Icon(Icons.article_rounded, size: 15),
                   label: const Text('Ver Boletín'),
                   style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.parent),
+                    backgroundColor: AppColors.parent,
+                  ),
                   onPressed: (course != null && period != null)
                       ? () => _showBulletin(
-                            context,
-                            academic,
-                            parent,
-                            student,
-                            course,
-                            period,
-                            subjects,
-                            avg,
-                            rank,
-                            total,
-                          )
+                          context,
+                          academic,
+                          parent,
+                          student,
+                          course,
+                          period,
+                          subjects,
+                          avg,
+                          rank,
+                          total,
+                        )
                       : null,
                 ),
               ],
@@ -238,14 +260,18 @@ class _BulletinScreenState extends State<BulletinScreen> {
       ),
       child: Column(
         children: [
-          Text(value,
-              style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  color: color)),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 9, color: AppColors.textSecondary)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );
@@ -262,7 +288,8 @@ class _BulletinScreenState extends State<BulletinScreen> {
       children: [
         TableRow(
           decoration: BoxDecoration(
-              color: AppColors.parent.withValues(alpha: 0.08)),
+            color: AppColors.parent.withValues(alpha: 0.08),
+          ),
           children: [
             _tCell('Asignatura', isHeader: true, flex: true),
             _tCell('Nota', isHeader: true, center: true),
@@ -271,26 +298,39 @@ class _BulletinScreenState extends State<BulletinScreen> {
         ),
         ...subjects.map((s) {
           final g = academic.calculateSubjectPeriodGrade(
-              student.id, s.id, _selectedPeriodId!);
+            student.id,
+            s.id,
+            _selectedPeriodId!,
+          );
           final perf = _performanceLabel(g);
           final col = _performanceColor(g);
-          return TableRow(children: [
-            _tCell(s.name, flex: true),
-            _tCell(g > 0 ? g.toStringAsFixed(1) : '—', center: true,
-                color: g > 0 ? col : null),
-            _tCell(g > 0 ? perf : '—', center: true,
-                color: g > 0 ? col : null),
-          ]);
+          return TableRow(
+            children: [
+              _tCell(s.name, flex: true),
+              _tCell(
+                g > 0 ? g.toStringAsFixed(1) : '—',
+                center: true,
+                color: g > 0 ? col : null,
+              ),
+              _tCell(
+                g > 0 ? perf : '—',
+                center: true,
+                color: g > 0 ? col : null,
+              ),
+            ],
+          );
         }),
       ],
     );
   }
 
-  Widget _tCell(String text,
-      {bool isHeader = false,
-      bool flex = false,
-      bool center = false,
-      Color? color}) {
+  Widget _tCell(
+    String text, {
+    bool isHeader = false,
+    bool flex = false,
+    bool center = false,
+    Color? color,
+  }) {
     final w = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       child: Text(
@@ -323,8 +363,7 @@ class _BulletinScreenState extends State<BulletinScreen> {
   ) {
     final grades = {
       for (final s in subjects)
-        s.id: academic.calculateSubjectPeriodGrade(
-            student.id, s.id, period.id)
+        s.id: academic.calculateSubjectPeriodGrade(student.id, s.id, period.id),
     };
 
     showDialog(
@@ -347,10 +386,10 @@ class _BulletinScreenState extends State<BulletinScreen> {
 
   static Color _performanceColor(double g) {
     if (g <= 0) return AppColors.textSecondary;
-    if (g >= 9.0) return const Color(0xFF1565C0);  // Superior - azul
-    if (g >= 7.5) return const Color(0xFF2E7D32);  // Alto - verde
-    if (g >= 6.0) return const Color(0xFFE65100);  // Básico - naranja
-    return const Color(0xFFC62828);                 // Bajo - rojo
+    if (g >= 9.0) return const Color(0xFF1565C0); // Superior - azul
+    if (g >= 7.5) return const Color(0xFF2E7D32); // Alto - verde
+    if (g >= 6.0) return const Color(0xFFE65100); // Básico - naranja
+    return const Color(0xFFC62828); // Bajo - rojo
   }
 
   static String _performanceLabel(double g) {
@@ -443,12 +482,16 @@ class _BulletinDialog extends StatelessWidget {
                 Text(
                   'Boletín — ${student.fullName}',
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   '${course.name} · ${period.name}',
                   style: const TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -479,9 +522,10 @@ class _BulletinDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 16,
-              spreadRadius: 2),
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 16,
+            spreadRadius: 2,
+          ),
         ],
       ),
       child: Column(
@@ -504,7 +548,9 @@ class _BulletinDialog extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Color(0xFF1E3A8A),
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(4),
+        ),
       ),
       child: Column(
         children: [
@@ -518,8 +564,11 @@ class _BulletinDialog extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.school_rounded,
-                    color: Colors.white, size: 26),
+                child: const Icon(
+                  Icons.school_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 14),
               const Column(
@@ -528,17 +577,19 @@ class _BulletinDialog extends StatelessWidget {
                   Text(
                     'COLEGIO SAN JOSÉ',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2),
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                    ),
                   ),
                   Text(
                     'BOLETÍN DE CALIFICACIONES',
                     style: TextStyle(
-                        color: Color(0xFFBFD9FF),
-                        fontSize: 11,
-                        letterSpacing: 1.2),
+                      color: Color(0xFFBFD9FF),
+                      fontSize: 11,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ],
               ),
@@ -585,18 +636,24 @@ class _BulletinDialog extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF64748B),
-                letterSpacing: 0.8)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF64748B),
+            letterSpacing: 0.8,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E3A8A))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E3A8A),
+          ),
+        ),
       ],
     );
   }
@@ -609,16 +666,18 @@ class _BulletinDialog extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
-            child: Text('CALIFICACIONES POR ASIGNATURA',
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF64748B),
-                    letterSpacing: 0.8)),
+            child: Text(
+              'CALIFICACIONES POR ASIGNATURA',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF64748B),
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
           Table(
-            border: TableBorder.all(
-                color: const Color(0xFFCBD5E1), width: 0.5),
+            border: TableBorder.all(color: const Color(0xFFCBD5E1), width: 0.5),
             columnWidths: const {
               0: FlexColumnWidth(3),
               1: FixedColumnWidth(70),
@@ -626,8 +685,7 @@ class _BulletinDialog extends StatelessWidget {
             },
             children: [
               TableRow(
-                decoration:
-                    const BoxDecoration(color: Color(0xFF1E3A8A)),
+                decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
                 children: [
                   _th('Asignatura'),
                   _th('Nota', center: true),
@@ -637,14 +695,17 @@ class _BulletinDialog extends StatelessWidget {
               ...subjects.map((s) {
                 final g = grades[s.id] ?? 0.0;
                 final col = _perfColor(g);
-                return TableRow(children: [
-                  _td(s.name),
-                  _tdColored(
-                      g > 0 ? g.toStringAsFixed(1) : '—', col,
-                      center: true),
-                  _tdColored(g > 0 ? _perfLabel(g) : '—', col,
-                      center: true),
-                ]);
+                return TableRow(
+                  children: [
+                    _td(s.name),
+                    _tdColored(
+                      g > 0 ? g.toStringAsFixed(1) : '—',
+                      col,
+                      center: true,
+                    ),
+                    _tdColored(g > 0 ? _perfLabel(g) : '—', col, center: true),
+                  ],
+                );
               }),
             ],
           ),
@@ -656,33 +717,40 @@ class _BulletinDialog extends StatelessWidget {
   Widget _th(String text, {bool center = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      child: Text(text,
-          textAlign: center ? TextAlign.center : TextAlign.left,
-          style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 12)),
+      child: Text(
+        text,
+        textAlign: center ? TextAlign.center : TextAlign.left,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 
   Widget _td(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      child: Text(text,
-          style: const TextStyle(
-              fontSize: 12, color: Color(0xFF1E293B))),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)),
+      ),
     );
   }
 
   Widget _tdColored(String text, Color color, {bool center = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      child: Text(text,
-          textAlign: center ? TextAlign.center : TextAlign.left,
-          style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color)),
+      child: Text(
+        text,
+        textAlign: center ? TextAlign.center : TextAlign.left,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 
@@ -699,19 +767,25 @@ class _BulletinDialog extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statBox('PROMEDIO GENERAL',
-              avg > 0 ? avg.toStringAsFixed(2) : '—', perfColor),
+          _statBox(
+            'PROMEDIO GENERAL',
+            avg > 0 ? avg.toStringAsFixed(2) : '—',
+            perfColor,
+          ),
           Container(width: 1, height: 44, color: const Color(0xFFCBD5E1)),
-          _statBox('DESEMPEÑO',
-              avg > 0 ? _perfLabel(avg) : '—', perfColor),
+          _statBox('DESEMPEÑO', avg > 0 ? _perfLabel(avg) : '—', perfColor),
           Container(width: 1, height: 44, color: const Color(0xFFCBD5E1)),
           _statBox(
-              'PUESTO EN EL CURSO',
-              avg > 0 ? '$rank°' : '—',
-              AppColors.parent),
+            'PUESTO EN EL CURSO',
+            avg > 0 ? '$rank°' : '—',
+            AppColors.parent,
+          ),
           Container(width: 1, height: 44, color: const Color(0xFFCBD5E1)),
           _statBox(
-              'TOTAL ASIGNATURAS', '${subjects.length}', AppColors.primary),
+            'TOTAL ASIGNATURAS',
+            '${subjects.length}',
+            AppColors.primary,
+          ),
         ],
       ),
     );
@@ -720,17 +794,25 @@ class _BulletinDialog extends StatelessWidget {
   Widget _statBox(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value,
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 9,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 9,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     );
   }
@@ -746,19 +828,23 @@ class _BulletinDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('OBSERVACIONES GENERALES',
-              style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                  letterSpacing: 0.8)),
+          const Text(
+            'OBSERVACIONES GENERALES',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF64748B),
+              letterSpacing: 0.8,
+            ),
+          ),
           const SizedBox(height: 10),
           Container(
-              height: 48,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                  border: Border(
-                      bottom: BorderSide(color: Color(0xFFCBD5E1))))),
+            height: 48,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFCBD5E1))),
+            ),
+          ),
         ],
       ),
     );
@@ -783,9 +869,10 @@ class _BulletinDialog extends StatelessWidget {
       children: [
         Container(width: width, height: 1, color: const Color(0xFF94A3B8)),
         const SizedBox(height: 5),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 10, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+        ),
       ],
     );
   }
@@ -832,19 +919,25 @@ class _BulletinDialog extends StatelessWidget {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text('COLEGIO SAN JOSÉ',
-                      style: pw.TextStyle(
-                          font: bold,
-                          fontSize: 16,
-                          color: PdfColors.white,
-                          letterSpacing: 2)),
+                  pw.Text(
+                    'COLEGIO SAN JOSÉ',
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: 16,
+                      color: PdfColors.white,
+                      letterSpacing: 2,
+                    ),
+                  ),
                   pw.SizedBox(height: 3),
-                  pw.Text('BOLETÍN DE CALIFICACIONES',
-                      style: pw.TextStyle(
-                          font: regular,
-                          fontSize: 9,
-                          color: const PdfColor(0.749, 0.851, 1.0),
-                          letterSpacing: 1.2)),
+                  pw.Text(
+                    'BOLETÍN DE CALIFICACIONES',
+                    style: pw.TextStyle(
+                      font: regular,
+                      fontSize: 9,
+                      color: const PdfColor(0.749, 0.851, 1.0),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -852,8 +945,9 @@ class _BulletinDialog extends StatelessWidget {
             // ── Info block ──
             pw.Container(
               decoration: pw.BoxDecoration(
-                  color: lightBg,
-                  border: pw.Border.all(color: borderC, width: 0.5)),
+                color: lightBg,
+                border: pw.Border.all(color: borderC, width: 0.5),
+              ),
               padding: const pw.EdgeInsets.all(10),
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -867,12 +961,15 @@ class _BulletinDialog extends StatelessWidget {
             ),
             pw.SizedBox(height: 12),
             // ── Section label ──
-            pw.Text('CALIFICACIONES POR ASIGNATURA',
-                style: pw.TextStyle(
-                    font: bold,
-                    fontSize: 8,
-                    color: PdfColors.grey600,
-                    letterSpacing: 0.8)),
+            pw.Text(
+              'CALIFICACIONES POR ASIGNATURA',
+              style: pw.TextStyle(
+                font: bold,
+                fontSize: 8,
+                color: PdfColors.grey600,
+                letterSpacing: 0.8,
+              ),
+            ),
             pw.SizedBox(height: 4),
             // ── Grades table ──
             pw.Table(
@@ -901,8 +998,11 @@ class _BulletinDialog extends StatelessWidget {
                     decoration: pw.BoxDecoration(color: alt),
                     children: [
                       _pTd(regular, s.name),
-                      _pTdC(bold, g > 0 ? g.toStringAsFixed(1) : '—',
-                          pColor(g)),
+                      _pTdC(
+                        bold,
+                        g > 0 ? g.toStringAsFixed(1) : '—',
+                        pColor(g),
+                      ),
                       _pTdC(bold, pLabel(g), pColor(g)),
                     ],
                   );
@@ -913,23 +1013,44 @@ class _BulletinDialog extends StatelessWidget {
             // ── Summary block ──
             pw.Container(
               decoration: pw.BoxDecoration(
-                  color: lightBg,
-                  border: pw.Border.all(color: borderC, width: 0.5)),
+                color: lightBg,
+                border: pw.Border.all(color: borderC, width: 0.5),
+              ),
               padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
+                horizontal: 12,
+                vertical: 10,
+              ),
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _pStat(bold, regular, 'PROMEDIO GENERAL',
-                      avg > 0 ? avg.toStringAsFixed(2) : '—',
-                      pColor(avg)),
-                  _pStat(bold, regular, 'DESEMPEÑO',
-                      avg > 0 ? pLabel(avg) : '—', pColor(avg)),
-                  _pStat(bold, regular, 'PUESTO EN EL CURSO',
-                      avg > 0 ? '$rank°' : '—',
-                      const PdfColor(0.404, 0.227, 0.718)),
-                  _pStat(bold, regular, 'TOTAL ASIGNATURAS',
-                      '${subjects.length}', navy),
+                  _pStat(
+                    bold,
+                    regular,
+                    'PROMEDIO GENERAL',
+                    avg > 0 ? avg.toStringAsFixed(2) : '—',
+                    pColor(avg),
+                  ),
+                  _pStat(
+                    bold,
+                    regular,
+                    'DESEMPEÑO',
+                    avg > 0 ? pLabel(avg) : '—',
+                    pColor(avg),
+                  ),
+                  _pStat(
+                    bold,
+                    regular,
+                    'PUESTO EN EL CURSO',
+                    avg > 0 ? '$rank°' : '—',
+                    const PdfColor(0.404, 0.227, 0.718),
+                  ),
+                  _pStat(
+                    bold,
+                    regular,
+                    'TOTAL ASIGNATURAS',
+                    '${subjects.length}',
+                    navy,
+                  ),
                 ],
               ),
             ),
@@ -937,17 +1058,21 @@ class _BulletinDialog extends StatelessWidget {
             // ── Observations ──
             pw.Container(
               decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: borderC, width: 0.5)),
+                border: pw.Border.all(color: borderC, width: 0.5),
+              ),
               padding: const pw.EdgeInsets.all(10),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('OBSERVACIONES GENERALES',
-                      style: pw.TextStyle(
-                          font: bold,
-                          fontSize: 8,
-                          color: PdfColors.grey600,
-                          letterSpacing: 0.8)),
+                  pw.Text(
+                    'OBSERVACIONES GENERALES',
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: 8,
+                      color: PdfColors.grey600,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
                   pw.SizedBox(height: 20),
                   pw.Divider(color: borderC, thickness: 0.5),
                 ],
@@ -969,8 +1094,10 @@ class _BulletinDialog extends StatelessWidget {
     );
 
     final bytes = await doc.save();
-    _downloadBytes(bytes,
-        'boletin_${student.fullName.replaceAll(' ', '_')}_${period.name}.pdf');
+    _downloadBytes(
+      bytes,
+      'boletin_${student.fullName.replaceAll(' ', '_')}_${period.name}.pdf',
+    );
     await Printing.sharePdf(
       bytes: bytes,
       filename:
@@ -979,22 +1106,32 @@ class _BulletinDialog extends StatelessWidget {
   }
 
   pw.Widget _pInfoItem(
-      pw.Font bold, pw.Font regular, String label, String value) {
+    pw.Font bold,
+    pw.Font regular,
+    String label,
+    String value,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(label,
-            style: pw.TextStyle(
-                font: bold,
-                fontSize: 7,
-                color: PdfColors.grey600,
-                letterSpacing: 0.5)),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            font: bold,
+            fontSize: 7,
+            color: PdfColors.grey600,
+            letterSpacing: 0.5,
+          ),
+        ),
         pw.SizedBox(height: 2),
-        pw.Text(value,
-            style: pw.TextStyle(
-                font: bold,
-                fontSize: 10,
-                color: const PdfColor(0.118, 0.227, 0.541))),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            font: bold,
+            fontSize: 10,
+            color: const PdfColor(0.118, 0.227, 0.541),
+          ),
+        ),
       ],
     );
   }
@@ -1002,49 +1139,69 @@ class _BulletinDialog extends StatelessWidget {
   pw.Widget _pTh(pw.Font bold, String text, {bool center = false}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: pw.Text(text,
-          textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
-          style: pw.TextStyle(
-              font: bold, fontSize: 8, color: PdfColors.white)),
+      child: pw.Text(
+        text,
+        textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
+        style: pw.TextStyle(font: bold, fontSize: 8, color: PdfColors.white),
+      ),
     );
   }
 
   pw.Widget _pTd(pw.Font regular, String text) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-      child: pw.Text(text,
-          style: pw.TextStyle(
-              font: regular, fontSize: 8.5, color: PdfColors.black)),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          font: regular,
+          fontSize: 8.5,
+          color: PdfColors.black,
+        ),
+      ),
     );
   }
 
-  pw.Widget _pTdC(pw.Font bold, String text, PdfColor color,
-      {bool center = true}) {
+  pw.Widget _pTdC(
+    pw.Font bold,
+    String text,
+    PdfColor color, {
+    bool center = true,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-      child: pw.Text(text,
-          textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
-          style:
-              pw.TextStyle(font: bold, fontSize: 8.5, color: color)),
+      child: pw.Text(
+        text,
+        textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
+        style: pw.TextStyle(font: bold, fontSize: 8.5, color: color),
+      ),
     );
   }
 
-  pw.Widget _pStat(pw.Font bold, pw.Font regular, String label,
-      String value, PdfColor color) {
+  pw.Widget _pStat(
+    pw.Font bold,
+    pw.Font regular,
+    String label,
+    String value,
+    PdfColor color,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Text(value,
-            style: pw.TextStyle(
-                font: bold, fontSize: 14, color: color)),
+        pw.Text(
+          value,
+          style: pw.TextStyle(font: bold, fontSize: 14, color: color),
+        ),
         pw.SizedBox(height: 3),
-        pw.Text(label,
-            textAlign: pw.TextAlign.center,
-            style: pw.TextStyle(
-                font: regular,
-                fontSize: 7,
-                color: PdfColors.grey600,
-                letterSpacing: 0.5)),
+        pw.Text(
+          label,
+          textAlign: pw.TextAlign.center,
+          style: pw.TextStyle(
+            font: regular,
+            fontSize: 7,
+            color: PdfColors.grey600,
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     );
   }
@@ -1053,12 +1210,16 @@ class _BulletinDialog extends StatelessWidget {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Container(
-            width: width, height: 0.5, color: PdfColors.grey600),
+        pw.Container(width: width, height: 0.5, color: PdfColors.grey600),
         pw.SizedBox(height: 3),
-        pw.Text(label,
-            style: pw.TextStyle(
-                font: regular, fontSize: 7.5, color: PdfColors.grey600)),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            font: regular,
+            fontSize: 7.5,
+            color: PdfColors.grey600,
+          ),
+        ),
       ],
     );
   }

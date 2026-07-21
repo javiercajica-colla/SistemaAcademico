@@ -23,8 +23,7 @@ class Message {
     List<String>? readBy,
   }) : readBy = List.from(readBy ?? []);
 
-  bool isReadBy(String userId) =>
-      senderId == userId || readBy.contains(userId);
+  bool isReadBy(String userId) => senderId == userId || readBy.contains(userId);
 }
 
 class Conversation {
@@ -45,9 +44,11 @@ class Conversation {
   });
 
   int unreadCount(String userId, List<Message> allMessages) => allMessages
-      .where((m) =>
-          m.conversationId == id &&
-          m.senderId != userId &&
-          !m.isReadBy(userId))
+      .where(
+        (m) =>
+            m.conversationId == id &&
+            m.senderId != userId &&
+            !m.isReadBy(userId),
+      )
       .length;
 }

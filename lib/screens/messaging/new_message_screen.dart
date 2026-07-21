@@ -39,7 +39,8 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   @override
   Widget build(BuildContext context) {
     final user = widget.currentUser;
-    final isCoordinator = user.role == UserRole.coordinator || user.role == UserRole.admin;
+    final isCoordinator =
+        user.role == UserRole.coordinator || user.role == UserRole.admin;
     final isTeacher = user.role == UserRole.teacher;
     final mq = MediaQuery.of(context);
 
@@ -50,68 +51,82 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
-          children: [
-            _handle(),
-            _header(user),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + mq.viewInsets.bottom),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Tipo de mensaje
-                    if (isCoordinator || isTeacher)
-                      _typeSelector(isCoordinator, isTeacher),
-                    const SizedBox(height: 16),
-                    // Selector de destinatario(s)
-                    if (_type == _MsgType.individual)
-                      _recipientSelector(context)
-                    else if (_type == _MsgType.group && isTeacher)
-                      _groupSelector(context)
-                    else if (_type == _MsgType.institutional && isCoordinator)
-                      _institutionalForm(),
-                    const SizedBox(height: 16),
-                    _label('Mensaje'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _bodyCtrl,
-                      minLines: 4,
-                      maxLines: 8,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: _inputDecoration('Escribe tu mensaje aquí...'),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: _canSend() && !_sending ? _doSend : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+        children: [
+          _handle(),
+          _header(user),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                20 + mq.viewInsets.bottom,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tipo de mensaje
+                  if (isCoordinator || isTeacher)
+                    _typeSelector(isCoordinator, isTeacher),
+                  const SizedBox(height: 16),
+                  // Selector de destinatario(s)
+                  if (_type == _MsgType.individual)
+                    _recipientSelector(context)
+                  else if (_type == _MsgType.group && isTeacher)
+                    _groupSelector(context)
+                  else if (_type == _MsgType.institutional && isCoordinator)
+                    _institutionalForm(),
+                  const SizedBox(height: 16),
+                  _label('Mensaje'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _bodyCtrl,
+                    minLines: 4,
+                    maxLines: 8,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: _inputDecoration('Escribe tu mensaje aquí...'),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _canSend() && !_sending ? _doSend : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        icon: _sending
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.send_rounded,
-                                color: Colors.white, size: 18),
-                        label: Text(
-                          _sending ? 'Enviando...' : 'Enviar mensaje',
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
+                      icon: _sending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                      label: Text(
+                        _sending ? 'Enviando...' : 'Enviar mensaje',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -140,15 +155,20 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
           const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
           const SizedBox(width: 10),
           const Expanded(
-            child: Text('Nuevo mensaje',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary)),
+            child: Text(
+              'Nuevo mensaje',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded,
-                color: AppColors.textSecondary),
+            icon: const Icon(
+              Icons.close_rounded,
+              color: AppColors.textSecondary,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -208,10 +228,12 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         _label('Para'),
         const SizedBox(height: 8),
         DropdownButtonFormField<AppUser>(
-          value: _selectedRecipient,
+          initialValue: _selectedRecipient,
           itemHeight: 60,
-          hint: const Text('Seleccionar destinatario',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          hint: const Text(
+            'Seleccionar destinatario',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
           items: recipients.map((u) {
             return DropdownMenuItem(
               value: u,
@@ -219,13 +241,15 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
                 children: [
                   CircleAvatar(
                     radius: 14,
-                    backgroundColor:
-                        _roleColor(u.role).withValues(alpha: 0.15),
-                    child: Text(u.name[0],
-                        style: TextStyle(
-                            color: _roleColor(u.role),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold)),
+                    backgroundColor: _roleColor(u.role).withValues(alpha: 0.15),
+                    child: Text(
+                      u.name[0],
+                      style: TextStyle(
+                        color: _roleColor(u.role),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -233,14 +257,20 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(u.name,
-                            style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textPrimary)),
-                        Text(_roleLabel(u.role),
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary)),
+                        Text(
+                          u.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          _roleLabel(u.role),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -260,8 +290,10 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
           ),
           isExpanded: true,
         ),
@@ -280,8 +312,9 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         .map((a) => a.courseId)
         .toSet()
         .toList();
-    final courses =
-        academic.courses.where((c) => courseIds.contains(c.id)).toList();
+    final courses = academic.courses
+        .where((c) => courseIds.contains(c.id))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,15 +322,18 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         _label('Curso'),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedCourseId,
-          hint: const Text('Seleccionar curso',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          initialValue: _selectedCourseId,
+          hint: const Text(
+            'Seleccionar curso',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
           items: courses
-              .map((c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Text(c.name,
-                        style: const TextStyle(fontSize: 13)),
-                  ))
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text(c.name, style: const TextStyle(fontSize: 13)),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() => _selectedCourseId = v),
           decoration: _dropdownDecoration(),
@@ -359,7 +395,10 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
               const Expanded(
                 child: Text(
                   'Se enviará a toda la comunidad educativa (solo lectura para los receptores)',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -370,7 +409,9 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         const SizedBox(height: 6),
         TextField(
           onChanged: (v) => setState(() => _title = v),
-          decoration: _inputDecoration('Ej: Cierre de período, Reunión de padres...'),
+          decoration: _inputDecoration(
+            'Ej: Cierre de período, Reunión de padres...',
+          ),
         ),
       ],
     );
@@ -379,45 +420,43 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   Widget _label(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textPrimary,
+    ),
+  );
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        filled: true,
-        fillColor: AppColors.background,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+    filled: true,
+    fillColor: AppColors.background,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  );
 
   InputDecoration _dropdownDecoration() => InputDecoration(
-        filled: true,
-        fillColor: AppColors.background,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      );
+    filled: true,
+    fillColor: AppColors.background,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  );
 
   bool _canSend() {
     final body = _bodyCtrl.text.trim();
@@ -457,19 +496,30 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
             .where((s) => courseIds.contains(s.courseId))
             .expand((s) => s.parentIds)
             .map((pid) {
-          try {
-            return academic.parents
-                .firstWhere((p) => p.id == pid)
-                .userId;
-          } catch (_) {
-            return '';
-          }
-        }).where((id) => id.isNotEmpty).toSet();
-        final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
-        final teacherIds =
-            allUsers.where((u) => u.role == UserRole.teacher && u.id != user.id).map((u) => u.id).toSet();
-        final allowed = {...studentIds, ...parentIds, ...coordinatorIds, ...teacherIds};
+              try {
+                return academic.parents.firstWhere((p) => p.id == pid).userId;
+              } catch (_) {
+                return '';
+              }
+            })
+            .where((id) => id.isNotEmpty)
+            .toSet();
+        final coordinatorIds = allUsers
+            .where(
+              (u) => u.role == UserRole.coordinator || u.role == UserRole.admin,
+            )
+            .map((u) => u.id)
+            .toSet();
+        final teacherIds = allUsers
+            .where((u) => u.role == UserRole.teacher && u.id != user.id)
+            .map((u) => u.id)
+            .toSet();
+        final allowed = {
+          ...studentIds,
+          ...parentIds,
+          ...coordinatorIds,
+          ...teacherIds,
+        };
         return allUsers.where((u) => allowed.contains(u.id)).toList();
 
       case UserRole.parent:
@@ -488,8 +538,12 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
             .where((t) => teacherIds.contains(t.id))
             .map((t) => t.userId)
             .toSet();
-        final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
+        final coordinatorIds = allUsers
+            .where(
+              (u) => u.role == UserRole.coordinator || u.role == UserRole.admin,
+            )
+            .map((u) => u.id)
+            .toSet();
         final allowed = {...teacherUserIds, ...coordinatorIds};
         return allUsers.where((u) => allowed.contains(u.id)).toList();
 
@@ -498,16 +552,20 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
         if (student == null) return [];
         final assignmentTeacherIds = student.courseId != null
             ? academic.assignments
-                .where((a) => a.courseId == student.courseId)
-                .map((a) => a.teacherId)
-                .toSet()
+                  .where((a) => a.courseId == student.courseId)
+                  .map((a) => a.teacherId)
+                  .toSet()
             : <String>{};
         final teacherUserIds = academic.teachers
             .where((t) => assignmentTeacherIds.contains(t.id))
             .map((t) => t.userId)
             .toSet();
-        final coordinatorIds =
-            allUsers.where((u) => u.role == UserRole.coordinator || u.role == UserRole.admin).map((u) => u.id).toSet();
+        final coordinatorIds = allUsers
+            .where(
+              (u) => u.role == UserRole.coordinator || u.role == UserRole.admin,
+            )
+            .map((u) => u.id)
+            .toSet();
         final allowed = {...teacherUserIds, ...coordinatorIds};
         return allUsers.where((u) => allowed.contains(u.id)).toList();
     }
@@ -516,8 +574,9 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   Teacher? _getTeacher(BuildContext context) {
     final academic = context.read<AcademicProvider>();
     try {
-      return academic.teachers
-          .firstWhere((t) => t.userId == widget.currentUser.id);
+      return academic.teachers.firstWhere(
+        (t) => t.userId == widget.currentUser.id,
+      );
     } catch (_) {
       return null;
     }
@@ -526,8 +585,9 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   Parent? _getParent(BuildContext context) {
     final academic = context.read<AcademicProvider>();
     try {
-      return academic.parents
-          .firstWhere((p) => p.userId == widget.currentUser.id);
+      return academic.parents.firstWhere(
+        (p) => p.userId == widget.currentUser.id,
+      );
     } catch (_) {
       return null;
     }
@@ -536,8 +596,9 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   Student? _getStudent(BuildContext context) {
     final academic = context.read<AcademicProvider>();
     try {
-      return academic.students
-          .firstWhere((s) => s.userId == widget.currentUser.id);
+      return academic.students.firstWhere(
+        (s) => s.userId == widget.currentUser.id,
+      );
     } catch (_) {
       return null;
     }
@@ -578,8 +639,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
               .map((s) => s.userId)
               .toList();
           participantIds.addAll(studentUserIds);
-          final course =
-              academic.courses.firstWhere((c) => c.id == courseId);
+          final course = academic.courses.firstWhere((c) => c.id == courseId);
           final conv = msgProv.createGroup(
             senderId: user.id,
             title: 'Grupo ${course.name}',
@@ -599,15 +659,16 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
               .where((s) => s.courseId == courseId)
               .expand((s) => s.parentIds)
               .map((pid) {
-            try {
-              return academic.parents.firstWhere((p) => p.id == pid).userId;
-            } catch (_) {
-              return '';
-            }
-          }).where((id) => id.isNotEmpty).toList();
+                try {
+                  return academic.parents.firstWhere((p) => p.id == pid).userId;
+                } catch (_) {
+                  return '';
+                }
+              })
+              .where((id) => id.isNotEmpty)
+              .toList();
           participantIds.addAll(parentUserIds);
-          final course =
-              academic.courses.firstWhere((c) => c.id == courseId);
+          final course = academic.courses.firstWhere((c) => c.id == courseId);
           final conv = msgProv.createGroup(
             senderId: user.id,
             title: 'Padres de familia ${course.name}',

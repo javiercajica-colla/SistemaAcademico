@@ -30,29 +30,37 @@ function generatePassword(length = 11) {
 // posible con Firebase: la contraseña original NUNCA puede leerse, solo se
 // puede sobrescribir con una nueva (que es la que se devuelve al admin).
 exports.adminResetUserPassword = onCall(async (request) => {
-  const auth = request.auth;
-  if (!auth) {
-    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
-  }
-
-  const callerDoc = await db.collection('users').doc(auth.uid).get();
-  const callerRole = callerDoc.data()?.role;
-  if (callerRole !== 'admin' && callerRole !== 'coordinator') {
-    throw new HttpsError('permission-denied', 'No tienes permiso para restablecer contraseñas.');
-  }
-
-  const targetUserId = request.data?.targetUserId;
-  if (!targetUserId || typeof targetUserId !== 'string') {
-    throw new HttpsError('invalid-argument', 'Falta el id del usuario objetivo.');
-  }
-
-  const newPassword = generatePassword();
-
   try {
-    await admin.auth().updateUser(targetUserId, { password: newPassword });
-  } catch (e) {
-    throw new HttpsError('internal', `No se pudo restablecer la contraseña: ${e.message}`);
-  }
+    const auth = request.auth;
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    }
 
-  return { password: newPassword };
+    const callerDoc = await db.collection('users').doc(auth.uid).get();
+    if (!callerDoc.exists) {
+      throw new HttpsError('permission-denied', 'No se encontró tu perfil de usuario en la base de datos.');
+    }
+    const callerRole = callerDoc.data()?.role;
+    if (callerRole !== 'admin' && callerRole !== 'coordinator') {
+      throw new HttpsError('permission-denied', 'No tienes permiso para restablecer contraseñas.');
+    }
+
+    const targetUserId = request.data?.targetUserId;
+    if (!targetUserId || typeof targetUserId !== 'string') {
+      throw new HttpsError('invalid-argument', 'Falta el id del usuario objetivo.');
+    }
+
+    const newPassword = generatePassword();
+
+    try {
+      await admin.auth().updateUser(targetUserId, { password: newPassword });
+    } catch (e) {
+      throw new HttpsError('internal', `No se pudo restablecer la contraseña: ${e.message}`);
+    }
+
+    return { password: newPassword };
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    throw new HttpsError('internal', `Error inesperado: ${e.message || e}`);
+  }
 });

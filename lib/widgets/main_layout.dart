@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +7,8 @@ import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/academic_provider.dart';
-import '../services/firebase_auth_service.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/repository_provider.dart';
 import '../services/user_credential_generator.dart';
 import 'app_sidebar.dart';
 import 'user_avatar.dart';
@@ -19,9 +19,11 @@ class MainLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // En web siempre sidebar permanente; en móvil/APK usar Drawer ocultable
-    final usePermanentSidebar =
-        kIsWeb || MediaQuery.of(context).size.width >= 768;
+    // Sidebar permanente en pantallas anchas (desktop/tablet grande);
+    // Drawer deslizable en angostas (móvil, tanto en la app nativa como en
+    // un navegador móvil visitando la versión web) — el criterio es el
+    // ancho real disponible, no la plataforma.
+    final usePermanentSidebar = MediaQuery.of(context).size.width >= 768;
 
     if (usePermanentSidebar) {
       return Scaffold(
@@ -87,8 +89,10 @@ class _AppHeader extends StatelessWidget {
           if (showMenuButton)
             Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu_rounded,
-                    color: AppColors.textSecondary),
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: AppColors.textSecondary,
+                ),
                 tooltip: 'Menú',
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
@@ -208,28 +212,34 @@ class _AppHeader extends StatelessWidget {
       itemBuilder: (_) => [
         const PopupMenuItem(
           value: 'perfil',
-          child: Row(children: [
-            Icon(Icons.person_outline, size: 18),
-            SizedBox(width: 10),
-            Text('Mi Perfil'),
-          ]),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, size: 18),
+              SizedBox(width: 10),
+              Text('Mi Perfil'),
+            ],
+          ),
         ),
         const PopupMenuItem(
           value: 'configuracion',
-          child: Row(children: [
-            Icon(Icons.settings_outlined, size: 18),
-            SizedBox(width: 10),
-            Text('Configuración'),
-          ]),
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Configuración'),
+            ],
+          ),
         ),
         const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'logout',
-          child: Row(children: [
-            Icon(Icons.logout, size: 18, color: Colors.red),
-            SizedBox(width: 10),
-            Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
-          ]),
+          child: Row(
+            children: [
+              Icon(Icons.logout, size: 18, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
+            ],
+          ),
         ),
       ],
       child: Container(
@@ -282,111 +292,115 @@ class _AppHeader extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.person_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('Mi Perfil'),
-          ]),
+          title: const Row(
+            children: [
+              Icon(Icons.person_rounded, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('Mi Perfil'),
+            ],
+          ),
           content: SizedBox(
             width: 380,
-            child: SingleChildScrollView(child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    final result = await FilePicker.platform.pickFiles(
-                      type: FileType.image,
-                      withData: true,
-                    );
-                    if (result?.files.single.bytes != null) {
-                      setDialogState(
-                        () => previewBytes = result!.files.single.bytes,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                        withData: true,
                       );
-                    }
-                  },
-                  child: Tooltip(
-                    message: 'Cambiar foto',
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: AppColors.primary,
-                          backgroundImage: previewBytes != null
-                              ? MemoryImage(previewBytes!)
-                              : null,
-                          child: previewBytes == null
-                              ? Text(
-                                  user.name.substring(0, 1).toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
+                      if (result?.files.single.bytes != null) {
+                        setDialogState(
+                          () => previewBytes = result!.files.single.bytes,
+                        );
+                      }
+                    },
+                    child: Tooltip(
+                      message: 'Cambiar foto',
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppColors.primary,
+                            backgroundImage: previewBytes != null
+                                ? MemoryImage(previewBytes!)
+                                : null,
+                            child: previewBytes == null
+                                ? Text(
+                                    user.name.substring(0, 1).toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 14,
-                            color: Colors.white,
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Toca para cambiar foto',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Toca para cambiar foto',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  auth.roleDisplayName,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
+                  const SizedBox(height: 4),
+                  Text(
+                    auth.roleDisplayName,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre completo',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre completo',
+                      prefixIcon: Icon(Icons.person_outline),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: emailCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo electrónico',
+                      prefixIcon: Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                    label: const Text('Cambiar contraseña'),
-                    onPressed: () => _showChangePasswordDialog(context),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                      label: const Text('Cambiar contraseña'),
+                      onPressed: () => _showChangePasswordDialog(context),
+                    ),
                   ),
-                ),
-              ],
-            )),
+                ],
+              ),
+            ),
           ),
           actions: [
             TextButton(
@@ -426,11 +440,13 @@ class _AppHeader extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.lock_outline_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('Cambiar contraseña'),
-          ]),
+          title: const Row(
+            children: [
+              Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('Cambiar contraseña'),
+            ],
+          ),
           content: SizedBox(
             width: 380,
             child: Form(
@@ -447,9 +463,17 @@ class _AppHeader extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3),
+                          ),
                         ),
-                        child: Text(errorMsg!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+                        child: Text(
+                          errorMsg!,
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -460,11 +484,18 @@ class _AppHeader extends StatelessWidget {
                         labelText: 'Contraseña actual',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                          onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
+                          icon: Icon(
+                            obscureCurrent
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () => setDialogState(
+                            () => obscureCurrent = !obscureCurrent,
+                          ),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -474,17 +505,28 @@ class _AppHeader extends StatelessWidget {
                         labelText: 'Nueva contraseña',
                         prefixIcon: const Icon(Icons.key_rounded),
                         suffixIcon: IconButton(
-                          icon: Icon(obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                          onPressed: () => setDialogState(() => obscureNew = !obscureNew),
+                          icon: Icon(
+                            obscureNew
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () =>
+                              setDialogState(() => obscureNew = !obscureNew),
                         ),
                       ),
-                      validator: (v) => UserCredentialGenerator.validatePasswordStrength(v ?? ''),
+                      validator: (v) =>
+                          UserCredentialGenerator.validatePasswordStrength(
+                            v ?? '',
+                          ),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
                         'Mínimo 10 caracteres, con mayúscula, minúscula, número y carácter especial.',
-                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -495,7 +537,9 @@ class _AppHeader extends StatelessWidget {
                         labelText: 'Confirmar nueva contraseña',
                         prefixIcon: Icon(Icons.key_rounded),
                       ),
-                      validator: (v) => (v != newCtrl.text) ? 'Las contraseñas no coinciden' : null,
+                      validator: (v) => (v != newCtrl.text)
+                          ? 'Las contraseñas no coinciden'
+                          : null,
                     ),
                   ],
                 ),
@@ -517,15 +561,18 @@ class _AppHeader extends StatelessWidget {
                         errorMsg = null;
                       });
                       try {
-                        await FirebaseAuthService().changePassword(
+                        await authRepository.changePassword(
                           currentPassword: currentCtrl.text,
                           newPassword: newCtrl.text,
                         );
+                        if (!ctx.mounted) return;
                         Navigator.pop(ctx);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Contraseña actualizada correctamente'),
+                              content: Text(
+                                'Contraseña actualizada correctamente',
+                              ),
                               backgroundColor: AppColors.secondary,
                             ),
                           );
@@ -538,7 +585,11 @@ class _AppHeader extends StatelessWidget {
                       }
                     },
               child: saving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('Guardar'),
             ),
           ],
