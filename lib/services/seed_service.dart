@@ -16,6 +16,16 @@ class SeedService {
     onProgress('Creando usuarios en Firebase Auth…');
     await _seedUsers(onProgress);
 
+    // _seedUsers deja la sesión activa como el ÚLTIMO usuario procesado
+    // (que puede no tener permisos de staff, p. ej. un padre de familia).
+    // Todo lo que sigue necesita permisos de staff, así que hay que volver
+    // a autenticar como coordinador ANTES de continuar, no solo al final.
+    onProgress('Restaurando sesión del coordinador…');
+    await _auth.signInWithEmailAndPassword(
+      email: 'coordinador@colegio.edu.co',
+      password: '123456',
+    );
+
     onProgress('Años académicos…');
     await _seedAcademicYears();
 

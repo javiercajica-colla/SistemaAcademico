@@ -6,8 +6,15 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Nota: get(...).data lanza error si el documento no existe (p. ej. un
+    // usuario recién creado en Auth que todavía no tiene perfil en
+    // Firestore). Como esta función es el primer operando de varios `||`,
+    // un error acá tumba la regla completa aunque la otra condición fuera
+    // suficiente — por eso se protege explícitamente con exists().
     function userRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
 
     function isCoordinator() {
