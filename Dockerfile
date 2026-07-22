@@ -20,13 +20,21 @@ COPY . .
 # lib/core/config/env.dart). USE_MOCK_DATA se fija en "false" para que la
 # imagen de producción NUNCA sirva datos falsos, sin importar el valor por
 # defecto en el código fuente (pensado para desarrollo local).
-ARG FIREBASE_API_KEY
-ARG FIREBASE_APP_ID
-ARG FIREBASE_MESSAGING_SENDER_ID
-ARG FIREBASE_PROJECT_ID
-ARG FIREBASE_AUTH_DOMAIN
-ARG FIREBASE_STORAGE_BUCKET
-ARG FIREBASE_MEASUREMENT_ID
+#
+# Cada ARG tiene como default el mismo valor que ya está hardcodeado en
+# lib/core/config/env.dart (proyecto sistema-academico-81c58) — si Railway
+# no define estas Build Variables (caso normal, mismo proyecto de Firebase),
+# el build igual queda con la config real. Sin un default aquí, un ARG vacío
+# se pasaría como --dart-define=FIREBASE_API_KEY= (vacío), lo que PISA el
+# defaultValue de String.fromEnvironment en Dart (el default de Dart solo
+# aplica si el --dart-define no se pasa en absoluto, no si se pasa vacío).
+ARG FIREBASE_API_KEY=AIzaSyDHBY1kKqMkWylQMTFVwzJEi674qAhz_gw
+ARG FIREBASE_APP_ID=1:651724277271:web:337186d40512348490be52
+ARG FIREBASE_MESSAGING_SENDER_ID=651724277271
+ARG FIREBASE_PROJECT_ID=sistema-academico-81c58
+ARG FIREBASE_AUTH_DOMAIN=sistema-academico-81c58.firebaseapp.com
+ARG FIREBASE_STORAGE_BUCKET=sistema-academico-81c58.firebasestorage.app
+ARG FIREBASE_MEASUREMENT_ID=G-31LRRFE2PS
 ARG USE_MOCK_DATA=false
 
 RUN flutter build web --release \
