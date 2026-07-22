@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/seed_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -316,10 +315,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // ── Acceso rápido ──
           _buildQuickAccess(auth, compact),
-          const SizedBox(height: 16),
-
-          // ── Inicializar Firebase (primera vez) ──
-          _buildSeedButton(),
         ],
       ),
     );
@@ -469,26 +464,6 @@ class _LoginScreenState extends State<LoginScreen> {
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-      ),
-    );
-  }
-
-  // ─── Seed button ──────────────────────────────────────────────────────────
-
-  Widget _buildSeedButton() {
-    return OutlinedButton.icon(
-      onPressed: () => SeedDialog.show(context),
-      icon: const Icon(Icons.cloud_upload_rounded, size: 15),
-      label: const Text(
-        'Primera vez · Inicializar datos Firebase',
-        style: TextStyle(fontSize: 12),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.blueGrey,
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        minimumSize: const Size(double.infinity, 0),
       ),
     );
   }
