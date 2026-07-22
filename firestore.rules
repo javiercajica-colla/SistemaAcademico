@@ -27,7 +27,7 @@ service cloud.firestore {
 
     // El administrador del sistema tiene exactamente los mismos permisos
     // de gestión que el coordinador, más el acceso a restablecer contraseñas
-    // (controlado dentro de la Cloud Function, no por estas reglas).
+    // (controlado dentro del backend en server/, no por estas reglas).
     function isCoordinatorOrAdmin() {
       return isCoordinator() || isAdmin();
     }

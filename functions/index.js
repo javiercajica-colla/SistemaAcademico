@@ -1,12 +1,20 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { setGlobalOptions } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 
+setGlobalOptions({ region: 'us-central1' });
 admin.initializeApp();
 const db = admin.firestore();
 
+function getErrorMessage(error) {
+  if (typeof error === 'string') return error;
+  if (error?.message) return error.message;
+  return 'Error desconocido';
+}
+
 // Mismas reglas que UserCredentialGenerator.generatePassword() en Flutter:
 // 10-12 caracteres, con mayúscula, minúscula, número y símbolo obligatorios.
-function generatePassword(length = 11) {
+function generatePassword(length = 12) {
   const lowers = 'abcdefghijkmnpqrstuvwxyz';
   const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const digits = '23456789';
@@ -38,29 +46,62 @@ exports.adminResetUserPassword = onCall(async (request) => {
 
     const callerDoc = await db.collection('users').doc(auth.uid).get();
     if (!callerDoc.exists) {
-      throw new HttpsError('permission-denied', 'No se encontró tu perfil de usuario en la base de datos.');
-    }
-    const callerRole = callerDoc.data()?.role;
-    if (callerRole !== 'admin' && callerRole !== 'coordinator') {
-      throw new HttpsError('permission-denied', 'No tienes permiso para restablecer contraseñas.');
+      throw new HttpsError(
+        'permission-denied',
+        'No se encontró tu perfil de usuario en la base de datos.',
+      );
     }
 
-    const targetUserId = request.data?.targetUserId;
+    const callerRole = callerDoc.data()?.role;
+    if (callerRole !== 'admin' && callerRole !== 'coordinator') {
+      throw new HttpsError(
+        'permission-denied',
+        'No tienes permiso para restablecer contraseñas.',
+      );
+    }
+
+    const targetUserId = request.data?.targetUserId?.trim();
     if (!targetUserId || typeof targetUserId !== 'string') {
       throw new HttpsError('invalid-argument', 'Falta el id del usuario objetivo.');
+    }
+
+    let targetUser;
+    try {
+      targetUser = await admin.auth().getUser(targetUserId);
+    } catch (error) {
+      const message = getErrorMessage(error);
+      if (message.includes('user-not-found') || message.includes('not found')) {
+        throw new HttpsError(
+          'not-found',
+          'No existe una cuenta de autenticación para ese usuario.',
+        );
+      }
+      throw new HttpsError('internal', `No se pudo localizar la cuenta de destino: ${message}`);
+    }
+
+    if (!targetUser.email) {
+      throw new HttpsError('failed-precondition', 'La cuenta objetivo no tiene correo asociado.');
     }
 
     const newPassword = generatePassword();
 
     try {
       await admin.auth().updateUser(targetUserId, { password: newPassword });
-    } catch (e) {
-      throw new HttpsError('internal', `No se pudo restablecer la contraseña: ${e.message}`);
+    } catch (error) {
+      const code = error?.code || 'internal-error';
+      const message = getErrorMessage(error);
+      if (code === 'auth/user-not-found') {
+        throw new HttpsError('not-found', 'No existe una cuenta de autenticación para ese usuario.');
+      }
+      if (code === 'auth/invalid-password') {
+        throw new HttpsError('invalid-argument', 'La contraseña generada no es válida.');
+      }
+      throw new HttpsError('internal', `No se pudo restablecer la contraseña: ${message}`);
     }
 
     return { password: newPassword };
-  } catch (e) {
-    if (e instanceof HttpsError) throw e;
-    throw new HttpsError('internal', `Error inesperado: ${e.message || e}`);
+  } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError('internal', `Error inesperado: ${getErrorMessage(error)}`);
   }
 });

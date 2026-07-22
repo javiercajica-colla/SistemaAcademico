@@ -48,20 +48,28 @@ RUN flutter build web --release \
     --dart-define=USE_MOCK_DATA=${USE_MOCK_DATA}
 
 # ─────────────────────────────────────────────────────────────────────────
-# Etapa 2: sirve el build estático con Nginx (imagen final pequeña, no
-# lleva el SDK de Flutter).
+# Etapa 2: sirve el build estático y la API administrativa con Node/Express
+# (server/). Reemplaza a Nginx: la API de reset de contraseñas necesita un
+# proceso con el Admin SDK de Firebase (antes vivía en Cloud Functions, pero
+# esas requieren el plan Blaze; este backend corre junto al frontend en
+# Railway sin ese requisito).
 # ─────────────────────────────────────────────────────────────────────────
-FROM nginx:1.27-alpine AS runtime
+FROM node:20-alpine AS runtime
 
-# nginx:alpine ejecuta automáticamente, al iniciar, envsubst sobre cualquier
-# archivo *.template en /etc/nginx/templates/ y lo escribe (sin la
-# extensión) en /etc/nginx/conf.d/ — así ${PORT} (que Railway inyecta en
-# runtime) se resuelve sin necesidad de un entrypoint propio.
-COPY nginx.conf /etc/nginx/templates/default.conf.template
-COPY --from=builder /app/build/web /usr/share/nginx/html
+WORKDIR /app
 
-ENV PORT=80
-EXPOSE 80
+COPY server/package.json server/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY server/server.js ./
+COPY --from=builder /app/build/web ./public
+
+# Cuenta de servicio de Firebase (Admin SDK) inyectada como variable de
+# entorno en Railway — ver server/server.js, nunca se commitea al repo.
+ENV PORT=8080
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
     CMD wget -q --spider http://127.0.0.1:${PORT}/ || exit 1
+
+CMD ["node", "server.js"]

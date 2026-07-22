@@ -1,0 +1,18 @@
+{
+  "name": "sistema-academico-server",
+  "description": "Sirve el build de Flutter Web y expone la API administrativa (reset de contraseñas) para Railway.",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.21.1",
+    "firebase-admin": "^12.6.0"
+  }
+}

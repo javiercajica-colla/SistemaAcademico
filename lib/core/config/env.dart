@@ -56,4 +56,12 @@ class Env {
     'USE_MOCK_DATA',
     defaultValue: true,
   );
+
+  // Origen del backend propio (server/, ver AdminCredentialsService). Vacío
+  // por defecto: en producción el backend sirve el mismo build de Flutter
+  // Web, así que las llamadas van al mismo origen (Uri.base). Solo hace
+  // falta pasar esto en desarrollo local, cuando la app corre en el puerto
+  // del dev server de Flutter pero el backend está en otro (p. ej.
+  // http://localhost:8080).
+  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 }

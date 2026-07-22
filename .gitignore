@@ -58,5 +58,8 @@ app.*.map.json
 *.jks
 *.keystore
 
-# Cloud Functions
+# Cloud Functions (histórico, ver server/ para el backend actual en Railway)
 functions/node_modules/
+
+# Backend propio (Railway)
+server/node_modules/
