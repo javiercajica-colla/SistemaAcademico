@@ -1,5 +1,6 @@
 import '../../data/mock_data.dart';
 import '../../models/models.dart';
+import '../../models/piar_models.dart';
 
 // Datos falsos iniciales para el modo `useMockData = true` (ver
 // lib/core/config/app_config.dart). Reutiliza lib/data/mock_data.dart — el mismo
@@ -42,3 +43,19 @@ List<Indicator> seedIndicators() => List.of(MockData.indicators);
 // Actividades son un módulo posterior a mock_data.dart y no tienen datos
 // de ejemplo allí; se dejan vacías (la app las maneja bien sin datos).
 List<Activity> seedActivities() => const [];
+
+// PIAR: el catálogo de apoyos viene precargado, además de un caso de
+// ejemplo ya activo (María González López, ver mock_data.dart) para que la
+// pantalla del docente (Fase 5) tenga contenido real sin depender de que
+// coordinación registre uno primero en cada sesión de prueba. El resto
+// (seguimientos, evidencias, actas, diagnósticos, alertas) arranca vacío —
+// se crean desde la propia app.
+List<PiarCatalogoApoyo> seedPiarCatalogoApoyos() =>
+    List.of(MockData.piarCatalogoApoyos);
+List<PiarInscripcion> seedPiarInscripciones() =>
+    List.of(MockData.piarInscripcionesDemo);
+List<PiarSoporteExterno> seedPiarSoportesExternos() =>
+    List.of(MockData.piarSoportesExternosDemo);
+List<PiarPerfilApoyo> seedPiarPerfilesApoyo() =>
+    List.of(MockData.piarPerfilesApoyoDemo);
+List<PiarAjuste> seedPiarAjustes() => List.of(MockData.piarAjustesDemo);

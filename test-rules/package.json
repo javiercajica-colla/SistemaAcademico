@@ -1,0 +1,17 @@
+{
+  "name": "sistema-academico-rules-tests",
+  "description": "Pruebas de autorización del módulo PIAR contra las Firestore Security Rules reales, usando el Firebase Emulator Suite. Solo dev-time — no se despliega, no afecta el build de producción de Flutter.",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test piar.rules.test.js"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.0.0"
+  }
+}

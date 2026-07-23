@@ -36,8 +36,39 @@ service cloud.firestore {
       return isSignedIn() && userRole() == 'teacher';
     }
 
+    function isParent() {
+      return isSignedIn() && userRole() == 'parent';
+    }
+
     function isStaff() {
       return isCoordinatorOrAdmin() || isTeacher();
+    }
+
+    // ── Helpers PIAR ─────────────────────────────────────────────────────
+    // `teacherId` aquí es siempre un Teacher.id (documento interno), no un
+    // uid de Firebase Auth — es la convención que ya usa el resto del
+    // sistema (SubjectAssignment.teacherId, Course.directorTeacherId).
+    // Como las rules no pueden hacer queries "¿qué Teacher tiene este
+    // uid?", resolvemos siempre hacia adelante: dado un Teacher.id
+    // conocido (el que trae el propio documento PIAR), leemos ese
+    // teacher y comparamos su `userId` contra request.auth.uid.
+    function isDocenteFor(teacherId) {
+      return isTeacher() &&
+        exists(/databases/$(database)/documents/teachers/$(teacherId)) &&
+        get(/databases/$(database)/documents/teachers/$(teacherId)).data.userId == request.auth.uid;
+    }
+
+    // Válido tanto en create (aún no existe `resource`) como en update.
+    // - meta_minima inmutable sin ajuste significativo: es un invariante
+    //   estructural, se aplica siempre (también en borrador).
+    // - justificación obligatoria con significativo: solo se exige al
+    //   "enviar" (estado != borrador) — guardar borrador no valida nada.
+    function piarAjusteValido(data) {
+      return
+        (('significativo' in data.tiposAjuste) || data.metaMinima == data.competenciaTextoOriginal) &&
+        (data.estado == 'borrador' ||
+          !('significativo' in data.tiposAjuste) ||
+          (data.justificacionSignificativo != null && data.justificacionSignificativo.size() > 0));
     }
 
     // Perfil de usuario: cualquier autenticado puede leer (para mostrar
@@ -69,6 +100,122 @@ service cloud.firestore {
                         'academic_years', 'academic_periods', 'standards',
                         'indicators', 'activities', 'grades', 'attendance',
                         'observations', 'subject_assignments', 'evaluation_configs'];
+    }
+
+    // ── PIAR ─────────────────────────────────────────────────────────────
+    // Principio: el soporte clínico y el ajuste pedagógico son capas
+    // separadas con permisos distintos. Ningún docente puede leer
+    // piar_soportes_externos ni piar_actas_acuerdo bajo ninguna vía — esas
+    // dos colecciones nunca mencionan isTeacher()/isDocenteFor() en su
+    // regla de lectura, a propósito. "Orientación" y "Directivo" (del
+    // documento de negocio) se modelan como isCoordinatorOrAdmin() —
+    // decisión confirmada con el usuario en Fase 0.
+
+    match /piar_inscripciones/{id} {
+      allow read: if isCoordinatorOrAdmin() ||
+        (isTeacher() && request.auth.uid in resource.data.docentesAutorizadosIds) ||
+        (isParent() && request.auth.uid in resource.data.padresAutorizadosIds);
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // Documento-candado de unicidad "una inscripción activa por
+    // estudiante y año lectivo". Solo coordinación puede crearlo/leerlo/
+    // borrarlo; la existencia o no del documento es lo que hace la
+    // restricción verificable en servidor (ver
+    // FirestoreService.tryLockPiarInscripcionActiva, que usa una
+    // transacción leer+crear-si-no-existe sobre este mismo path).
+    match /piar_inscripciones_activas_lock/{id} {
+      allow read, create, delete: if isCoordinatorOrAdmin();
+    }
+
+    // Soportes externos y adjuntos clínicos: NUNCA docente. Coordinación
+    // ve todo; familia solo el de su propio hijo (según su inscripción).
+    match /piar_soportes_externos/{id} {
+      allow read: if isCoordinatorOrAdmin() ||
+        (isParent() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.padresAutorizadosIds);
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // Perfil de apoyo (capa pedagógica visible al docente): coordinación
+    // edita; docentes con carga académica sobre el estudiante y la
+    // familia del estudiante solo leen.
+    match /piar_perfiles_apoyo/{id} {
+      allow read: if isCoordinatorOrAdmin() ||
+        (isTeacher() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.docentesAutorizadosIds) ||
+        (isParent() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.padresAutorizadosIds);
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // Catálogo de apoyos: no es información sensible — cualquier
+    // autenticado lo lee (los docentes lo necesitan para elegir apoyos al
+    // registrar un ajuste); solo coordinación lo administra.
+    match /piar_catalogo_apoyos/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // El núcleo: un docente solo lee/escribe los ajustes donde figura
+    // como docente responsable (de su propia asignatura), nunca los de
+    // otra. La actualización no permite reasignar `docenteResponsableId`
+    // a otro docente (eso es exclusivo de coordinación). Las
+    // invariantes de meta_minima/justificación se validan siempre,
+    // también si coordinación escribe directamente.
+    match /piar_ajustes/{id} {
+      allow read: if isCoordinatorOrAdmin() || isDocenteFor(resource.data.docenteResponsableId);
+      allow create: if (isCoordinatorOrAdmin() || isDocenteFor(request.resource.data.docenteResponsableId)) &&
+        piarAjusteValido(request.resource.data);
+      allow update: if (isCoordinatorOrAdmin() ||
+          (isDocenteFor(resource.data.docenteResponsableId) &&
+            resource.data.docenteResponsableId == request.resource.data.docenteResponsableId)) &&
+        piarAjusteValido(request.resource.data);
+    }
+
+    // Seguimiento por período: mismo alcance que el ajuste padre (usa el
+    // docenteResponsableId denormalizado). Un registro de período cerrado
+    // no admite actualización — las correcciones son un documento nuevo
+    // de rectificación (create sigue permitido).
+    match /piar_seguimientos/{id} {
+      allow read: if isCoordinatorOrAdmin() || isDocenteFor(resource.data.docenteResponsableId);
+      allow create: if isCoordinatorOrAdmin() || isDocenteFor(request.resource.data.docenteResponsableId);
+      allow update: if (isCoordinatorOrAdmin() ||
+          (isDocenteFor(resource.data.docenteResponsableId) &&
+            resource.data.docenteResponsableId == request.resource.data.docenteResponsableId)) &&
+        get(/databases/$(database)/documents/academic_periods/$(resource.data.periodId)).data.isOpen == true;
+    }
+
+    match /piar_evidencias/{id} {
+      allow read: if isCoordinatorOrAdmin() || isDocenteFor(resource.data.docenteResponsableId);
+      allow create: if isCoordinatorOrAdmin() || isDocenteFor(request.resource.data.docenteResponsableId);
+    }
+
+    // Actas de acuerdo: firmas — coordinación/directivo(=admin) las crea y
+    // gestiona; familia lee la de su propio hijo; nunca docente.
+    match /piar_actas_acuerdo/{id} {
+      allow read: if isCoordinatorOrAdmin() ||
+        (isParent() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.padresAutorizadosIds);
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // Diagnóstico final (cierre de año): mismo alcance de lectura que el
+    // perfil de apoyo; solo coordinación lo genera/edita.
+    match /piar_diagnosticos_finales/{id} {
+      allow read: if isCoordinatorOrAdmin() ||
+        (isTeacher() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.docentesAutorizadosIds) ||
+        (isParent() && request.auth.uid in
+          get(/databases/$(database)/documents/piar_inscripciones/$(resource.data.inscripcionId)).data.padresAutorizadosIds);
+      allow create, update: if isCoordinatorOrAdmin();
+    }
+
+    // Alertas: cada usuario solo lee/marca-leídas las suyas; las genera
+    // siempre el sistema en nombre de un miembro del staff.
+    match /piar_alertas/{id} {
+      allow read, update: if isSignedIn() && request.auth.uid == resource.data.destinatarioUserId;
+      allow create: if isStaff();
     }
   }
 }

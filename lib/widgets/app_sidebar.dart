@@ -255,6 +255,12 @@ class AppSidebar extends StatelessWidget {
             '/coordinator/grade-sheet',
           ),
           null,
+          _NavItem(
+            'PIAR',
+            Icons.accessibility_new_rounded,
+            '/coordinator/piar',
+          ),
+          null,
           if (role == UserRole.admin)
             _NavItem(
               'Administración de Contraseñas',
@@ -312,6 +318,7 @@ class AppSidebar extends StatelessWidget {
             Icons.grid_view_rounded,
             '/teacher/consolidated-report',
           ),
+          _NavItem('PIAR', Icons.accessibility_new_rounded, '/teacher/piar'),
           null,
           _NavItem(
             'Hoja de Vida',

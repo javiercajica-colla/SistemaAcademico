@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/academic_provider.dart';
 import 'providers/email_provider.dart';
+import 'providers/piar_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +45,7 @@ class SistemaAcademicoApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AcademicProvider()),
         ChangeNotifierProvider(create: (_) => EmailProvider()),
+        ChangeNotifierProvider(create: (_) => PiarProvider()),
       ],
       child: const _AppRouter(),
     );

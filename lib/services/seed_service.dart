@@ -68,6 +68,9 @@ class SeedService {
     onProgress('Configuración de evaluación…');
     await _seedEvalConfigs();
 
+    onProgress('PIAR — catálogo de apoyos…');
+    await _seedPiarCatalogoApoyos();
+
     // Re-autenticar como coordinador para restaurar la sesión
     onProgress('Restaurando sesión del coordinador…');
     await _auth.signInWithEmailAndPassword(
@@ -342,6 +345,18 @@ class SeedService {
         'periodId': ec.periodId,
         'standardsWeight': ec.standardsWeight,
         'finalExamWeight': ec.finalExamWeight,
+      });
+    }
+    await batch.commit();
+  }
+
+  Future<void> _seedPiarCatalogoApoyos() async {
+    final batch = _db.batch();
+    for (final a in MockData.piarCatalogoApoyos) {
+      batch.set(_db.collection('piar_catalogo_apoyos').doc(a.id), {
+        'nombre': a.nombre,
+        'descripcion': a.descripcion,
+        'activo': a.activo,
       });
     }
     await batch.commit();

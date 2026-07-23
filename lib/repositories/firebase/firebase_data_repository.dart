@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../../models/piar_models.dart';
 import '../../services/firestore_service.dart';
 import '../data_repository.dart';
 
@@ -203,4 +204,113 @@ class FirebaseDataRepository implements DataRepository {
   Future<void> saveAssignment(SubjectAssignment a) => _store.saveAssignment(a);
   @override
   Future<void> deleteAssignment(String id) => _store.deleteAssignment(id);
+
+  // ── PIAR ─────────────────────────────────────────────────────────────────
+  @override
+  Stream<List<PiarInscripcion>> piarInscripcionesStream({
+    String? studentId,
+    String? academicYearId,
+    String? courseId,
+  }) => _store.piarInscripcionesStream(
+    studentId: studentId,
+    academicYearId: academicYearId,
+    courseId: courseId,
+  );
+  @override
+  Future<void> savePiarInscripcion(PiarInscripcion i) =>
+      _store.savePiarInscripcion(i);
+  @override
+  Future<bool> tryLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) => _store.tryLockPiarInscripcionActiva(studentId, academicYearId);
+  @override
+  Future<void> liberarLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) => _store.liberarLockPiarInscripcionActiva(studentId, academicYearId);
+
+  @override
+  Stream<List<PiarSoporteExterno>> piarSoportesExternosStream({
+    String? inscripcionId,
+  }) => _store.piarSoportesExternosStream(inscripcionId: inscripcionId);
+  @override
+  Future<void> savePiarSoporteExterno(PiarSoporteExterno s) =>
+      _store.savePiarSoporteExterno(s);
+
+  @override
+  Stream<List<PiarPerfilApoyo>> piarPerfilesApoyoStream({
+    String? inscripcionId,
+  }) => _store.piarPerfilesApoyoStream(inscripcionId: inscripcionId);
+  @override
+  Future<void> savePiarPerfilApoyo(PiarPerfilApoyo p) =>
+      _store.savePiarPerfilApoyo(p);
+
+  @override
+  Stream<List<PiarCatalogoApoyo>> piarCatalogoApoyosStream() =>
+      _store.piarCatalogoApoyosStream();
+  @override
+  Future<void> savePiarCatalogoApoyo(PiarCatalogoApoyo a) =>
+      _store.savePiarCatalogoApoyo(a);
+
+  @override
+  Stream<List<PiarAjuste>> piarAjustesStream({
+    String? inscripcionId,
+    String? subjectId,
+    String? periodId,
+    String? docenteResponsableId,
+  }) => _store.piarAjustesStream(
+    inscripcionId: inscripcionId,
+    subjectId: subjectId,
+    periodId: periodId,
+    docenteResponsableId: docenteResponsableId,
+  );
+  @override
+  Future<void> savePiarAjuste(PiarAjuste a) => _store.savePiarAjuste(a);
+
+  @override
+  Stream<List<PiarSeguimiento>> piarSeguimientosStream({
+    String? ajusteId,
+    String? periodId,
+  }) => _store.piarSeguimientosStream(ajusteId: ajusteId, periodId: periodId);
+  @override
+  Future<void> savePiarSeguimiento(PiarSeguimiento s) =>
+      _store.savePiarSeguimiento(s);
+
+  @override
+  Stream<List<PiarEvidencia>> piarEvidenciasStream({String? seguimientoId}) =>
+      _store.piarEvidenciasStream(seguimientoId: seguimientoId);
+  @override
+  Future<void> savePiarEvidencia(PiarEvidencia e) =>
+      _store.savePiarEvidencia(e);
+
+  @override
+  Stream<List<PiarActaAcuerdo>> piarActasAcuerdoStream({
+    String? inscripcionId,
+  }) => _store.piarActasAcuerdoStream(inscripcionId: inscripcionId);
+  @override
+  Future<void> savePiarActaAcuerdo(PiarActaAcuerdo a) =>
+      _store.savePiarActaAcuerdo(a);
+
+  @override
+  Stream<List<PiarDiagnosticoFinal>> piarDiagnosticosFinalesStream({
+    String? inscripcionId,
+  }) => _store.piarDiagnosticosFinalesStream(inscripcionId: inscripcionId);
+  @override
+  Future<void> savePiarDiagnosticoFinal(PiarDiagnosticoFinal d) =>
+      _store.savePiarDiagnosticoFinal(d);
+
+  @override
+  Stream<List<PiarAlerta>> piarAlertasStream({
+    String? destinatarioUserId,
+    PiarEstadoLectura? estadoLectura,
+  }) => _store.piarAlertasStream(
+    destinatarioUserId: destinatarioUserId,
+    estadoLectura: estadoLectura,
+  );
+  @override
+  Future<void> savePiarAlerta(PiarAlerta a) => _store.savePiarAlerta(a);
+  @override
+  Future<void> marcarPiarAlertaLeida(String id) =>
+      _store.marcarPiarAlertaLeida(id);
 }

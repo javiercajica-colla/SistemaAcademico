@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../../models/piar_models.dart';
 import '../data_repository.dart';
 import 'mock_backend.dart';
 
@@ -437,5 +438,245 @@ class MockDataRepository implements DataRepository {
   Future<void> deleteAssignment(String id) async {
     await MockBackend.delay();
     _backend.assignments.removeWhere((a) => a.id == id);
+  }
+
+  // ── PIAR ─────────────────────────────────────────────────────────────────
+
+  @override
+  Stream<List<PiarInscripcion>> piarInscripcionesStream({
+    String? studentId,
+    String? academicYearId,
+    String? courseId,
+  }) {
+    return _backend.piarInscripciones.stream.map(
+      (list) => list
+          .where((i) => i.eliminadoEn == null)
+          .where((i) => studentId == null || i.studentId == studentId)
+          .where(
+            (i) => academicYearId == null || i.academicYearId == academicYearId,
+          )
+          .where((i) => courseId == null || i.courseId == courseId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarInscripcion(PiarInscripcion i) async {
+    await MockBackend.delay();
+    _backend.piarInscripciones.upsert(i, (x) => x.id == i.id);
+  }
+
+  @override
+  Future<bool> tryLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) async {
+    await MockBackend.delay();
+    final key = '${studentId}_$academicYearId';
+    if (_backend.piarInscripcionesActivasLock.contains(key)) return false;
+    _backend.piarInscripcionesActivasLock.add(key);
+    return true;
+  }
+
+  @override
+  Future<void> liberarLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) async {
+    await MockBackend.delay();
+    _backend.piarInscripcionesActivasLock.remove('${studentId}_$academicYearId');
+  }
+
+  @override
+  Stream<List<PiarSoporteExterno>> piarSoportesExternosStream({
+    String? inscripcionId,
+  }) {
+    return _backend.piarSoportesExternos.stream.map(
+      (list) => list
+          .where((s) => s.eliminadoEn == null)
+          .where((s) => inscripcionId == null || s.inscripcionId == inscripcionId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarSoporteExterno(PiarSoporteExterno s) async {
+    await MockBackend.delay();
+    _backend.piarSoportesExternos.upsert(s, (x) => x.id == s.id);
+  }
+
+  @override
+  Stream<List<PiarPerfilApoyo>> piarPerfilesApoyoStream({
+    String? inscripcionId,
+  }) {
+    return _backend.piarPerfilesApoyo.stream.map(
+      (list) => list
+          .where((p) => p.eliminadoEn == null)
+          .where((p) => inscripcionId == null || p.inscripcionId == inscripcionId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarPerfilApoyo(PiarPerfilApoyo p) async {
+    await MockBackend.delay();
+    _backend.piarPerfilesApoyo.upsert(p, (x) => x.id == p.id);
+  }
+
+  @override
+  Stream<List<PiarCatalogoApoyo>> piarCatalogoApoyosStream() =>
+      _backend.piarCatalogoApoyos.stream;
+
+  @override
+  Future<void> savePiarCatalogoApoyo(PiarCatalogoApoyo a) async {
+    await MockBackend.delay();
+    _backend.piarCatalogoApoyos.upsert(a, (x) => x.id == a.id);
+  }
+
+  @override
+  Stream<List<PiarAjuste>> piarAjustesStream({
+    String? inscripcionId,
+    String? subjectId,
+    String? periodId,
+    String? docenteResponsableId,
+  }) {
+    return _backend.piarAjustes.stream.map(
+      (list) => list
+          .where((a) => a.eliminadoEn == null)
+          .where((a) => inscripcionId == null || a.inscripcionId == inscripcionId)
+          .where((a) => subjectId == null || a.subjectId == subjectId)
+          .where((a) => periodId == null || a.periodId == periodId)
+          .where(
+            (a) =>
+                docenteResponsableId == null ||
+                a.docenteResponsableId == docenteResponsableId,
+          )
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarAjuste(PiarAjuste a) async {
+    await MockBackend.delay();
+    _backend.piarAjustes.upsert(a, (x) => x.id == a.id);
+  }
+
+  @override
+  Stream<List<PiarSeguimiento>> piarSeguimientosStream({
+    String? ajusteId,
+    String? periodId,
+  }) {
+    return _backend.piarSeguimientos.stream.map(
+      (list) => list
+          .where((s) => s.eliminadoEn == null)
+          .where((s) => ajusteId == null || s.ajusteId == ajusteId)
+          .where((s) => periodId == null || s.periodId == periodId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarSeguimiento(PiarSeguimiento s) async {
+    await MockBackend.delay();
+    _backend.piarSeguimientos.upsert(s, (x) => x.id == s.id);
+  }
+
+  @override
+  Stream<List<PiarEvidencia>> piarEvidenciasStream({String? seguimientoId}) {
+    return _backend.piarEvidencias.stream.map(
+      (list) => list
+          .where((e) => e.eliminadoEn == null)
+          .where((e) => seguimientoId == null || e.seguimientoId == seguimientoId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarEvidencia(PiarEvidencia e) async {
+    await MockBackend.delay();
+    _backend.piarEvidencias.upsert(e, (x) => x.id == e.id);
+  }
+
+  @override
+  Stream<List<PiarActaAcuerdo>> piarActasAcuerdoStream({
+    String? inscripcionId,
+  }) {
+    return _backend.piarActasAcuerdo.stream.map(
+      (list) => list
+          .where((a) => a.eliminadoEn == null)
+          .where((a) => inscripcionId == null || a.inscripcionId == inscripcionId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarActaAcuerdo(PiarActaAcuerdo a) async {
+    await MockBackend.delay();
+    _backend.piarActasAcuerdo.upsert(a, (x) => x.id == a.id);
+  }
+
+  @override
+  Stream<List<PiarDiagnosticoFinal>> piarDiagnosticosFinalesStream({
+    String? inscripcionId,
+  }) {
+    return _backend.piarDiagnosticosFinales.stream.map(
+      (list) => list
+          .where((d) => d.eliminadoEn == null)
+          .where((d) => inscripcionId == null || d.inscripcionId == inscripcionId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarDiagnosticoFinal(PiarDiagnosticoFinal d) async {
+    await MockBackend.delay();
+    _backend.piarDiagnosticosFinales.upsert(d, (x) => x.id == d.id);
+  }
+
+  @override
+  Stream<List<PiarAlerta>> piarAlertasStream({
+    String? destinatarioUserId,
+    PiarEstadoLectura? estadoLectura,
+  }) {
+    return _backend.piarAlertas.stream.map(
+      (list) => list
+          .where((a) => a.eliminadoEn == null)
+          .where(
+            (a) =>
+                destinatarioUserId == null ||
+                a.destinatarioUserId == destinatarioUserId,
+          )
+          .where((a) => estadoLectura == null || a.estadoLectura == estadoLectura)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> savePiarAlerta(PiarAlerta a) async {
+    await MockBackend.delay();
+    _backend.piarAlertas.upsert(a, (x) => x.id == a.id);
+  }
+
+  @override
+  Future<void> marcarPiarAlertaLeida(String id) async {
+    await MockBackend.delay();
+    final old = _backend.piarAlertas.value.firstWhere((a) => a.id == id);
+    _backend.piarAlertas.upsert(
+      PiarAlerta(
+        id: old.id,
+        tipo: old.tipo,
+        destinatarioUserId: old.destinatarioUserId,
+        mensaje: old.mensaje,
+        entidadRelacionadaTipo: old.entidadRelacionadaTipo,
+        entidadRelacionadaId: old.entidadRelacionadaId,
+        estadoLectura: PiarEstadoLectura.leida,
+        creadoPor: old.creadoPor,
+        creadoEn: old.creadoEn,
+        actualizadoPor: old.actualizadoPor,
+        actualizadoEn: DateTime.now(),
+        eliminadoEn: old.eliminadoEn,
+      ),
+      (x) => x.id == id,
+    );
   }
 }

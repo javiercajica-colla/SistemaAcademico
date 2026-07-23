@@ -63,3 +63,9 @@ functions/node_modules/
 
 # Backend propio (Railway)
 server/node_modules/
+
+# Suite Node de pruebas contra Firestore rules (PIAR, solo dev-time)
+test-rules/node_modules/
+
+# Capturas de pantalla usadas para verificación manual durante el desarrollo
+shots/

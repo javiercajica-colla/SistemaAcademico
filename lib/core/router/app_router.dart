@@ -9,6 +9,7 @@ import '../../screens/coordinator/academic_config_screen.dart';
 import '../../screens/coordinator/subjects_screen.dart';
 import '../../screens/coordinator/courses_screen.dart';
 import '../../screens/coordinator/reports_screen.dart';
+import '../../screens/coordinator/piar/piar_screen.dart';
 import '../../screens/coordinator/grades_config_screen.dart';
 import '../../screens/coordinator/password_admin_screen.dart';
 import '../../screens/teacher/teacher_dashboard.dart';
@@ -21,6 +22,7 @@ import '../../screens/teacher/grade_format_screen.dart';
 import '../../screens/teacher/definitive_report_screen.dart';
 import '../../screens/teacher/behavior_screen.dart';
 import '../../screens/teacher/consolidated_report_screen.dart';
+import '../../screens/teacher/piar/piar_teacher_screen.dart';
 import '../../screens/teacher/hoja_de_vida_teacher_screen.dart';
 import '../../screens/student/hoja_de_vida_student_screen.dart';
 import '../../screens/shared/grade_sheet_screen.dart';
@@ -114,6 +116,10 @@ GoRouter createRouter(AuthProvider auth) {
             builder: (_, _) => const ReportsScreen(),
           ),
           GoRoute(
+            path: '/coordinator/piar',
+            builder: (_, _) => const PiarScreen(),
+          ),
+          GoRoute(
             path: '/coordinator/password-admin',
             builder: (_, _) => const PasswordAdminScreen(),
           ),
@@ -161,6 +167,10 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(
             path: '/teacher/consolidated-report',
             builder: (_, _) => const ConsolidatedReportScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/piar',
+            builder: (_, _) => const PiarTeacherScreen(),
           ),
           GoRoute(
             path: '/teacher/hoja-de-vida',

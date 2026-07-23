@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import '../models/piar_models.dart';
 
 /// Abstracción de acceso a datos (equivalente a las colecciones de
 /// Firestore usadas por la app). Implementada por [FirebaseDataRepository]
@@ -110,4 +111,79 @@ abstract class DataRepository {
   Stream<List<SubjectAssignment>> assignmentsStream({String? teacherId});
   Future<void> saveAssignment(SubjectAssignment a);
   Future<void> deleteAssignment(String id);
+
+  // ── PIAR (Plan Individual de Ajustes Razonables) ─────────────────────────
+  // Todas las entidades PIAR son de solo lectura lógica: no hay `deleteX`
+  // físico. El borrado es lógico (guardar con `eliminadoEn` seteado) y los
+  // registros de período cerrado nunca se sobrescriben — se crea un
+  // registro nuevo de rectificación. Los streams ya excluyen los
+  // eliminados lógicamente (lo resuelve cada implementación).
+
+  Stream<List<PiarInscripcion>> piarInscripcionesStream({
+    String? studentId,
+    String? academicYearId,
+    String? courseId,
+  });
+  Future<void> savePiarInscripcion(PiarInscripcion i);
+
+  /// Intenta tomar el candado de "inscripción activa" para
+  /// estudiante+año lectivo. Devuelve `false` si ya existe (otra
+  /// inscripción activa vigente) — la unicidad se garantiza en servidor
+  /// vía Firestore rules sobre este mismo documento-candado (fase 2), no
+  /// solo aquí.
+  Future<bool> tryLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  );
+  Future<void> liberarLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  );
+
+  Stream<List<PiarSoporteExterno>> piarSoportesExternosStream({
+    String? inscripcionId,
+  });
+  Future<void> savePiarSoporteExterno(PiarSoporteExterno s);
+
+  Stream<List<PiarPerfilApoyo>> piarPerfilesApoyoStream({
+    String? inscripcionId,
+  });
+  Future<void> savePiarPerfilApoyo(PiarPerfilApoyo p);
+
+  Stream<List<PiarCatalogoApoyo>> piarCatalogoApoyosStream();
+  Future<void> savePiarCatalogoApoyo(PiarCatalogoApoyo a);
+
+  Stream<List<PiarAjuste>> piarAjustesStream({
+    String? inscripcionId,
+    String? subjectId,
+    String? periodId,
+    String? docenteResponsableId,
+  });
+  Future<void> savePiarAjuste(PiarAjuste a);
+
+  Stream<List<PiarSeguimiento>> piarSeguimientosStream({
+    String? ajusteId,
+    String? periodId,
+  });
+  Future<void> savePiarSeguimiento(PiarSeguimiento s);
+
+  Stream<List<PiarEvidencia>> piarEvidenciasStream({String? seguimientoId});
+  Future<void> savePiarEvidencia(PiarEvidencia e);
+
+  Stream<List<PiarActaAcuerdo>> piarActasAcuerdoStream({
+    String? inscripcionId,
+  });
+  Future<void> savePiarActaAcuerdo(PiarActaAcuerdo a);
+
+  Stream<List<PiarDiagnosticoFinal>> piarDiagnosticosFinalesStream({
+    String? inscripcionId,
+  });
+  Future<void> savePiarDiagnosticoFinal(PiarDiagnosticoFinal d);
+
+  Stream<List<PiarAlerta>> piarAlertasStream({
+    String? destinatarioUserId,
+    PiarEstadoLectura? estadoLectura,
+  });
+  Future<void> savePiarAlerta(PiarAlerta a);
+  Future<void> marcarPiarAlertaLeida(String id);
 }

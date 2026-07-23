@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import '../models/piar_models.dart';
 
 class MockData {
   static final List<AppUser> users = [
@@ -353,6 +354,27 @@ class MockData {
       periodId: 'ap1',
       name: 'Pensamiento científico',
       description: 'Aplicación del método científico',
+      weight: 100,
+    ),
+    // Mismo propósito, pero en ap2 (el período abierto/activo en el
+    // seed): permite probar de extremo a extremo el módulo PIAR (Fase 4
+    // en adelante), que resuelve competencias del período vigente.
+    const Standard(
+      id: 'st_demo_mat_p2',
+      subjectId: 's1',
+      periodId: 'ap2',
+      name: 'Pensamiento numérico',
+      description:
+          'Interpreta y resuelve situaciones problema usando operaciones básicas.',
+      weight: 100,
+    ),
+    const Standard(
+      id: 'st_demo_esp_p2',
+      subjectId: 's2',
+      periodId: 'ap2',
+      name: 'Comprensión lectora',
+      description:
+          'Comprende textos narrativos cortos e identifica ideas principales.',
       weight: 100,
     ),
   ];
@@ -1185,6 +1207,185 @@ class MockData {
       periodId: 'ap2',
       standardsWeight: 70,
       finalExamWeight: 30,
+    ),
+  ];
+
+  // ── PIAR: catálogo inicial de apoyos ──────────────────────────────────
+  static final List<PiarCatalogoApoyo> piarCatalogoApoyos = [
+    const PiarCatalogoApoyo(
+      id: 'apoyo1',
+      nombre: 'Pictogramas / apoyo visual',
+      descripcion: 'Material de apoyo con imágenes o pictogramas.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo2',
+      nombre: 'Tiempo adicional',
+      descripcion: 'Tiempo extra para completar actividades o evaluaciones.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo3',
+      nombre: 'Lectura en voz alta de instrucciones',
+      descripcion: 'El docente u otro estudiante lee las instrucciones en voz alta.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo4',
+      nombre: 'Ubicación preferencial en el aula',
+      descripcion: 'Puesto cercano al docente o lejos de distractores.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo5',
+      nombre: 'Instrucciones fraccionadas',
+      descripcion: 'Dividir instrucciones largas en pasos cortos y secuenciales.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo6',
+      nombre: 'Uso de calculadora o tabla de apoyo',
+      descripcion: 'Herramienta de apoyo para cálculos u operaciones.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo7',
+      nombre: 'Respuesta oral en lugar de escrita',
+      descripcion: 'Permitir demostrar el aprendizaje de forma oral.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo8',
+      nombre: 'Anticipación de cambios de actividad',
+      descripcion: 'Avisar con antelación los cambios en la rutina de clase.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo9',
+      nombre: 'Pausas activas programadas',
+      descripcion: 'Descansos breves y regulares durante la clase.',
+    ),
+    const PiarCatalogoApoyo(
+      id: 'apoyo10',
+      nombre: 'Acompañamiento de un par (compañero tutor)',
+      descripcion: 'Otro estudiante apoya puntualmente una actividad.',
+    ),
+  ];
+
+  // Caso PIAR de ejemplo, ya activo, para que el docente (Fase 5) tenga algo
+  // que ver y editar sin depender de que coordinación registre uno primero
+  // en cada sesión. Estudiante: María González López (st2, curso c1),
+  // asignaturas Matemáticas (s1, Prof. Carlos/t1) y Español (s2, Prof. Ana
+  // Martínez/t2), período ap2 — coincide con los estándares de demo
+  // st_demo_mat_p2/st_demo_esp_p2 de arriba.
+  static final DateTime _piarDemoFecha = DateTime(2026, 3, 10);
+
+  static final List<PiarInscripcion> piarInscripcionesDemo = [
+    PiarInscripcion(
+      id: 'piar_insc_demo1',
+      studentId: 'st2',
+      academicYearId: 'ay1',
+      courseId: 'c1',
+      fechaInscripcion: _piarDemoFecha,
+      coordinadorId: 'u1',
+      estado: PiarEstadoInscripcion.activo,
+      docentesAutorizadosIds: const ['u2', 'u3'],
+      padresAutorizadosIds: const ['u7'],
+      creadoPor: 'u1',
+      creadoEn: _piarDemoFecha,
+      actualizadoPor: 'u1',
+      actualizadoEn: _piarDemoFecha,
+    ),
+  ];
+
+  static final List<PiarSoporteExterno> piarSoportesExternosDemo = [
+    PiarSoporteExterno(
+      id: 'piar_soporte_demo1',
+      inscripcionId: 'piar_insc_demo1',
+      tipo: PiarTipoSoporte.terapiaOcupacional,
+      entidadEmisora: 'Centro Terapéutico Avanza',
+      profesional: 'Dr. Felipe Rincón',
+      numeroRegistroProfesional: 'TO-1187',
+      fechaEmision: DateTime(2026, 1, 15),
+      vigenciaHasta: DateTime(2027, 12, 31),
+      observaciones: 'Seguimiento trimestral con reporte al colegio.',
+      creadoPor: 'u1',
+      creadoEn: _piarDemoFecha,
+      actualizadoPor: 'u1',
+      actualizadoEn: _piarDemoFecha,
+    ),
+  ];
+
+  static final List<PiarPerfilApoyo> piarPerfilesApoyoDemo = [
+    PiarPerfilApoyo(
+      id: 'piar_perfil_demo1',
+      inscripcionId: 'piar_insc_demo1',
+      fortalezas:
+          'Le gusta la música y es muy colaboradora en actividades grupales.',
+      comoAprendeMejor:
+          'Con rutinas claras, instrucciones cortas y refuerzo positivo constante.',
+      barrerasIdentificadas:
+          'Dificultad para mantener la atención en tareas largas o con muchos pasos.',
+      canalAccesoPreferente: 'Auditivo',
+      formaRespuestaPreferente: 'Escrita',
+      tiempoAtencionSostenidaMinutos: 15,
+      apoyosRequeridosIds: const ['apoyo2'],
+      creadoPor: 'u1',
+      creadoEn: _piarDemoFecha,
+      actualizadoPor: 'u1',
+      actualizadoEn: _piarDemoFecha,
+    ),
+  ];
+
+  static final List<PiarAjuste> piarAjustesDemo = [
+    PiarAjuste(
+      id: 'piar_ajuste_demo1',
+      inscripcionId: 'piar_insc_demo1',
+      subjectId: 's1',
+      standardId: 'st_demo_mat_p2',
+      periodId: 'ap2',
+      competenciaTextoOriginal:
+          'Interpreta y resuelve situaciones problema usando operaciones básicas.',
+      requiereAjuste: null,
+      metaMinima:
+          'Interpreta y resuelve situaciones problema usando operaciones básicas.',
+      docenteResponsableId: 't1',
+      estado: PiarEstadoAjuste.borrador,
+      creadoPor: 'u1',
+      creadoEn: _piarDemoFecha,
+      actualizadoPor: 'u1',
+      actualizadoEn: _piarDemoFecha,
+    ),
+    PiarAjuste(
+      id: 'piar_ajuste_demo2',
+      inscripcionId: 'piar_insc_demo1',
+      subjectId: 's2',
+      standardId: 'st_demo_esp_p2',
+      periodId: 'ap2',
+      competenciaTextoOriginal:
+          'Comprende textos narrativos cortos e identifica ideas principales.',
+      requiereAjuste: null,
+      metaMinima:
+          'Comprende textos narrativos cortos e identifica ideas principales.',
+      docenteResponsableId: 't2',
+      estado: PiarEstadoAjuste.borrador,
+      creadoPor: 'u1',
+      creadoEn: _piarDemoFecha,
+      actualizadoPor: 'u1',
+      actualizadoEn: _piarDemoFecha,
+    ),
+  ];
+
+  static final List<AppNotification> piarNotificationsDemo = [
+    AppNotification(
+      id: 'piar_notif_demo1',
+      userId: 'u2',
+      title: 'PIAR activado en tu clase',
+      message:
+          'Un estudiante de tu carga académica activó su PIAR. Revisa los ajustes pendientes en tu asignatura.',
+      type: NotificationType.general,
+      createdAt: _piarDemoFecha,
+    ),
+    AppNotification(
+      id: 'piar_notif_demo2',
+      userId: 'u3',
+      title: 'PIAR activado en tu clase',
+      message:
+          'Un estudiante de tu carga académica activó su PIAR. Revisa los ajustes pendientes en tu asignatura.',
+      type: NotificationType.general,
+      createdAt: _piarDemoFecha,
     ),
   ];
 }

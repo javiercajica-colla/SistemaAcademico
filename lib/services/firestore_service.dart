@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/models.dart';
+import '../models/piar_models.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
@@ -27,6 +28,17 @@ class FirestoreService {
   static const _kIndicators = 'indicators';
   static const _kActivities = 'activities';
   static const _kEvalConfigs = 'evaluation_configs';
+  static const _kPiarInscripciones = 'piar_inscripciones';
+  static const _kPiarInscripcionesLock = 'piar_inscripciones_activas_lock';
+  static const _kPiarSoportesExternos = 'piar_soportes_externos';
+  static const _kPiarPerfilesApoyo = 'piar_perfiles_apoyo';
+  static const _kPiarCatalogoApoyos = 'piar_catalogo_apoyos';
+  static const _kPiarAjustes = 'piar_ajustes';
+  static const _kPiarSeguimientos = 'piar_seguimientos';
+  static const _kPiarEvidencias = 'piar_evidencias';
+  static const _kPiarActasAcuerdo = 'piar_actas_acuerdo';
+  static const _kPiarDiagnosticosFinales = 'piar_diagnosticos_finales';
+  static const _kPiarAlertas = 'piar_alertas';
 
   // ══════════════════════════════════════════════════════════════════════════
   // USUARIOS
@@ -820,5 +832,688 @@ class FirestoreService {
     'periodId': ec.periodId,
     'standardsWeight': ec.standardsWeight,
     'finalExamWeight': ec.finalExamWeight,
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PIAR
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Map<String, dynamic> _piarAuditMap({
+    required String creadoPor,
+    required DateTime creadoEn,
+    required String actualizadoPor,
+    required DateTime actualizadoEn,
+    required DateTime? eliminadoEn,
+  }) => {
+    'creadoPor': creadoPor,
+    'creadoEn': Timestamp.fromDate(creadoEn),
+    'actualizadoPor': actualizadoPor,
+    'actualizadoEn': Timestamp.fromDate(actualizadoEn),
+    'eliminadoEn': eliminadoEn == null ? null : Timestamp.fromDate(eliminadoEn),
+  };
+
+  // ── piar_inscripciones ────────────────────────────────────────────────
+
+  Stream<List<PiarInscripcion>> piarInscripcionesStream({
+    String? studentId,
+    String? academicYearId,
+    String? courseId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarInscripciones);
+    if (studentId != null) q = q.where('studentId', isEqualTo: studentId);
+    if (academicYearId != null) {
+      q = q.where('academicYearId', isEqualTo: academicYearId);
+    }
+    if (courseId != null) q = q.where('courseId', isEqualTo: courseId);
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarInscripcionFromDoc)
+          .where((i) => i.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarInscripcion(PiarInscripcion i) => _db
+      .collection(_kPiarInscripciones)
+      .doc(i.id)
+      .set(_piarInscripcionToMap(i), SetOptions(merge: true));
+
+  Future<bool> tryLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) async {
+    final ref = _db
+        .collection(_kPiarInscripcionesLock)
+        .doc('${studentId}_$academicYearId');
+    // Transacción "leer + crear si no existe" — es la operación atómica
+    // que garantiza la unicidad en servidor (junto con las Firestore
+    // rules de la Fase 2, que además impiden borrar este documento salvo
+    // a coordinación).
+    return _db.runTransaction<bool>((tx) async {
+      final snap = await tx.get(ref);
+      if (snap.exists) return false;
+      tx.set(ref, {
+        'studentId': studentId,
+        'academicYearId': academicYearId,
+        'creadoEn': Timestamp.now(),
+      });
+      return true;
+    });
+  }
+
+  Future<void> liberarLockPiarInscripcionActiva(
+    String studentId,
+    String academicYearId,
+  ) => _db
+      .collection(_kPiarInscripcionesLock)
+      .doc('${studentId}_$academicYearId')
+      .delete();
+
+  PiarInscripcion _piarInscripcionFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarInscripcion(
+      id: doc.id,
+      studentId: d['studentId'] as String,
+      academicYearId: d['academicYearId'] as String,
+      courseId: d['courseId'] as String,
+      fechaInscripcion: (d['fechaInscripcion'] as Timestamp).toDate(),
+      coordinadorId: d['coordinadorId'] as String,
+      estado: PiarEstadoInscripcion.values.byName(d['estado'] as String),
+      inscripcionAnteriorId: d['inscripcionAnteriorId'] as String?,
+      docentesAutorizadosIds:
+          (d['docentesAutorizadosIds'] as List?)?.cast<String>() ?? const [],
+      padresAutorizadosIds:
+          (d['padresAutorizadosIds'] as List?)?.cast<String>() ?? const [],
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarInscripcionToMap(PiarInscripcion i) => {
+    'studentId': i.studentId,
+    'academicYearId': i.academicYearId,
+    'courseId': i.courseId,
+    'fechaInscripcion': Timestamp.fromDate(i.fechaInscripcion),
+    'coordinadorId': i.coordinadorId,
+    'estado': i.estado.name,
+    'inscripcionAnteriorId': i.inscripcionAnteriorId,
+    ..._piarAuditMap(
+      creadoPor: i.creadoPor,
+      creadoEn: i.creadoEn,
+      actualizadoPor: i.actualizadoPor,
+      actualizadoEn: i.actualizadoEn,
+      eliminadoEn: i.eliminadoEn,
+    ),
+  };
+
+  // ── piar_soportes_externos ───────────────────────────────────────────
+
+  Stream<List<PiarSoporteExterno>> piarSoportesExternosStream({
+    String? inscripcionId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarSoportesExternos);
+    if (inscripcionId != null) {
+      q = q.where('inscripcionId', isEqualTo: inscripcionId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarSoporteExternoFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarSoporteExterno(PiarSoporteExterno soporte) => _db
+      .collection(_kPiarSoportesExternos)
+      .doc(soporte.id)
+      .set(_piarSoporteExternoToMap(soporte), SetOptions(merge: true));
+
+  PiarSoporteExterno _piarSoporteExternoFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarSoporteExterno(
+      id: doc.id,
+      inscripcionId: d['inscripcionId'] as String,
+      tipo: PiarTipoSoporte.values.byName(d['tipo'] as String),
+      entidadEmisora: d['entidadEmisora'] as String,
+      profesional: d['profesional'] as String,
+      numeroRegistroProfesional: d['numeroRegistroProfesional'] as String,
+      fechaEmision: (d['fechaEmision'] as Timestamp).toDate(),
+      vigenciaHasta: (d['vigenciaHasta'] as Timestamp).toDate(),
+      archivoAdjunto: d['archivoAdjunto'] as String?,
+      observaciones: d['observaciones'] as String?,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarSoporteExternoToMap(PiarSoporteExterno s) => {
+    'inscripcionId': s.inscripcionId,
+    'tipo': s.tipo.name,
+    'entidadEmisora': s.entidadEmisora,
+    'profesional': s.profesional,
+    'numeroRegistroProfesional': s.numeroRegistroProfesional,
+    'fechaEmision': Timestamp.fromDate(s.fechaEmision),
+    'vigenciaHasta': Timestamp.fromDate(s.vigenciaHasta),
+    'archivoAdjunto': s.archivoAdjunto,
+    'observaciones': s.observaciones,
+    ..._piarAuditMap(
+      creadoPor: s.creadoPor,
+      creadoEn: s.creadoEn,
+      actualizadoPor: s.actualizadoPor,
+      actualizadoEn: s.actualizadoEn,
+      eliminadoEn: s.eliminadoEn,
+    ),
+  };
+
+  // ── piar_perfiles_apoyo ──────────────────────────────────────────────
+
+  Stream<List<PiarPerfilApoyo>> piarPerfilesApoyoStream({
+    String? inscripcionId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarPerfilesApoyo);
+    if (inscripcionId != null) {
+      q = q.where('inscripcionId', isEqualTo: inscripcionId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarPerfilApoyoFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarPerfilApoyo(PiarPerfilApoyo perfil) => _db
+      .collection(_kPiarPerfilesApoyo)
+      .doc(perfil.id)
+      .set(_piarPerfilApoyoToMap(perfil), SetOptions(merge: true));
+
+  PiarPerfilApoyo _piarPerfilApoyoFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarPerfilApoyo(
+      id: doc.id,
+      inscripcionId: d['inscripcionId'] as String,
+      fortalezas: d['fortalezas'] as String,
+      comoAprendeMejor: d['comoAprendeMejor'] as String,
+      barrerasIdentificadas: d['barrerasIdentificadas'] as String,
+      canalAccesoPreferente: d['canalAccesoPreferente'] as String,
+      formaRespuestaPreferente: d['formaRespuestaPreferente'] as String,
+      tiempoAtencionSostenidaMinutos:
+          d['tiempoAtencionSostenidaMinutos'] as int,
+      apoyosRequeridosIds:
+          (d['apoyosRequeridosIds'] as List?)?.cast<String>() ?? const [],
+      alertasAula: d['alertasAula'] as String?,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarPerfilApoyoToMap(PiarPerfilApoyo p) => {
+    'inscripcionId': p.inscripcionId,
+    'fortalezas': p.fortalezas,
+    'comoAprendeMejor': p.comoAprendeMejor,
+    'barrerasIdentificadas': p.barrerasIdentificadas,
+    'canalAccesoPreferente': p.canalAccesoPreferente,
+    'formaRespuestaPreferente': p.formaRespuestaPreferente,
+    'tiempoAtencionSostenidaMinutos': p.tiempoAtencionSostenidaMinutos,
+    'apoyosRequeridosIds': p.apoyosRequeridosIds,
+    'alertasAula': p.alertasAula,
+    ..._piarAuditMap(
+      creadoPor: p.creadoPor,
+      creadoEn: p.creadoEn,
+      actualizadoPor: p.actualizadoPor,
+      actualizadoEn: p.actualizadoEn,
+      eliminadoEn: p.eliminadoEn,
+    ),
+  };
+
+  // ── piar_catalogo_apoyos ─────────────────────────────────────────────
+
+  Stream<List<PiarCatalogoApoyo>> piarCatalogoApoyosStream() => _db
+      .collection(_kPiarCatalogoApoyos)
+      .snapshots()
+      .map((s) => s.docs.map(_piarCatalogoApoyoFromDoc).toList());
+
+  Future<void> savePiarCatalogoApoyo(PiarCatalogoApoyo apoyo) => _db
+      .collection(_kPiarCatalogoApoyos)
+      .doc(apoyo.id)
+      .set(_piarCatalogoApoyoToMap(apoyo), SetOptions(merge: true));
+
+  PiarCatalogoApoyo _piarCatalogoApoyoFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarCatalogoApoyo(
+      id: doc.id,
+      nombre: d['nombre'] as String,
+      descripcion: d['descripcion'] as String?,
+      activo: d['activo'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> _piarCatalogoApoyoToMap(PiarCatalogoApoyo a) => {
+    'nombre': a.nombre,
+    'descripcion': a.descripcion,
+    'activo': a.activo,
+  };
+
+  // ── piar_ajustes ──────────────────────────────────────────────────────
+
+  Stream<List<PiarAjuste>> piarAjustesStream({
+    String? inscripcionId,
+    String? subjectId,
+    String? periodId,
+    String? docenteResponsableId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarAjustes);
+    if (inscripcionId != null) {
+      q = q.where('inscripcionId', isEqualTo: inscripcionId);
+    }
+    if (subjectId != null) q = q.where('subjectId', isEqualTo: subjectId);
+    if (periodId != null) q = q.where('periodId', isEqualTo: periodId);
+    if (docenteResponsableId != null) {
+      q = q.where('docenteResponsableId', isEqualTo: docenteResponsableId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarAjusteFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarAjuste(PiarAjuste ajuste) => _db
+      .collection(_kPiarAjustes)
+      .doc(ajuste.id)
+      .set(_piarAjusteToMap(ajuste), SetOptions(merge: true));
+
+  PiarAjuste _piarAjusteFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return PiarAjuste(
+      id: doc.id,
+      inscripcionId: d['inscripcionId'] as String,
+      subjectId: d['subjectId'] as String,
+      standardId: d['standardId'] as String,
+      periodId: d['periodId'] as String,
+      competenciaTextoOriginal: d['competenciaTextoOriginal'] as String,
+      requiereAjuste: d['requiereAjuste'] as bool?,
+      tiposAjuste:
+          (d['tiposAjuste'] as List?)
+              ?.map((e) => PiarTipoAjuste.values.byName(e as String))
+              .toSet() ??
+          const {},
+      descripcionAjuste: d['descripcionAjuste'] as String? ?? '',
+      metaMinima: d['metaMinima'] as String,
+      justificacionSignificativo: d['justificacionSignificativo'] as String?,
+      evidenciaEsperada: d['evidenciaEsperada'] as String? ?? '',
+      apoyosAUtilizarIds:
+          (d['apoyosAUtilizarIds'] as List?)?.cast<String>() ?? const [],
+      observaciones: d['observaciones'] as String?,
+      docenteResponsableId: d['docenteResponsableId'] as String,
+      estado: PiarEstadoAjuste.values.byName(d['estado'] as String),
+      sinRevisar: d['sinRevisar'] as bool? ?? false,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarAjusteToMap(PiarAjuste a) => {
+    'inscripcionId': a.inscripcionId,
+    'subjectId': a.subjectId,
+    'standardId': a.standardId,
+    'periodId': a.periodId,
+    'competenciaTextoOriginal': a.competenciaTextoOriginal,
+    'requiereAjuste': a.requiereAjuste,
+    'tiposAjuste': a.tiposAjuste.map((t) => t.name).toList(),
+    'descripcionAjuste': a.descripcionAjuste,
+    'metaMinima': a.metaMinima,
+    'justificacionSignificativo': a.justificacionSignificativo,
+    'evidenciaEsperada': a.evidenciaEsperada,
+    'apoyosAUtilizarIds': a.apoyosAUtilizarIds,
+    'observaciones': a.observaciones,
+    'docenteResponsableId': a.docenteResponsableId,
+    'estado': a.estado.name,
+    'sinRevisar': a.sinRevisar,
+    ..._piarAuditMap(
+      creadoPor: a.creadoPor,
+      creadoEn: a.creadoEn,
+      actualizadoPor: a.actualizadoPor,
+      actualizadoEn: a.actualizadoEn,
+      eliminadoEn: a.eliminadoEn,
+    ),
+  };
+
+  // ── piar_seguimientos ─────────────────────────────────────────────────
+
+  Stream<List<PiarSeguimiento>> piarSeguimientosStream({
+    String? ajusteId,
+    String? periodId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarSeguimientos);
+    if (ajusteId != null) q = q.where('ajusteId', isEqualTo: ajusteId);
+    if (periodId != null) q = q.where('periodId', isEqualTo: periodId);
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarSeguimientoFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarSeguimiento(PiarSeguimiento seguimiento) => _db
+      .collection(_kPiarSeguimientos)
+      .doc(seguimiento.id)
+      .set(_piarSeguimientoToMap(seguimiento), SetOptions(merge: true));
+
+  PiarSeguimiento _piarSeguimientoFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarSeguimiento(
+      id: doc.id,
+      ajusteId: d['ajusteId'] as String,
+      docenteResponsableId: d['docenteResponsableId'] as String,
+      periodId: d['periodId'] as String,
+      aplicacion: PiarAplicacion.values.byName(d['aplicacion'] as String),
+      causaNoAplicacion: d['causaNoAplicacion'] == null
+          ? null
+          : PiarCausaNoAplicacion.values.byName(
+              d['causaNoAplicacion'] as String,
+            ),
+      valoracion: PiarValoracion.values.byName(d['valoracion'] as String),
+      apoyosEfectivamenteUsadosIds:
+          (d['apoyosEfectivamenteUsadosIds'] as List?)?.cast<String>(),
+      queLogro: d['queLogro'] as String,
+      conQueApoyo: d['conQueApoyo'] as String,
+      queSigue: d['queSigue'] as String,
+      decisionAjuste: PiarDecisionAjuste.values.byName(
+        d['decisionAjuste'] as String,
+      ),
+      nuevaRedaccion: d['nuevaRedaccion'] as String?,
+      esRectificacion: d['esRectificacion'] as bool? ?? false,
+      rectificaARegistroId: d['rectificaARegistroId'] as String?,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarSeguimientoToMap(PiarSeguimiento s) => {
+    'ajusteId': s.ajusteId,
+    'docenteResponsableId': s.docenteResponsableId,
+    'periodId': s.periodId,
+    'aplicacion': s.aplicacion.name,
+    'causaNoAplicacion': s.causaNoAplicacion?.name,
+    'valoracion': s.valoracion.name,
+    'apoyosEfectivamenteUsadosIds': s.apoyosEfectivamenteUsadosIds,
+    'queLogro': s.queLogro,
+    'conQueApoyo': s.conQueApoyo,
+    'queSigue': s.queSigue,
+    'decisionAjuste': s.decisionAjuste.name,
+    'nuevaRedaccion': s.nuevaRedaccion,
+    'esRectificacion': s.esRectificacion,
+    'rectificaARegistroId': s.rectificaARegistroId,
+    ..._piarAuditMap(
+      creadoPor: s.creadoPor,
+      creadoEn: s.creadoEn,
+      actualizadoPor: s.actualizadoPor,
+      actualizadoEn: s.actualizadoEn,
+      eliminadoEn: s.eliminadoEn,
+    ),
+  };
+
+  // ── piar_evidencias ───────────────────────────────────────────────────
+
+  Stream<List<PiarEvidencia>> piarEvidenciasStream({String? seguimientoId}) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarEvidencias);
+    if (seguimientoId != null) {
+      q = q.where('seguimientoId', isEqualTo: seguimientoId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarEvidenciaFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarEvidencia(PiarEvidencia evidencia) => _db
+      .collection(_kPiarEvidencias)
+      .doc(evidencia.id)
+      .set(_piarEvidenciaToMap(evidencia), SetOptions(merge: true));
+
+  PiarEvidencia _piarEvidenciaFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarEvidencia(
+      id: doc.id,
+      seguimientoId: d['seguimientoId'] as String,
+      docenteResponsableId: d['docenteResponsableId'] as String,
+      archivo: d['archivo'] as String,
+      descripcionBreve: d['descripcionBreve'] as String,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarEvidenciaToMap(PiarEvidencia e) => {
+    'seguimientoId': e.seguimientoId,
+    'docenteResponsableId': e.docenteResponsableId,
+    'archivo': e.archivo,
+    'descripcionBreve': e.descripcionBreve,
+    ..._piarAuditMap(
+      creadoPor: e.creadoPor,
+      creadoEn: e.creadoEn,
+      actualizadoPor: e.actualizadoPor,
+      actualizadoEn: e.actualizadoEn,
+      eliminadoEn: e.eliminadoEn,
+    ),
+  };
+
+  // ── piar_actas_acuerdo ────────────────────────────────────────────────
+
+  Stream<List<PiarActaAcuerdo>> piarActasAcuerdoStream({
+    String? inscripcionId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarActasAcuerdo);
+    if (inscripcionId != null) {
+      q = q.where('inscripcionId', isEqualTo: inscripcionId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarActaAcuerdoFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarActaAcuerdo(PiarActaAcuerdo acta) => _db
+      .collection(_kPiarActasAcuerdo)
+      .doc(acta.id)
+      .set(_piarActaAcuerdoToMap(acta), SetOptions(merge: true));
+
+  PiarActaAcuerdo _piarActaAcuerdoFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarActaAcuerdo(
+      id: doc.id,
+      inscripcionId: d['inscripcionId'] as String,
+      fecha: (d['fecha'] as Timestamp).toDate(),
+      archivo: d['archivo'] as String?,
+      firmadaFamilia: d['firmadaFamilia'] as bool? ?? false,
+      firmadaDocentes: d['firmadaDocentes'] as bool? ?? false,
+      firmadaDirectivo: d['firmadaDirectivo'] as bool? ?? false,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarActaAcuerdoToMap(PiarActaAcuerdo a) => {
+    'inscripcionId': a.inscripcionId,
+    'fecha': Timestamp.fromDate(a.fecha),
+    'archivo': a.archivo,
+    'firmadaFamilia': a.firmadaFamilia,
+    'firmadaDocentes': a.firmadaDocentes,
+    'firmadaDirectivo': a.firmadaDirectivo,
+    ..._piarAuditMap(
+      creadoPor: a.creadoPor,
+      creadoEn: a.creadoEn,
+      actualizadoPor: a.actualizadoPor,
+      actualizadoEn: a.actualizadoEn,
+      eliminadoEn: a.eliminadoEn,
+    ),
+  };
+
+  // ── piar_diagnosticos_finales ─────────────────────────────────────────
+
+  Stream<List<PiarDiagnosticoFinal>> piarDiagnosticosFinalesStream({
+    String? inscripcionId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarDiagnosticosFinales);
+    if (inscripcionId != null) {
+      q = q.where('inscripcionId', isEqualTo: inscripcionId);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarDiagnosticoFinalFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarDiagnosticoFinal(PiarDiagnosticoFinal diagnostico) =>
+      _db
+          .collection(_kPiarDiagnosticosFinales)
+          .doc(diagnostico.id)
+          .set(_piarDiagnosticoFinalToMap(diagnostico), SetOptions(merge: true));
+
+  PiarDiagnosticoFinal _piarDiagnosticoFinalFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return PiarDiagnosticoFinal(
+      id: doc.id,
+      inscripcionId: d['inscripcionId'] as String,
+      standardId: d['standardId'] as String,
+      valoracionFinal: PiarValoracion.values.byName(
+        d['valoracionFinal'] as String,
+      ),
+      tuvoAjusteSignificativo: d['tuvoAjusteSignificativo'] as bool,
+      observacion: d['observacion'] as String,
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarDiagnosticoFinalToMap(PiarDiagnosticoFinal d) => {
+    'inscripcionId': d.inscripcionId,
+    'standardId': d.standardId,
+    'valoracionFinal': d.valoracionFinal.name,
+    'tuvoAjusteSignificativo': d.tuvoAjusteSignificativo,
+    'observacion': d.observacion,
+    ..._piarAuditMap(
+      creadoPor: d.creadoPor,
+      creadoEn: d.creadoEn,
+      actualizadoPor: d.actualizadoPor,
+      actualizadoEn: d.actualizadoEn,
+      eliminadoEn: d.eliminadoEn,
+    ),
+  };
+
+  // ── piar_alertas ──────────────────────────────────────────────────────
+
+  Stream<List<PiarAlerta>> piarAlertasStream({
+    String? destinatarioUserId,
+    PiarEstadoLectura? estadoLectura,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kPiarAlertas);
+    if (destinatarioUserId != null) {
+      q = q.where('destinatarioUserId', isEqualTo: destinatarioUserId);
+    }
+    if (estadoLectura != null) {
+      q = q.where('estadoLectura', isEqualTo: estadoLectura.name);
+    }
+    return q.snapshots().map(
+      (s) => s.docs
+          .map(_piarAlertaFromDoc)
+          .where((x) => x.eliminadoEn == null)
+          .toList(),
+    );
+  }
+
+  Future<void> savePiarAlerta(PiarAlerta alerta) => _db
+      .collection(_kPiarAlertas)
+      .doc(alerta.id)
+      .set(_piarAlertaToMap(alerta), SetOptions(merge: true));
+
+  Future<void> marcarPiarAlertaLeida(String id) => _db
+      .collection(_kPiarAlertas)
+      .doc(id)
+      .update({'estadoLectura': PiarEstadoLectura.leida.name});
+
+  PiarAlerta _piarAlertaFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return PiarAlerta(
+      id: doc.id,
+      tipo: PiarTipoAlerta.values.byName(d['tipo'] as String),
+      destinatarioUserId: d['destinatarioUserId'] as String,
+      mensaje: d['mensaje'] as String,
+      entidadRelacionadaTipo: d['entidadRelacionadaTipo'] as String?,
+      entidadRelacionadaId: d['entidadRelacionadaId'] as String?,
+      estadoLectura: PiarEstadoLectura.values.byName(
+        d['estadoLectura'] as String,
+      ),
+      creadoPor: d['creadoPor'] as String,
+      creadoEn: (d['creadoEn'] as Timestamp).toDate(),
+      actualizadoPor: d['actualizadoPor'] as String,
+      actualizadoEn: (d['actualizadoEn'] as Timestamp).toDate(),
+      eliminadoEn: (d['eliminadoEn'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _piarAlertaToMap(PiarAlerta a) => {
+    'tipo': a.tipo.name,
+    'destinatarioUserId': a.destinatarioUserId,
+    'mensaje': a.mensaje,
+    'entidadRelacionadaTipo': a.entidadRelacionadaTipo,
+    'entidadRelacionadaId': a.entidadRelacionadaId,
+    'estadoLectura': a.estadoLectura.name,
+    ..._piarAuditMap(
+      creadoPor: a.creadoPor,
+      creadoEn: a.creadoEn,
+      actualizadoPor: a.actualizadoPor,
+      actualizadoEn: a.actualizadoEn,
+      eliminadoEn: a.eliminadoEn,
+    ),
   };
 }

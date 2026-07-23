@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import '../../data/mock_data.dart';
 import '../../models/models.dart';
+import '../../models/piar_models.dart';
 import 'mock_seed_data.dart';
 
 /// Lista observable simple (equivalente en memoria a una colección de
@@ -67,8 +69,22 @@ class MockBackend {
       behaviorAssessments = LiveList(seedBehaviorAssessments()),
       assignments = LiveList(seedAssignments()),
       evalConfigs = LiveList(seedEvalConfigs()),
+      piarInscripciones = LiveList(seedPiarInscripciones()),
+      piarSoportesExternos = LiveList(seedPiarSoportesExternos()),
+      piarPerfilesApoyo = LiveList(seedPiarPerfilesApoyo()),
+      piarCatalogoApoyos = LiveList(seedPiarCatalogoApoyos()),
+      piarAjustes = LiveList(seedPiarAjustes()),
+      piarSeguimientos = LiveList(const []),
+      piarEvidencias = LiveList(const []),
+      piarActasAcuerdo = LiveList(const []),
+      piarDiagnosticosFinales = LiveList(const []),
+      piarAlertas = LiveList(const []),
+      piarInscripcionesActivasLock = <String>{'st2_ay1'},
       notifications = <String, LiveList<AppNotification>>{} {
     for (final n in seedNotifications()) {
+      notificationsFor(n.userId).add(n);
+    }
+    for (final n in MockData.piarNotificationsDemo) {
       notificationsFor(n.userId).add(n);
     }
   }
@@ -96,6 +112,20 @@ class MockBackend {
   final LiveList<BehaviorAssessment> behaviorAssessments;
   final LiveList<SubjectAssignment> assignments;
   final LiveList<EvaluationConfig> evalConfigs;
+  final LiveList<PiarInscripcion> piarInscripciones;
+  final LiveList<PiarSoporteExterno> piarSoportesExternos;
+  final LiveList<PiarPerfilApoyo> piarPerfilesApoyo;
+  final LiveList<PiarCatalogoApoyo> piarCatalogoApoyos;
+  final LiveList<PiarAjuste> piarAjustes;
+  final LiveList<PiarSeguimiento> piarSeguimientos;
+  final LiveList<PiarEvidencia> piarEvidencias;
+  final LiveList<PiarActaAcuerdo> piarActasAcuerdo;
+  final LiveList<PiarDiagnosticoFinal> piarDiagnosticosFinales;
+  final LiveList<PiarAlerta> piarAlertas;
+  /// Candados en memoria de "inscripción activa" (`{studentId}_{academicYearId}`),
+  /// equivalente al patrón de documento-candado usado en Firestore real
+  /// para garantizar unicidad sin transacciones distribuidas.
+  final Set<String> piarInscripcionesActivasLock;
   final Map<String, LiveList<AppNotification>> notifications;
 
   LiveList<AppNotification> notificationsFor(String userId) =>
