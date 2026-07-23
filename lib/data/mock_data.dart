@@ -335,6 +335,83 @@ class MockData {
       description: 'Gramática y vocabulario inglés',
       weight: 25,
     ),
+    // Estándares de ejemplo ya asociados a un período concreto (ap1), para
+    // que el boletín tenga indicadores que mostrar como bullets. Los
+    // estándares st1-st13 son plantillas de año sin período (periodId
+    // null) y por eso standardsForSubjectAndPeriod() nunca los devuelve.
+    const Standard(
+      id: 'st_demo_mat_p1',
+      subjectId: 's1',
+      periodId: 'ap1',
+      name: 'Pensamiento matemático',
+      description: 'Aplicación de conceptos y procedimientos matemáticos',
+      weight: 100,
+    ),
+    const Standard(
+      id: 'st_demo_cn_p1',
+      subjectId: 's3',
+      periodId: 'ap1',
+      name: 'Pensamiento científico',
+      description: 'Aplicación del método científico',
+      weight: 100,
+    ),
+  ];
+
+  static final List<Indicator> indicators = [
+    const Indicator(
+      id: 'ind_mat_p1_1',
+      standardId: 'st_demo_mat_p1',
+      name: 'Resolución de problemas',
+      description:
+          'Propone diversas alternativas en los procesos de planteamiento y '
+          'resolución de problemas matemáticos y de la vida cotidiana.',
+      order: 1,
+    ),
+    const Indicator(
+      id: 'ind_mat_p1_2',
+      standardId: 'st_demo_mat_p1',
+      name: 'Comunicación matemática',
+      description:
+          'Comunica su pensamiento matemático con coherencia y claridad.',
+      order: 2,
+    ),
+    const Indicator(
+      id: 'ind_mat_p1_3',
+      standardId: 'st_demo_mat_p1',
+      name: 'Procedimientos formales',
+      description:
+          'Elabora, compara, ejercita y valora procedimientos utilizando '
+          'métodos formales.',
+      order: 3,
+    ),
+    const Indicator(
+      id: 'ind_mat_p1_4',
+      standardId: 'st_demo_mat_p1',
+      name: 'Razonamiento y argumentación',
+      description:
+          'Reconoce el razonamiento y la argumentación como aspectos '
+          'fundamentales de las matemáticas.',
+      order: 4,
+    ),
+    const Indicator(
+      id: 'ind_cn_p1_1',
+      standardId: 'st_demo_cn_p1',
+      name: 'Argumentación científica',
+      description:
+          'Muestra capacidad para argumentar y sustentar teorías científicas '
+          'con base en leyes y principios universales.',
+      order: 1,
+    ),
+    const Indicator(
+      id: 'ind_cn_p1_2',
+      standardId: 'st_demo_cn_p1',
+      name: 'Curiosidad científica',
+      description:
+          'Manifiesta curiosidad científica y deseo de saber, al aplicar sus '
+          'conocimientos en la solución de problemas y al desarrollo de '
+          'proyectos.',
+      order: 2,
+    ),
   ];
 
   static final List<Course> courses = [
@@ -822,6 +899,75 @@ class MockData {
       standardId: 'st5',
       value: 4.9,
       registeredAt: DateTime(2026, 5, 12),
+    ),
+    // Notas por indicador de ejemplo (ver indicators en este mismo archivo),
+    // para que el boletín muestre estándar + nota además de la evaluación
+    // final ya cargada arriba para st1/s1/ap1 y st1/s3/ap1.
+    Grade(
+      id: 'g_demo_mat_p1_1',
+      studentId: 'st1',
+      subjectId: 's1',
+      periodId: 'ap1',
+      standardId: 'st_demo_mat_p1',
+      indicatorId: 'ind_mat_p1_1',
+      slot: 1,
+      value: 4.3,
+      registeredAt: DateTime(2026, 3, 10),
+    ),
+    Grade(
+      id: 'g_demo_mat_p1_2',
+      studentId: 'st1',
+      subjectId: 's1',
+      periodId: 'ap1',
+      standardId: 'st_demo_mat_p1',
+      indicatorId: 'ind_mat_p1_2',
+      slot: 1,
+      value: 4.0,
+      registeredAt: DateTime(2026, 3, 10),
+    ),
+    Grade(
+      id: 'g_demo_mat_p1_3',
+      studentId: 'st1',
+      subjectId: 's1',
+      periodId: 'ap1',
+      standardId: 'st_demo_mat_p1',
+      indicatorId: 'ind_mat_p1_3',
+      slot: 1,
+      value: 3.9,
+      registeredAt: DateTime(2026, 3, 10),
+    ),
+    Grade(
+      id: 'g_demo_mat_p1_4',
+      studentId: 'st1',
+      subjectId: 's1',
+      periodId: 'ap1',
+      standardId: 'st_demo_mat_p1',
+      indicatorId: 'ind_mat_p1_4',
+      slot: 1,
+      value: 4.4,
+      registeredAt: DateTime(2026, 3, 10),
+    ),
+    Grade(
+      id: 'g_demo_cn_p1_1',
+      studentId: 'st1',
+      subjectId: 's3',
+      periodId: 'ap1',
+      standardId: 'st_demo_cn_p1',
+      indicatorId: 'ind_cn_p1_1',
+      slot: 1,
+      value: 3.7,
+      registeredAt: DateTime(2026, 3, 10),
+    ),
+    Grade(
+      id: 'g_demo_cn_p1_2',
+      studentId: 'st1',
+      subjectId: 's3',
+      periodId: 'ap1',
+      standardId: 'st_demo_cn_p1',
+      indicatorId: 'ind_cn_p1_2',
+      slot: 1,
+      value: 3.5,
+      registeredAt: DateTime(2026, 3, 10),
     ),
   ];
 

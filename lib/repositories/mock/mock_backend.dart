@@ -64,6 +64,7 @@ class MockBackend {
       grades = LiveList(seedGrades()),
       attendance = LiveList(seedAttendance()),
       observations = LiveList(seedObservations()),
+      behaviorAssessments = LiveList(seedBehaviorAssessments()),
       assignments = LiveList(seedAssignments()),
       evalConfigs = LiveList(seedEvalConfigs()),
       notifications = <String, LiveList<AppNotification>>{} {
@@ -92,6 +93,7 @@ class MockBackend {
   final LiveList<Grade> grades;
   final LiveList<AttendanceRecord> attendance;
   final LiveList<Observation> observations;
+  final LiveList<BehaviorAssessment> behaviorAssessments;
   final LiveList<SubjectAssignment> assignments;
   final LiveList<EvaluationConfig> evalConfigs;
   final Map<String, LiveList<AppNotification>> notifications;

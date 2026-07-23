@@ -143,6 +143,22 @@ class FirebaseDataRepository implements DataRepository {
   @override
   Future<void> deleteObservation(String id) => _store.deleteObservation(id);
 
+  // ── Comportamiento ───────────────────────────────────────────────────────
+  @override
+  Stream<List<BehaviorAssessment>> behaviorAssessmentsStream({
+    String? studentId,
+    String? periodId,
+  }) => _store.behaviorAssessmentsStream(
+    studentId: studentId,
+    periodId: periodId,
+  );
+  @override
+  Future<void> saveBehaviorAssessment(BehaviorAssessment b) =>
+      _store.saveBehaviorAssessment(b);
+  @override
+  Future<void> deleteBehaviorAssessment(String id) =>
+      _store.deleteBehaviorAssessment(id);
+
   // ── Indicadores ──────────────────────────────────────────────────────────
   @override
   Stream<List<Indicator>> indicatorsStream({String? standardId}) =>

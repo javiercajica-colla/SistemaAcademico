@@ -79,6 +79,14 @@ abstract class DataRepository {
   Future<void> saveObservation(Observation obs);
   Future<void> deleteObservation(String id);
 
+  // ── Comportamiento (por período) ─────────────────────────────────────────
+  Stream<List<BehaviorAssessment>> behaviorAssessmentsStream({
+    String? studentId,
+    String? periodId,
+  });
+  Future<void> saveBehaviorAssessment(BehaviorAssessment b);
+  Future<void> deleteBehaviorAssessment(String id);
+
   // ── Indicadores ──────────────────────────────────────────────────────────
   Stream<List<Indicator>> indicatorsStream({String? standardId});
   Future<void> saveIndicator(Indicator ind);

@@ -21,6 +21,7 @@ class FirestoreService {
   static const _kGrades = 'grades';
   static const _kAttendance = 'attendance';
   static const _kObservations = 'observations';
+  static const _kBehaviorAssessments = 'behavior_assessments';
   static const _kNotifications = 'notifications';
   static const _kAssignments = 'subject_assignments';
   static const _kIndicators = 'indicators';
@@ -298,6 +299,30 @@ class FirestoreService {
 
   Future<void> deleteObservation(String id) =>
       _db.collection(_kObservations).doc(id).delete();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // COMPORTAMIENTO
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Stream<List<BehaviorAssessment>> behaviorAssessmentsStream({
+    String? studentId,
+    String? periodId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kBehaviorAssessments);
+    if (studentId != null) q = q.where('studentId', isEqualTo: studentId);
+    if (periodId != null) q = q.where('periodId', isEqualTo: periodId);
+    return q.snapshots().map(
+      (s) => s.docs.map(_behaviorAssessmentFromDoc).toList(),
+    );
+  }
+
+  Future<void> saveBehaviorAssessment(BehaviorAssessment b) => _db
+      .collection(_kBehaviorAssessments)
+      .doc(b.id)
+      .set(_behaviorAssessmentToMap(b), SetOptions(merge: true));
+
+  Future<void> deleteBehaviorAssessment(String id) =>
+      _db.collection(_kBehaviorAssessments).doc(id).delete();
 
   // ══════════════════════════════════════════════════════════════════════════
   // INDICADORES
@@ -662,6 +687,30 @@ class FirestoreService {
     'title': o.title,
     'description': o.description,
     'date': Timestamp.fromDate(o.date),
+  };
+
+  BehaviorAssessment _behaviorAssessmentFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final d = doc.data()!;
+    return BehaviorAssessment(
+      id: doc.id,
+      studentId: d['studentId'] as String,
+      periodId: d['periodId'] as String,
+      teacherId: d['teacherId'] as String,
+      performanceLevel: d['performanceLevel'] as String,
+      description: d['description'] as String,
+      registeredAt: (d['registeredAt'] as Timestamp).toDate(),
+    );
+  }
+
+  Map<String, dynamic> _behaviorAssessmentToMap(BehaviorAssessment b) => {
+    'studentId': b.studentId,
+    'periodId': b.periodId,
+    'teacherId': b.teacherId,
+    'performanceLevel': b.performanceLevel,
+    'description': b.description,
+    'registeredAt': Timestamp.fromDate(b.registeredAt),
   };
 
   AppNotification _notificationFromDoc(

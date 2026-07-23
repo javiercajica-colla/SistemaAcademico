@@ -297,6 +297,21 @@ class AppSidebar extends StatelessWidget {
             Icons.print_rounded,
             '/teacher/grade-format',
           ),
+          _NavItem(
+            'Notas Definitivas',
+            Icons.emoji_events_rounded,
+            '/teacher/definitive-report',
+          ),
+          _NavItem(
+            'Comportamiento',
+            Icons.psychology_alt_rounded,
+            '/teacher/behavior',
+          ),
+          _NavItem(
+            'Consolidado',
+            Icons.grid_view_rounded,
+            '/teacher/consolidated-report',
+          ),
           null,
           _NavItem(
             'Hoja de Vida',

@@ -32,12 +32,13 @@ List<Standard> seedStandards() => List.of(MockData.standards);
 List<Grade> seedGrades() => List.of(MockData.grades);
 List<AttendanceRecord> seedAttendance() => List.of(MockData.attendance);
 List<Observation> seedObservations() => List.of(MockData.observations);
+List<BehaviorAssessment> seedBehaviorAssessments() => const [];
 List<SubjectAssignment> seedAssignments() => List.of(MockData.assignments);
 List<EvaluationConfig> seedEvalConfigs() => List.of(MockData.evalConfigs);
 List<AppNotification> seedNotifications() => List.of(MockData.notifications);
 
-// Indicadores y actividades son un módulo posterior a mock_data.dart y no
-// tienen datos de ejemplo allí; se dejan vacíos (la app los maneja bien
-// sin datos: listas/promedios vacíos, no errores).
-List<Indicator> seedIndicators() => const [];
+List<Indicator> seedIndicators() => List.of(MockData.indicators);
+
+// Actividades son un módulo posterior a mock_data.dart y no tienen datos
+// de ejemplo allí; se dejan vacías (la app las maneja bien sin datos).
 List<Activity> seedActivities() => const [];

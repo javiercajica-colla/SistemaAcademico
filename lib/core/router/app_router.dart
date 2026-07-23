@@ -18,6 +18,9 @@ import '../../screens/teacher/attendance_screen.dart';
 import '../../screens/teacher/observations_screen.dart';
 import '../../screens/teacher/standards_screen.dart';
 import '../../screens/teacher/grade_format_screen.dart';
+import '../../screens/teacher/definitive_report_screen.dart';
+import '../../screens/teacher/behavior_screen.dart';
+import '../../screens/teacher/consolidated_report_screen.dart';
 import '../../screens/teacher/hoja_de_vida_teacher_screen.dart';
 import '../../screens/student/hoja_de_vida_student_screen.dart';
 import '../../screens/shared/grade_sheet_screen.dart';
@@ -146,6 +149,18 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(
             path: '/teacher/grade-format',
             builder: (_, _) => const GradeFormatScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/definitive-report',
+            builder: (_, _) => const DefinitiveReportScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/behavior',
+            builder: (_, _) => const BehaviorScreen(),
+          ),
+          GoRoute(
+            path: '/teacher/consolidated-report',
+            builder: (_, _) => const ConsolidatedReportScreen(),
           ),
           GoRoute(
             path: '/teacher/hoja-de-vida',

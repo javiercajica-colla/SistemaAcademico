@@ -317,6 +317,32 @@ class MockDataRepository implements DataRepository {
     _backend.observations.removeWhere((o) => o.id == id);
   }
 
+  // ── Comportamiento ───────────────────────────────────────────────────────
+  @override
+  Stream<List<BehaviorAssessment>> behaviorAssessmentsStream({
+    String? studentId,
+    String? periodId,
+  }) {
+    return _backend.behaviorAssessments.stream.map((list) {
+      return list
+          .where((b) => studentId == null || b.studentId == studentId)
+          .where((b) => periodId == null || b.periodId == periodId)
+          .toList();
+    });
+  }
+
+  @override
+  Future<void> saveBehaviorAssessment(BehaviorAssessment b) async {
+    await MockBackend.delay();
+    _backend.behaviorAssessments.upsert(b, (x) => x.id == b.id);
+  }
+
+  @override
+  Future<void> deleteBehaviorAssessment(String id) async {
+    await MockBackend.delay();
+    _backend.behaviorAssessments.removeWhere((b) => b.id == id);
+  }
+
   // ── Indicadores ──────────────────────────────────────────────────────────
   @override
   Stream<List<Indicator>> indicatorsStream({String? standardId}) {

@@ -3,6 +3,34 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../repositories/repository_provider.dart';
 
+class CourseReportRow {
+  final Student student;
+  final Map<String, double> gradeBySubjectId;
+  final double average;
+  final int rank;
+
+  const CourseReportRow({
+    required this.student,
+    required this.gradeBySubjectId,
+    required this.average,
+    required this.rank,
+  });
+}
+
+class CourseAreaReportRow {
+  final Student student;
+  final Map<String, double> gradeByArea;
+  final double average;
+  final int rank;
+
+  const CourseAreaReportRow({
+    required this.student,
+    required this.gradeByArea,
+    required this.average,
+    required this.rank,
+  });
+}
+
 class AcademicProvider extends ChangeNotifier {
   final _store = dataRepository;
 
@@ -17,6 +45,7 @@ class AcademicProvider extends ChangeNotifier {
   List<Grade> _grades = [];
   List<AttendanceRecord> _attendance = [];
   List<Observation> _observations = [];
+  List<BehaviorAssessment> _behaviorAssessments = [];
   final List<AppNotification> _notifications = [];
   List<SubjectAssignment> _assignments = [];
   List<EvaluationConfig> _evalConfigs = [];
@@ -76,6 +105,10 @@ class AcademicProvider extends ChangeNotifier {
         _observations = v;
         notifyListeners();
       }),
+      _store.behaviorAssessmentsStream().listen((v) {
+        _behaviorAssessments = v;
+        notifyListeners();
+      }),
       _store.assignmentsStream().listen((v) {
         _assignments = v;
         notifyListeners();
@@ -133,6 +166,7 @@ class AcademicProvider extends ChangeNotifier {
   List<Grade> get grades => _grades;
   List<AttendanceRecord> get attendance => _attendance;
   List<Observation> get observations => _observations;
+  List<BehaviorAssessment> get behaviorAssessments => _behaviorAssessments;
   List<AppNotification> get notifications => _notifications;
   List<SubjectAssignment> get assignments => _assignments;
   List<EvaluationConfig> get evalConfigs => _evalConfigs;
@@ -544,6 +578,96 @@ class AcademicProvider extends ChangeNotifier {
     return gs.isEmpty ? 0.0 : gs.reduce((a, b) => a + b) / gs.length;
   }
 
+  List<CourseReportRow> courseDefinitiveReport(String courseId, String periodId) {
+    final students = studentsInCourse(courseId);
+    final subjects = subjectsForCourse(courseId);
+
+    final entries = students.map((student) {
+      final gradeBySubjectId = <String, double>{
+        for (final subject in subjects)
+          subject.id: calculateSubjectPeriodGrade(
+            student.id,
+            subject.id,
+            periodId,
+          ),
+      };
+      final validGrades = gradeBySubjectId.values.where((g) => g > 0);
+      final average = validGrades.isEmpty
+          ? 0.0
+          : validGrades.reduce((a, b) => a + b) / validGrades.length;
+      return (student: student, gradeBySubjectId: gradeBySubjectId, average: average);
+    }).toList();
+
+    entries.sort((a, b) => b.average.compareTo(a.average));
+
+    return List.generate(entries.length, (i) {
+      final e = entries[i];
+      return CourseReportRow(
+        student: e.student,
+        gradeBySubjectId: e.gradeBySubjectId,
+        average: e.average,
+        rank: i + 1,
+      );
+    });
+  }
+
+  Map<String, List<Subject>> subjectsByArea(String courseId) {
+    final areas = <String, List<Subject>>{};
+    for (final s in subjectsForCourse(courseId)) {
+      areas.putIfAbsent(s.area, () => []).add(s);
+    }
+    return areas;
+  }
+
+  double areaGradeForStudent(
+    String studentId,
+    String periodId,
+    List<Subject> subjectsInArea,
+  ) {
+    double weightedSum = 0;
+    double totalWeight = 0;
+    for (final s in subjectsInArea) {
+      final g = calculateSubjectPeriodGrade(studentId, s.id, periodId);
+      if (g > 0) {
+        weightedSum += g * s.hoursPerWeek;
+        totalWeight += s.hoursPerWeek;
+      }
+    }
+    return totalWeight > 0 ? weightedSum / totalWeight : 0.0;
+  }
+
+  List<CourseAreaReportRow> courseAreaConsolidatedReport(
+    String courseId,
+    String periodId,
+  ) {
+    final students = studentsInCourse(courseId);
+    final areas = subjectsByArea(courseId);
+
+    final entries = students.map((student) {
+      final gradeByArea = <String, double>{
+        for (final e in areas.entries)
+          e.key: areaGradeForStudent(student.id, periodId, e.value),
+      };
+      final validGrades = gradeByArea.values.where((g) => g > 0);
+      final average = validGrades.isEmpty
+          ? 0.0
+          : validGrades.reduce((a, b) => a + b) / validGrades.length;
+      return (student: student, gradeByArea: gradeByArea, average: average);
+    }).toList();
+
+    entries.sort((a, b) => b.average.compareTo(a.average));
+
+    return List.generate(entries.length, (i) {
+      final e = entries[i];
+      return CourseAreaReportRow(
+        student: e.student,
+        gradeByArea: e.gradeByArea,
+        average: e.average,
+        rank: i + 1,
+      );
+    });
+  }
+
   List<Student> studentsForParent(String parentId) =>
       _students.where((s) => s.parentIds.contains(parentId)).toList();
 
@@ -809,6 +933,20 @@ class AcademicProvider extends ChangeNotifier {
 
   void addObservation(Observation obs) {
     _store.saveObservation(obs);
+  }
+
+  BehaviorAssessment? behaviorFor(String studentId, String periodId) {
+    try {
+      return _behaviorAssessments.firstWhere(
+        (b) => b.studentId == studentId && b.periodId == periodId,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void saveBehaviorAssessment(BehaviorAssessment b) {
+    _store.saveBehaviorAssessment(b);
   }
 
   void addAttendance(AttendanceRecord record) {

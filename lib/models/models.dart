@@ -288,6 +288,29 @@ class Observation {
 
 enum ObservationType { academic, disciplinary, positive }
 
+/// Evaluación de comportamiento de un estudiante en un período, registrada
+/// por el docente director de curso (no confundir con [Observation], que
+/// son notas puntuales de cualquier docente).
+class BehaviorAssessment {
+  final String id;
+  final String studentId;
+  final String periodId;
+  final String teacherId;
+  final String performanceLevel;
+  final String description;
+  final DateTime registeredAt;
+
+  const BehaviorAssessment({
+    required this.id,
+    required this.studentId,
+    required this.periodId,
+    required this.teacherId,
+    required this.performanceLevel,
+    required this.description,
+    required this.registeredAt,
+  });
+}
+
 class AppNotification {
   final String id;
   final String userId;

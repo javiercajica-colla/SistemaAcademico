@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../widgets/stat_card.dart';
+import '../shared/course_definitive_report.dart';
+import '../shared/course_consolidated_report.dart';
+import '../shared/student_bulletin_dialog.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -21,7 +25,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -42,6 +46,8 @@ class _ReportsScreenState extends State<ReportsScreen>
             tabs: const [
               Tab(text: 'Boletines'),
               Tab(text: 'Estadísticas'),
+              Tab(text: 'Notas Definitivas y Puesto'),
+              Tab(text: 'Consolidado de Áreas'),
               Tab(text: 'Exportar'),
             ],
           ),
@@ -52,6 +58,8 @@ class _ReportsScreenState extends State<ReportsScreen>
             children: [
               _buildBolettinesTab(academic),
               _buildStatsTab(academic),
+              CourseDefinitiveReportView(courses: academic.courses),
+              CourseConsolidatedReportView(courses: academic.courses),
               _buildExportTab(),
             ],
           ),
@@ -113,10 +121,16 @@ class _ReportsScreenState extends State<ReportsScreen>
                   )
                   .map((s) {
                     final course = academic.courseById(s.courseId ?? '');
-                    final avg = academic.calculateOverallAverage(
-                      s.id,
-                      _selectedPeriod ?? 'ap1',
-                    );
+                    final periodId =
+                        _selectedPeriod ??
+                        academic.currentOpenPeriod?.id ??
+                        academic.activePeriods.firstOrNull?.id;
+                    final period = periodId != null
+                        ? academic.periodById(periodId)
+                        : null;
+                    final avg = periodId != null
+                        ? academic.calculateOverallAverage(s.id, periodId)
+                        : 0.0;
                     return Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: const BoxDecoration(
@@ -165,7 +179,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                               ? GradeChip(grade: avg, compact: true)
                               : const SizedBox.shrink(),
                           const SizedBox(width: 12),
-                          _buildBtnGroup(context, s.fullName),
+                          _buildBtnGroup(context, s, course, period),
                         ],
                       ),
                     );
@@ -178,7 +192,19 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
   }
 
-  Widget _buildBtnGroup(BuildContext context, String studentName) {
+  Widget _buildBtnGroup(
+    BuildContext context,
+    Student student,
+    Course? course,
+    AcademicPeriod? period,
+  ) {
+    final enabled = course != null && period != null;
+    void openBulletin() => StudentBulletinDialog.show(
+      context,
+      student: student,
+      course: course!,
+      period: period!,
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -189,7 +215,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             minimumSize: Size.zero,
           ),
-          onPressed: () => _showBoletinPreview(context, studentName),
+          onPressed: enabled ? openBulletin : null,
         ),
         const SizedBox(width: 6),
         ElevatedButton.icon(
@@ -199,12 +225,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             minimumSize: Size.zero,
           ),
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Descargando boletín de $studentName...'),
-              backgroundColor: AppColors.primary,
-            ),
-          ),
+          onPressed: enabled ? openBulletin : null,
         ),
       ],
     );
@@ -567,121 +588,4 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
   }
 
-  void _showBoletinPreview(BuildContext context, String studentName) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        child: Container(
-          width: 600,
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'INSTITUCIÓN EDUCATIVA COLEGIO SAN JOSÉ',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              const Text(
-                'Boletín de Calificaciones',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_rounded, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Estudiante: $studentName',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Calificaciones período 1 — Año 2026',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Table(
-                border: TableBorder.all(color: AppColors.border),
-                children: [
-                  const TableRow(
-                    decoration: BoxDecoration(color: AppColors.surfaceVariant),
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text(
-                          'Asignatura',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text(
-                          'Nota P1',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  ...[
-                    'Matemáticas',
-                    'Español',
-                    'Ciencias Naturales',
-                    'Inglés',
-                  ].map(
-                    (s) => TableRow(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(s, style: const TextStyle(fontSize: 12)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            (3.5 + 0.5).toStringAsFixed(1),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Cerrar'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.download_rounded, size: 16),
-                    label: const Text('Descargar PDF'),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
