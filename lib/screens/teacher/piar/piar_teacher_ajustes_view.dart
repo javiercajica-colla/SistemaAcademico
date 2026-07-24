@@ -10,6 +10,7 @@ import '../../../providers/academic_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/piar_provider.dart';
 import '../../../widgets/stat_card.dart';
+import 'piar_teacher_seguimiento_section.dart';
 
 const _kTipoAjusteLabels = {
   PiarTipoAjuste.acceso: 'De acceso',
@@ -699,6 +700,25 @@ class _AjusteFormCardState extends State<_AjusteFormCard> {
               ),
             ],
           ),
+        if (widget.ajuste.requiereAjuste == true &&
+            (widget.ajuste.estado == PiarEstadoAjuste.enviado ||
+                widget.ajuste.estado == PiarEstadoAjuste.avalado)) ...[
+          const SizedBox(height: 20),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          const Text(
+            'Seguimiento',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Cómo fue la aplicación de este ajuste y qué logró el estudiante '
+            'en este período.',
+            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          PiarTeacherSeguimientoSection(ajuste: widget.ajuste),
+        ],
       ],
     );
   }

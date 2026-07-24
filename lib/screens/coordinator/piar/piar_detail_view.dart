@@ -9,6 +9,7 @@ import '../../../providers/academic_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/piar_provider.dart';
 import '../../../widgets/stat_card.dart';
+import 'piar_consolidado_tab.dart';
 import 'piar_soporte_dialog.dart';
 
 const _kTipoSoporteLabels = {
@@ -21,9 +22,9 @@ const _kTipoSoporteLabels = {
   PiarTipoSoporte.otro: 'Otro',
 };
 
-/// Detalle de una inscripción PIAR: soportes externos y perfil de apoyo.
-/// Las pestañas de ajustes/seguimiento/consolidado se agregan en fases
-/// posteriores.
+/// Detalle de una inscripción PIAR: soportes externos, perfil de apoyo y
+/// el consolidado por estudiante (ajustes, seguimientos y diagnóstico
+/// final) usado para el cierre de año.
 class PiarDetailView extends StatefulWidget {
   const PiarDetailView({
     super.key,
@@ -45,7 +46,7 @@ class _PiarDetailViewState extends State<PiarDetailView>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -121,6 +122,12 @@ class _PiarDetailViewState extends State<PiarDetailView>
                       ? () => _activar(context, piar, inscripcion)
                       : null,
                 ),
+              if (inscripcion.estado == PiarEstadoInscripcion.activo)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.event_available_rounded, size: 18),
+                  label: const Text('Cerrar año'),
+                  onPressed: () => _cerrarAnio(context, piar, inscripcion),
+                ),
             ],
           ),
         ),
@@ -142,6 +149,7 @@ class _PiarDetailViewState extends State<PiarDetailView>
             tabs: const [
               Tab(text: 'Soportes externos'),
               Tab(text: 'Perfil de apoyo'),
+              Tab(text: 'Consolidado'),
             ],
           ),
         ),
@@ -152,6 +160,7 @@ class _PiarDetailViewState extends State<PiarDetailView>
             children: [
               _SoportesTab(inscripcionId: inscripcion.id),
               _PerfilApoyoTab(inscripcionId: inscripcion.id),
+              PiarConsolidadoTab(inscripcionId: inscripcion.id),
             ],
           ),
         ),
@@ -233,6 +242,59 @@ class _PiarDetailViewState extends State<PiarDetailView>
         const SnackBar(
           content: Text(
             'Faltan requisitos: un soporte externo vigente y el perfil de apoyo completo.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _cerrarAnio(
+    BuildContext context,
+    PiarProvider piar,
+    PiarInscripcion inscripcion,
+  ) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cerrar año'),
+        content: const Text(
+          'Esto cierra el PIAR de este estudiante para el año lectivo '
+          'actual. Ya no se podrán registrar más ajustes ni seguimientos '
+          'sobre esta inscripción.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cerrar año'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    if (!context.mounted) return;
+
+    final uid = context.read<AuthProvider>().currentUser!.id;
+    final resultado = await piar.cerrarAnio(inscripcion.id, uid);
+    if (!context.mounted) return;
+
+    if (resultado == PiarAccionResultado.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Año cerrado.'),
+          backgroundColor: AppColors.secondary,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Todavía hay docentes sin responder o diagnósticos finales sin '
+            'registrar en el Consolidado. Complétalos antes de cerrar el año.',
           ),
           backgroundColor: AppColors.error,
         ),
