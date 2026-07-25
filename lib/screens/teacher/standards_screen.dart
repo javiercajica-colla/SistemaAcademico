@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
@@ -9,14 +8,15 @@ import '../../providers/auth_provider.dart';
 
 const _kMaxEstandaresPorAnio = 5;
 const _kMaxCompetenciasPorPeriodo = 5;
-const _kMaxActividadesPorCompetencia = 6;
 
 /// Estándar (por año) → Competencia (por período, una debe ser
-/// actitudinal) → Actividad (hasta 6, calificadas desde "Calificaciones").
-/// Reemplaza el modelo Standard → Indicator → Activity — ver plan de
-/// rediseño de evaluación. El docente sigue siendo quien define los
-/// Estándares (antes existía además un mecanismo de "plantilla" en la
-/// pantalla del coordinador que no se usaba realmente; se retiró).
+/// actitudinal). Las Actividades (hasta 4 por competencia) ya no se crean
+/// aquí: se registran directamente desde "Calificaciones", donde el
+/// docente hace clic en cada casilla para definir su nombre y fecha antes
+/// de calificar — ver grade_entry_screen.dart. El docente sigue siendo
+/// quien define los Estándares (antes existía además un mecanismo de
+/// "plantilla" en la pantalla del coordinador que no se usaba realmente;
+/// se retiró).
 class StandardsScreen extends StatefulWidget {
   const StandardsScreen({super.key});
 
@@ -319,7 +319,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
     Estandar estandar,
     Competencia competencia,
   ) {
-    final actividades = academic.actividadesForCompetencia(competencia.id);
     final esActitudinal = competencia.tipo == CompetenciaTipo.actitudinal;
     final tipoColor = esActitudinal ? AppColors.warning : AppColors.purple;
 
@@ -378,14 +377,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${actividades.length}/$_kMaxActividadesPorCompetencia actividades',
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: 4),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
               onPressed: () =>
@@ -399,93 +390,19 @@ class _StandardsScreenState extends State<StandardsScreen> {
             ),
           ],
         ),
-        children: [
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-          if (actividades.isEmpty)
-            const Text(
-              'Aún no hay actividades registradas para esta competencia.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            )
-          else
-            ...actividades.map((act) => _buildActividadRow(academic, act)),
-          if (actividades.length < _kMaxActividadesPorCompetencia)
-            TextButton.icon(
-              onPressed: () => _showAddActividadDialog(
-                academic,
-                competencia.id,
-                actividades.length + 1,
-              ),
-              icon: const Icon(Icons.add, size: 14),
-              label: const Text('Agregar Actividad'),
-            ),
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
+        children: const [
+          Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Las notas de cada actividad se registran desde el módulo de Calificaciones.',
+              'Las actividades (hasta 4) se registran desde el módulo de Calificaciones: '
+              'haz clic en cada casilla para definir su nombre y fecha antes de calificar.',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.textTertiary,
                 fontStyle: FontStyle.italic,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActividadRow(AcademicProvider academic, Actividad actividad) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Center(
-              child: Text(
-                '${actividad.order}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.info,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  actividad.name,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-                if (actividad.date != null)
-                  Text(
-                    DateFormat('dd/MM/yyyy').format(actividad.date!),
-                    style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-                  ),
-                if (actividad.description.isNotEmpty)
-                  Text(
-                    actividad.description,
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                  ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
-            onPressed: () => academic.deleteActividad(actividad.id),
-            tooltip: 'Eliminar actividad',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
       ),
@@ -1045,95 +962,4 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddActividadDialog(
-    AcademicProvider academic,
-    String competenciaId,
-    int order,
-  ) {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    DateTime? selectedDate;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Actividad $order'),
-          content: SizedBox(
-            width: 400,
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre de la actividad',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Descripción',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.calendar_today_rounded, size: 16),
-                    label: Text(
-                      selectedDate == null
-                          ? 'Elegir fecha (opcional)'
-                          : DateFormat('dd/MM/yyyy').format(selectedDate!),
-                    ),
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(DateTime.now().year - 1),
-                        lastDate: DateTime(DateTime.now().year + 1),
-                      );
-                      if (picked != null) {
-                        setDialogState(() => selectedDate = picked);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (!formKey.currentState!.validate()) return;
-                academic.addActividad(
-                  Actividad(
-                    id: const Uuid().v4(),
-                    competenciaId: competenciaId,
-                    name: nameCtrl.text.trim(),
-                    description: descCtrl.text.trim(),
-                    order: order,
-                    date: selectedDate,
-                  ),
-                );
-                Navigator.pop(ctx);
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

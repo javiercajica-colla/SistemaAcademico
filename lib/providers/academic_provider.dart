@@ -409,6 +409,25 @@ class AcademicProvider extends ChangeNotifier {
 
   void addActividad(Actividad a) => _store.saveActividad(a);
 
+  void updateActividad(
+    String id, {
+    required String name,
+    required String description,
+    DateTime? date,
+  }) {
+    final old = _actividades.firstWhere((a) => a.id == id);
+    _store.saveActividad(
+      Actividad(
+        id: old.id,
+        competenciaId: old.competenciaId,
+        name: name,
+        description: description,
+        order: old.order,
+        date: date,
+      ),
+    );
+  }
+
   void deleteActividad(String id) => _store.deleteActividad(id);
 
   EvaluationConfig? evalConfigFor(String subjectId, String periodId) {

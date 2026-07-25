@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
@@ -7,6 +8,8 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
 import '../../widgets/stat_card.dart';
+
+const _kActividadesPorCompetencia = 4;
 
 class GradeEntryScreen extends StatefulWidget {
   const GradeEntryScreen({super.key});
@@ -88,9 +91,20 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     return KeyEventResult.handled;
   }
 
-  double? _competenciaPreview(String studentId, List<Actividad> actividades) {
+  List<Actividad?> _slotsFor(List<Actividad> actividades) {
+    final slots = List<Actividad?>.filled(_kActividadesPorCompetencia, null);
+    for (final a in actividades) {
+      if (a.order >= 1 && a.order <= _kActividadesPorCompetencia) {
+        slots[a.order - 1] = a;
+      }
+    }
+    return slots;
+  }
+
+  double? _competenciaPreview(String studentId, List<Actividad?> actividades) {
     final vals = <double>[];
     for (final act in actividades) {
+      if (act == null) continue;
       final v = double.tryParse(_getController(studentId, act.id).text);
       if (v != null) vals.add(v);
     }
@@ -101,7 +115,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   double? _estandarPreview(
     String studentId,
     List<Competencia> competencias,
-    Map<String, List<Actividad>> actividadesByCompetencia,
+    Map<String, List<Actividad?>> actividadesByCompetencia,
   ) {
     final vals = competencias
         .map(
@@ -343,9 +357,12 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
       for (final e in estandares)
         e.id: academic.competenciasForEstandarAndPeriod(e.id, _selectedPeriod!),
     };
-    final actividadesByCompetencia = <String, List<Actividad>>{
+    // Siempre 4 casillas por competencia (algunas pueden estar sin definir
+    // todavía = null): el docente las activa haciendo clic en el
+    // encabezado para registrar nombre y fecha antes de poder calificar.
+    final actividadesByCompetencia = <String, List<Actividad?>>{
       for (final comps in competenciasByEstandar.values)
-        for (final c in comps) c.id: academic.actividadesForCompetencia(c.id),
+        for (final c in comps) c.id: _slotsFor(academic.actividadesForCompetencia(c.id)),
     };
 
     return AppCard(
@@ -417,18 +434,15 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   )
                 else ...[
                   for (final comp in competenciasByEstandar[estandares[ei].id]!) ...[
-                    for (final act in actividadesByCompetencia[comp.id]!)
+                    for (var slot = 0; slot < _kActividadesPorCompetencia; slot++)
                       DataColumn(
-                        label: _actividadHeader(estandares[ei], ei + 1, comp, act),
-                      ),
-                    if (actividadesByCompetencia[comp.id]!.isEmpty)
-                      DataColumn(
-                        label: _groupHeader(
-                          'EST${ei + 1}',
-                          'C${comp.order}',
-                          'Sin actividades',
-                          tooltip:
-                              '${estandares[ei].name} — ${comp.name} (definir actividades en Estándares)',
+                        label: _actividadHeader(
+                          academic,
+                          estandares[ei],
+                          ei + 1,
+                          comp,
+                          actividadesByCompetencia[comp.id]![slot],
+                          slot + 1,
                         ),
                       ),
                     DataColumn(
@@ -510,7 +524,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
               );
               for (final comps in competenciasByEstandar.values) {
                 for (final comp in comps) {
-                  for (final act in actividadesByCompetencia[comp.id] ?? const <Actividad>[]) {
+                  for (final act in actividadesByCompetencia[comp.id] ?? const <Actividad?>[]) {
+                    if (act == null) continue;
                     final ctrl = _getController(student.id, act.id);
                     if (ctrl.text.isEmpty) {
                       try {
@@ -608,13 +623,6 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                         for (final act in actividadesByCompetencia[comp.id]!)
                           DataCell(
                             _buildActividadCell(students, rowIndex, act),
-                          ),
-                        if (actividadesByCompetencia[comp.id]!.isEmpty)
-                          const DataCell(
-                            Text(
-                              '-',
-                              style: TextStyle(color: AppColors.textTertiary),
-                            ),
                           ),
                         DataCell(
                           _previewChip(
@@ -735,45 +743,70 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     return Tooltip(message: tooltip, child: column);
   }
 
+  /// Encabezado clicable: si la actividad ya está definida (nombre + fecha
+  /// opcional) muestra su nombre y permite editarla/eliminarla; si no,
+  /// invita a definirla — la casilla de nota solo se activa después.
   Widget _actividadHeader(
+    AcademicProvider academic,
     Estandar estandar,
     int estNum,
     Competencia comp,
-    Actividad act,
+    Actividad? act,
+    int order,
   ) {
     final tipoColor = comp.tipo == CompetenciaTipo.actitudinal
         ? AppColors.warning
         : AppColors.purple;
-    return Tooltip(
-      message:
-          '${estandar.name} — ${comp.name} '
-          '(${comp.tipo == CompetenciaTipo.actitudinal ? "Actitudinal" : "Cognitiva"}) — '
-          '${act.name}',
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'EST$estNum',
-            style: const TextStyle(
-              fontSize: 9,
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
+    final definida = act != null;
+    return InkWell(
+      onTap: () => _showActividadDialog(academic, comp, order, act),
+      child: Tooltip(
+        message: definida
+            ? '${estandar.name} — ${comp.name} — ${act.name}'
+                  '${act.date != null ? " (${DateFormat('dd/MM/yyyy').format(act.date!)})" : ""}'
+            : '${estandar.name} — ${comp.name} — Actividad $order sin definir '
+                  '(clic para registrar nombre y fecha)',
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'EST$estNum',
+              style: const TextStyle(
+                fontSize: 9,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          Text(
-            'C${comp.order}',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: tipoColor,
+            Text(
+              'C${comp.order}',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: tipoColor,
+              ),
             ),
-          ),
-          Text(
-            'Act${act.order}',
-            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
-          ),
-        ],
+            Row(
+              children: [
+                Text(
+                  'Act$order',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: definida
+                        ? AppColors.textSecondary
+                        : AppColors.textTertiary,
+                    fontStyle: definida ? FontStyle.normal : FontStyle.italic,
+                  ),
+                ),
+                Icon(
+                  definida ? Icons.check_circle : Icons.add_circle_outline,
+                  size: 10,
+                  color: definida ? AppColors.secondary : AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -781,8 +814,20 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   Widget _buildActividadCell(
     List<Student> students,
     int rowIndex,
-    Actividad actividad,
+    Actividad? actividad,
   ) {
+    if (actividad == null) {
+      return const SizedBox(
+        width: 64,
+        child: Center(
+          child: Icon(
+            Icons.lock_outline_rounded,
+            size: 14,
+            color: AppColors.textTertiary,
+          ),
+        ),
+      );
+    }
     final student = students[rowIndex];
     final ctrl = _getController(student.id, actividad.id);
     return SizedBox(
@@ -800,6 +845,110 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           style: const TextStyle(fontSize: 13),
           decoration: _gradeDecoration(ctrl.text),
           onChanged: (_) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
+  /// Diálogo inline para registrar (o editar/eliminar) el nombre y la
+  /// fecha de una actividad, sin salir de Calificaciones.
+  void _showActividadDialog(
+    AcademicProvider academic,
+    Competencia comp,
+    int order,
+    Actividad? existing,
+  ) {
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final formKey = GlobalKey<FormState>();
+    DateTime? selectedDate = existing?.date;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Actividad $order — ${comp.name}'),
+          content: SizedBox(
+            width: 400,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de la actividad',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                    label: Text(
+                      selectedDate == null
+                          ? 'Elegir fecha (opcional)'
+                          : DateFormat('dd/MM/yyyy').format(selectedDate!),
+                    ),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: selectedDate ?? DateTime.now(),
+                        firstDate: DateTime(DateTime.now().year - 1),
+                        lastDate: DateTime(DateTime.now().year + 1),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => selectedDate = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (existing != null)
+              TextButton(
+                onPressed: () {
+                  academic.deleteActividad(existing.id);
+                  Navigator.pop(ctx);
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                child: const Text('Eliminar'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                if (existing != null) {
+                  academic.updateActividad(
+                    existing.id,
+                    name: nameCtrl.text.trim(),
+                    description: existing.description,
+                    date: selectedDate,
+                  );
+                } else {
+                  academic.addActividad(
+                    Actividad(
+                      id: const Uuid().v4(),
+                      competenciaId: comp.id,
+                      name: nameCtrl.text.trim(),
+                      description: '',
+                      order: order,
+                      date: selectedDate,
+                    ),
+                  );
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
         ),
       ),
     );
