@@ -18,16 +18,16 @@ class FirestoreService {
   static const _kSubjects = 'subjects';
   static const _kYears = 'academic_years';
   static const _kPeriods = 'academic_periods';
-  static const _kStandards = 'standards';
   static const _kGrades = 'grades';
   static const _kAttendance = 'attendance';
   static const _kObservations = 'observations';
   static const _kBehaviorAssessments = 'behavior_assessments';
   static const _kNotifications = 'notifications';
   static const _kAssignments = 'subject_assignments';
-  static const _kIndicators = 'indicators';
-  static const _kActivities = 'activities';
   static const _kEvalConfigs = 'evaluation_configs';
+  static const _kEstandares = 'estandares';
+  static const _kCompetencias = 'competencias';
+  static const _kActividades = 'actividades';
   static const _kPiarInscripciones = 'piar_inscripciones';
   static const _kPiarInscripcionesLock = 'piar_inscripciones_activas_lock';
   static const _kPiarSoportesExternos = 'piar_soportes_externos';
@@ -227,24 +227,6 @@ class FirestoreService {
       .set(_periodToMap(period), SetOptions(merge: true));
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ESTÁNDARES DE EVALUACIÓN
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Stream<List<Standard>> standardsStream({String? subjectId}) {
-    Query<Map<String, dynamic>> q = _db.collection(_kStandards);
-    if (subjectId != null) q = q.where('subjectId', isEqualTo: subjectId);
-    return q.snapshots().map((s) => s.docs.map(_standardFromDoc).toList());
-  }
-
-  Future<void> saveStandard(Standard standard) => _db
-      .collection(_kStandards)
-      .doc(standard.id)
-      .set(_standardToMap(standard), SetOptions(merge: true));
-
-  Future<void> deleteStandard(String id) =>
-      _db.collection(_kStandards).doc(id).delete();
-
-  // ══════════════════════════════════════════════════════════════════════════
   // CALIFICACIONES
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -337,42 +319,6 @@ class FirestoreService {
       _db.collection(_kBehaviorAssessments).doc(id).delete();
 
   // ══════════════════════════════════════════════════════════════════════════
-  // INDICADORES
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Stream<List<Indicator>> indicatorsStream({String? standardId}) {
-    Query<Map<String, dynamic>> q = _db.collection(_kIndicators);
-    if (standardId != null) q = q.where('standardId', isEqualTo: standardId);
-    return q.snapshots().map((s) => s.docs.map(_indicatorFromDoc).toList());
-  }
-
-  Future<void> saveIndicator(Indicator ind) => _db
-      .collection(_kIndicators)
-      .doc(ind.id)
-      .set(_indicatorToMap(ind), SetOptions(merge: true));
-
-  Future<void> deleteIndicator(String id) =>
-      _db.collection(_kIndicators).doc(id).delete();
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // ACTIVIDADES
-  // ══════════════════════════════════════════════════════════════════════════
-
-  Stream<List<Activity>> activitiesStream({String? indicatorId}) {
-    Query<Map<String, dynamic>> q = _db.collection(_kActivities);
-    if (indicatorId != null) q = q.where('indicatorId', isEqualTo: indicatorId);
-    return q.snapshots().map((s) => s.docs.map(_activityFromDoc).toList());
-  }
-
-  Future<void> saveActivity(Activity act) => _db
-      .collection(_kActivities)
-      .doc(act.id)
-      .set(_activityToMap(act), SetOptions(merge: true));
-
-  Future<void> deleteActivity(String id) =>
-      _db.collection(_kActivities).doc(id).delete();
-
-  // ══════════════════════════════════════════════════════════════════════════
   // CONFIGURACIÓN DE EVALUACIÓN
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -385,6 +331,59 @@ class FirestoreService {
       .collection(_kEvalConfigs)
       .doc(ec.id)
       .set(_evalConfigToMap(ec), SetOptions(merge: true));
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ESTÁNDAR → COMPETENCIA → ACTIVIDAD (reemplaza Estándares/Indicadores/
+  // Actividades de arriba — ver plan de rediseño de evaluación)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Stream<List<Estandar>> estandaresStream({String? subjectId}) {
+    Query<Map<String, dynamic>> q = _db.collection(_kEstandares);
+    if (subjectId != null) q = q.where('subjectId', isEqualTo: subjectId);
+    return q.snapshots().map((s) => s.docs.map(_estandarFromDoc).toList());
+  }
+
+  Future<void> saveEstandar(Estandar estandar) => _db
+      .collection(_kEstandares)
+      .doc(estandar.id)
+      .set(_estandarToMap(estandar), SetOptions(merge: true));
+
+  Future<void> deleteEstandar(String id) =>
+      _db.collection(_kEstandares).doc(id).delete();
+
+  Stream<List<Competencia>> competenciasStream({
+    String? estandarId,
+    String? periodId,
+  }) {
+    Query<Map<String, dynamic>> q = _db.collection(_kCompetencias);
+    if (estandarId != null) q = q.where('estandarId', isEqualTo: estandarId);
+    if (periodId != null) q = q.where('periodId', isEqualTo: periodId);
+    return q.snapshots().map((s) => s.docs.map(_competenciaFromDoc).toList());
+  }
+
+  Future<void> saveCompetencia(Competencia competencia) => _db
+      .collection(_kCompetencias)
+      .doc(competencia.id)
+      .set(_competenciaToMap(competencia), SetOptions(merge: true));
+
+  Future<void> deleteCompetencia(String id) =>
+      _db.collection(_kCompetencias).doc(id).delete();
+
+  Stream<List<Actividad>> actividadesStream({String? competenciaId}) {
+    Query<Map<String, dynamic>> q = _db.collection(_kActividades);
+    if (competenciaId != null) {
+      q = q.where('competenciaId', isEqualTo: competenciaId);
+    }
+    return q.snapshots().map((s) => s.docs.map(_actividadFromDoc).toList());
+  }
+
+  Future<void> saveActividad(Actividad actividad) => _db
+      .collection(_kActividades)
+      .doc(actividad.id)
+      .set(_actividadToMap(actividad), SetOptions(merge: true));
+
+  Future<void> deleteActividad(String id) =>
+      _db.collection(_kActividades).doc(id).delete();
 
   // ══════════════════════════════════════════════════════════════════════════
   // NOTIFICACIONES  (subcolección por usuario)
@@ -599,26 +598,6 @@ class FirestoreService {
     'isOpen': p.isOpen,
   };
 
-  Standard _standardFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
-    return Standard(
-      id: doc.id,
-      subjectId: d['subjectId'] as String,
-      periodId: d['periodId'] as String?,
-      name: d['name'] as String,
-      description: d['description'] as String,
-      weight: (d['weight'] as num).toDouble(),
-    );
-  }
-
-  Map<String, dynamic> _standardToMap(Standard s) => {
-    'subjectId': s.subjectId,
-    'periodId': s.periodId,
-    'name': s.name,
-    'description': s.description,
-    'weight': s.weight,
-  };
-
   Grade _gradeFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
     return Grade(
@@ -626,9 +605,9 @@ class FirestoreService {
       studentId: d['studentId'] as String,
       subjectId: d['subjectId'] as String,
       periodId: d['periodId'] as String,
-      standardId: d['standardId'] as String?,
-      indicatorId: d['indicatorId'] as String?,
-      slot: d['slot'] as int?,
+      estandarId: d['estandarId'] as String?,
+      competenciaId: d['competenciaId'] as String?,
+      actividadId: d['actividadId'] as String?,
       value: (d['value'] as num).toDouble(),
       note: d['note'] as String?,
       registeredAt: (d['registeredAt'] as Timestamp).toDate(),
@@ -639,9 +618,9 @@ class FirestoreService {
     'studentId': g.studentId,
     'subjectId': g.subjectId,
     'periodId': g.periodId,
-    'standardId': g.standardId,
-    'indicatorId': g.indicatorId,
-    'slot': g.slot,
+    'estandarId': g.estandarId,
+    'competenciaId': g.competenciaId,
+    'actividadId': g.actividadId,
     'value': g.value,
     'note': g.note,
     'registeredAt': Timestamp.fromDate(g.registeredAt),
@@ -772,48 +751,6 @@ class FirestoreService {
     'academicYearId': a.academicYearId,
   };
 
-  Indicator _indicatorFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
-    return Indicator(
-      id: doc.id,
-      standardId: d['standardId'] as String,
-      name: d['name'] as String,
-      description: d['description'] as String,
-      order: d['order'] as int,
-    );
-  }
-
-  Map<String, dynamic> _indicatorToMap(Indicator i) => {
-    'standardId': i.standardId,
-    'name': i.name,
-    'description': i.description,
-    'order': i.order,
-  };
-
-  Activity _activityFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
-    return Activity(
-      id: doc.id,
-      indicatorId: d['indicatorId'] as String,
-      name: d['name'] as String,
-      description: d['description'] as String,
-      order: d['order'] as int,
-      isProgrammed: d['isProgrammed'] as bool? ?? false,
-      gradeValue: (d['gradeValue'] as num?)?.toDouble(),
-      date: (d['date'] as Timestamp?)?.toDate(),
-    );
-  }
-
-  Map<String, dynamic> _activityToMap(Activity a) => {
-    'indicatorId': a.indicatorId,
-    'name': a.name,
-    'description': a.description,
-    'order': a.order,
-    'isProgrammed': a.isProgrammed,
-    'gradeValue': a.gradeValue,
-    'date': a.date == null ? null : Timestamp.fromDate(a.date!),
-  };
-
   EvaluationConfig _evalConfigFromDoc(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
@@ -832,6 +769,73 @@ class FirestoreService {
     'periodId': ec.periodId,
     'standardsWeight': ec.standardsWeight,
     'finalExamWeight': ec.finalExamWeight,
+  };
+
+  Estandar _estandarFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return Estandar(
+      id: doc.id,
+      subjectId: d['subjectId'] as String,
+      academicYearId: d['academicYearId'] as String,
+      name: d['name'] as String,
+      description: d['description'] as String,
+      order: d['order'] as int,
+      weight: (d['weight'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> _estandarToMap(Estandar e) => {
+    'subjectId': e.subjectId,
+    'academicYearId': e.academicYearId,
+    'name': e.name,
+    'description': e.description,
+    'order': e.order,
+    'weight': e.weight,
+  };
+
+  Competencia _competenciaFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return Competencia(
+      id: doc.id,
+      estandarId: d['estandarId'] as String,
+      periodId: d['periodId'] as String,
+      tipo: CompetenciaTipo.values.firstWhere(
+        (t) => t.name == d['tipo'],
+        orElse: () => CompetenciaTipo.cognitiva,
+      ),
+      name: d['name'] as String,
+      description: d['description'] as String,
+      order: d['order'] as int,
+    );
+  }
+
+  Map<String, dynamic> _competenciaToMap(Competencia c) => {
+    'estandarId': c.estandarId,
+    'periodId': c.periodId,
+    'tipo': c.tipo.name,
+    'name': c.name,
+    'description': c.description,
+    'order': c.order,
+  };
+
+  Actividad _actividadFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return Actividad(
+      id: doc.id,
+      competenciaId: d['competenciaId'] as String,
+      name: d['name'] as String,
+      description: d['description'] as String,
+      order: d['order'] as int,
+      date: (d['date'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> _actividadToMap(Actividad a) => {
+    'competenciaId': a.competenciaId,
+    'name': a.name,
+    'description': a.description,
+    'order': a.order,
+    'date': a.date == null ? null : Timestamp.fromDate(a.date!),
   };
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1147,7 +1151,8 @@ class FirestoreService {
       id: doc.id,
       inscripcionId: d['inscripcionId'] as String,
       subjectId: d['subjectId'] as String,
-      standardId: d['standardId'] as String,
+      estandarId: d['estandarId'] as String,
+      competenciaId: d['competenciaId'] as String?,
       periodId: d['periodId'] as String,
       competenciaTextoOriginal: d['competenciaTextoOriginal'] as String,
       requiereAjuste: d['requiereAjuste'] as bool?,
@@ -1177,7 +1182,8 @@ class FirestoreService {
   Map<String, dynamic> _piarAjusteToMap(PiarAjuste a) => {
     'inscripcionId': a.inscripcionId,
     'subjectId': a.subjectId,
-    'standardId': a.standardId,
+    'estandarId': a.estandarId,
+    'competenciaId': a.competenciaId,
     'periodId': a.periodId,
     'competenciaTextoOriginal': a.competenciaTextoOriginal,
     'requiereAjuste': a.requiereAjuste,
@@ -1421,7 +1427,7 @@ class FirestoreService {
     return PiarDiagnosticoFinal(
       id: doc.id,
       inscripcionId: d['inscripcionId'] as String,
-      standardId: d['standardId'] as String,
+      estandarId: d['estandarId'] as String,
       valoracionFinal: PiarValoracion.values.byName(
         d['valoracionFinal'] as String,
       ),
@@ -1437,7 +1443,7 @@ class FirestoreService {
 
   Map<String, dynamic> _piarDiagnosticoFinalToMap(PiarDiagnosticoFinal d) => {
     'inscripcionId': d.inscripcionId,
-    'standardId': d.standardId,
+    'estandarId': d.estandarId,
     'valoracionFinal': d.valoracionFinal.name,
     'tuvoAjusteSignificativo': d.tuvoAjusteSignificativo,
     'observacion': d.observacion,

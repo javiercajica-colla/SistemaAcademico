@@ -52,11 +52,6 @@ abstract class DataRepository {
   Stream<List<AcademicPeriod>> periodsStream({String? academicYearId});
   Future<void> savePeriod(AcademicPeriod period);
 
-  // ── Estándares de evaluación ─────────────────────────────────────────────
-  Stream<List<Standard>> standardsStream({String? subjectId});
-  Future<void> saveStandard(Standard standard);
-  Future<void> deleteStandard(String id);
-
   // ── Calificaciones ───────────────────────────────────────────────────────
   Stream<List<Grade>> gradesStream({
     String? studentId,
@@ -88,19 +83,25 @@ abstract class DataRepository {
   Future<void> saveBehaviorAssessment(BehaviorAssessment b);
   Future<void> deleteBehaviorAssessment(String id);
 
-  // ── Indicadores ──────────────────────────────────────────────────────────
-  Stream<List<Indicator>> indicatorsStream({String? standardId});
-  Future<void> saveIndicator(Indicator ind);
-  Future<void> deleteIndicator(String id);
-
-  // ── Actividades ──────────────────────────────────────────────────────────
-  Stream<List<Activity>> activitiesStream({String? indicatorId});
-  Future<void> saveActivity(Activity act);
-  Future<void> deleteActivity(String id);
-
   // ── Configuración de evaluación ──────────────────────────────────────────
   Stream<List<EvaluationConfig>> evalConfigsStream();
   Future<void> saveEvalConfig(EvaluationConfig ec);
+
+  // ── Estándar → Competencia → Actividad ────────────────────────────────────
+  Stream<List<Estandar>> estandaresStream({String? subjectId});
+  Future<void> saveEstandar(Estandar estandar);
+  Future<void> deleteEstandar(String id);
+
+  Stream<List<Competencia>> competenciasStream({
+    String? estandarId,
+    String? periodId,
+  });
+  Future<void> saveCompetencia(Competencia competencia);
+  Future<void> deleteCompetencia(String id);
+
+  Stream<List<Actividad>> actividadesStream({String? competenciaId});
+  Future<void> saveActividad(Actividad actividad);
+  Future<void> deleteActividad(String id);
 
   // ── Notificaciones (por usuario) ─────────────────────────────────────────
   Stream<List<AppNotification>> notificationsStream(String userId);

@@ -97,26 +97,47 @@ class StudentBulletinDialog extends StatelessWidget {
     );
   }
 
-  List<({Standard standard, double? grade, List<String> indicatorDescriptions})>
-  _standardBreakdown(BuildContext context, Subject subject) {
+  List<
+    ({
+      Estandar estandar,
+      double? grade,
+      List<({Competencia competencia, double? grade, bool? alcanzada})>
+      competencias,
+    })
+  >
+  _estandarBreakdown(BuildContext context, Subject subject) {
     final academic = context.read<AcademicProvider>();
-    final standards = academic.standardsForSubjectAndPeriod(
-      subject.id,
-      period.id,
-    );
+    final estandares = academic.estandaresForSubject(subject.id);
     return [
-      for (final std in standards)
+      for (final est in estandares)
         (
-          standard: std,
-          grade: academic.standardGradeForStudent(
+          estandar: est,
+          grade: academic.estandarGradeForStudent(
             student.id,
             subject.id,
             period.id,
-            std.id,
+            est.id,
           ),
-          indicatorDescriptions: [
-            for (final ind in academic.indicatorsForStandard(std.id))
-              ind.description,
+          competencias: [
+            for (final comp in academic.competenciasForEstandarAndPeriod(
+              est.id,
+              period.id,
+            ))
+              (
+                competencia: comp,
+                grade: academic.competenciaGradeForStudent(
+                  student.id,
+                  subject.id,
+                  period.id,
+                  comp.id,
+                ),
+                alcanzada: academic.competenciaAlcanzada(
+                  student.id,
+                  subject.id,
+                  period.id,
+                  comp.id,
+                ),
+              ),
           ],
         ),
     ];
@@ -470,7 +491,7 @@ class StudentBulletinDialog extends StatelessWidget {
   Widget _subjectBlock(BuildContext context, Subject s) {
     final g = grades[s.id] ?? 0.0;
     final color = performanceColor(g);
-    final standards = _standardBreakdown(context, s);
+    final estandares = _estandarBreakdown(context, s);
     return Container(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -519,14 +540,12 @@ class StudentBulletinDialog extends StatelessWidget {
               ),
             ],
           ),
-          if (standards.isNotEmpty)
+          if (estandares.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 8, top: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: standards
-                    .map((std) => _standardRow(std))
-                    .toList(),
+                children: estandares.map((est) => _estandarRow(est)).toList(),
               ),
             ),
         ],
@@ -534,9 +553,14 @@ class StudentBulletinDialog extends StatelessWidget {
     );
   }
 
-  Widget _standardRow(
-    ({Standard standard, double? grade, List<String> indicatorDescriptions})
-    std,
+  Widget _estandarRow(
+    ({
+      Estandar estandar,
+      double? grade,
+      List<({Competencia competencia, double? grade, bool? alcanzada})>
+      competencias,
+    })
+    est,
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -547,7 +571,7 @@ class StudentBulletinDialog extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  std.standard.name,
+                  est.estandar.name,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -556,38 +580,73 @@ class StudentBulletinDialog extends StatelessWidget {
                 ),
               ),
               Text(
-                std.grade != null ? std.grade!.toStringAsFixed(1) : '—',
+                est.grade != null ? est.grade!.toStringAsFixed(1) : '—',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: std.grade != null
-                      ? performanceColor(std.grade!)
+                  color: est.grade != null
+                      ? performanceColor(est.grade!)
                       : AppColors.textSecondary,
                 ),
               ),
             ],
           ),
-          if (std.indicatorDescriptions.isNotEmpty)
+          if (est.competencias.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 10, top: 2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: std.indicatorDescriptions
-                    .map(
-                      (b) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Text(
-                          '•  $b',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                      ),
-                    )
+                children: est.competencias
+                    .map((c) => _competenciaRow(c))
                     .toList(),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _competenciaRow(
+    ({Competencia competencia, double? grade, bool? alcanzada}) c,
+  ) {
+    final tipoLabel = c.competencia.tipo == CompetenciaTipo.actitudinal
+        ? 'Actitudinal'
+        : 'Cognitiva';
+    final statusColor = c.alcanzada == null
+        ? AppColors.textSecondary
+        : (c.alcanzada! ? const Color(0xFF10B981) : const Color(0xFFEF4444));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              '•  ${c.competencia.name}  ($tipoLabel)',
+              style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+            ),
+          ),
+          Text(
+            c.grade != null
+                ? c.grade!.toStringAsFixed(1)
+                : (c.alcanzada == null ? '—' : ''),
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            c.alcanzada == null
+                ? ''
+                : (c.alcanzada! ? 'Alcanzada' : 'No alcanzada'),
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: statusColor,
+            ),
+          ),
         ],
       ),
     );
@@ -774,12 +833,19 @@ class StudentBulletinDialog extends StatelessWidget {
       return l == '—' ? pdfDash : l;
     }
 
-    final standardsBySubject = <
+    final estandaresBySubject = <
       Subject,
-      List<({Standard standard, double? grade, List<String> indicatorDescriptions})>
+      List<
+        ({
+          Estandar estandar,
+          double? grade,
+          List<({Competencia competencia, double? grade, bool? alcanzada})>
+          competencias,
+        })
+      >
     >{
       for (final list in areas.values)
-        for (final s in list) s: _standardBreakdown(context, s),
+        for (final s in list) s: _estandarBreakdown(context, s),
     };
 
     pw.Widget rowCell(String text, double w, {bool center = false, pw.Font? font, PdfColor? color, double size = 9}) {
@@ -903,14 +969,14 @@ class StudentBulletinDialog extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if ((standardsBySubject[s] ?? []).isNotEmpty)
+                    if ((estandaresBySubject[s] ?? []).isNotEmpty)
                       pw.Padding(
                         padding: const pw.EdgeInsets.only(left: 6, top: 3),
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: (standardsBySubject[s] ?? [])
+                          children: (estandaresBySubject[s] ?? [])
                               .map(
-                                (std) => pw.Padding(
+                                (est) => pw.Padding(
                                   padding: const pw.EdgeInsets.only(bottom: 2),
                                   child: pw.Column(
                                     crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -919,25 +985,44 @@ class StudentBulletinDialog extends StatelessWidget {
                                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                                         children: [
                                           pw.Text(
-                                            std.standard.name,
+                                            est.estandar.name,
                                             style: pw.TextStyle(font: bold, fontSize: 8, color: PdfColors.grey800),
                                           ),
                                           pw.Text(
-                                            std.grade != null ? std.grade!.toStringAsFixed(1) : pdfDash,
+                                            est.grade != null ? est.grade!.toStringAsFixed(1) : pdfDash,
                                             style: pw.TextStyle(
                                               font: bold,
                                               fontSize: 8,
-                                              color: std.grade != null ? pColor(std.grade!) : PdfColors.grey600,
+                                              color: est.grade != null ? pColor(est.grade!) : PdfColors.grey600,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      for (final b in std.indicatorDescriptions)
+                                      for (final c in est.competencias)
                                         pw.Padding(
                                           padding: const pw.EdgeInsets.only(left: 6, top: 1),
-                                          child: pw.Text(
-                                            '-  $b',
-                                            style: pw.TextStyle(font: regular, fontSize: 7.5, color: PdfColors.grey700),
+                                          child: pw.Row(
+                                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              pw.Expanded(
+                                                child: pw.Text(
+                                                  '-  ${c.competencia.name}  (${c.competencia.tipo == CompetenciaTipo.actitudinal ? "Actitudinal" : "Cognitiva"})',
+                                                  style: pw.TextStyle(font: regular, fontSize: 7.5, color: PdfColors.grey700),
+                                                ),
+                                              ),
+                                              pw.Text(
+                                                c.alcanzada == null
+                                                    ? pdfDash
+                                                    : (c.alcanzada! ? 'Alcanzada' : 'No alcanzada'),
+                                                style: pw.TextStyle(
+                                                  font: bold,
+                                                  fontSize: 7.5,
+                                                  color: c.alcanzada == null
+                                                      ? PdfColors.grey600
+                                                      : (c.alcanzada! ? const PdfColor(0.063, 0.725, 0.506) : const PdfColor(0.937, 0.267, 0.267)),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                     ],

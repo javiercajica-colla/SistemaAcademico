@@ -82,8 +82,8 @@ class _AjusteConsolidadoCard extends StatelessWidget {
     final piar = context.watch<PiarProvider>();
     final docente = academic.teacherById(ajuste.docenteResponsableId);
     final ultimoSeguimiento = piar.seguimientoActualPara(ajuste.id);
-    final diagnostico = piar.diagnosticoFinalPara(ajuste.inscripcionId, ajuste.standardId);
-    final standardName = _standardName(academic, ajuste.standardId);
+    final diagnostico = piar.diagnosticoFinalPara(ajuste.inscripcionId, ajuste.estandarId);
+    final standardName = _estandarName(academic, ajuste.estandarId);
 
     return AppCard(
       child: Column(
@@ -167,12 +167,8 @@ class _AjusteConsolidadoCard extends StatelessWidget {
     );
   }
 
-  String _standardName(AcademicProvider academic, String standardId) {
-    try {
-      return academic.standards.firstWhere((s) => s.id == standardId).name;
-    } catch (_) {
-      return 'Competencia';
-    }
+  String _estandarName(AcademicProvider academic, String estandarId) {
+    return academic.estandarById(estandarId)?.name ?? 'Competencia';
   }
 }
 
@@ -300,7 +296,7 @@ class _DiagnosticoDialogState extends State<_DiagnosticoDialog> {
       PiarDiagnosticoFinal(
         id: widget.existente?.id ?? const Uuid().v4(),
         inscripcionId: widget.ajuste.inscripcionId,
-        standardId: widget.ajuste.standardId,
+        estandarId: widget.ajuste.estandarId,
         valoracionFinal: _valoracion!,
         tuvoAjusteSignificativo: widget.ajuste.esSignificativo,
         observacion: _observacionCtrl.text.trim(),

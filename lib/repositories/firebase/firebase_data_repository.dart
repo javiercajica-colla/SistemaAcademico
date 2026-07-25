@@ -93,15 +93,6 @@ class FirebaseDataRepository implements DataRepository {
   @override
   Future<void> savePeriod(AcademicPeriod period) => _store.savePeriod(period);
 
-  // ── Estándares de evaluación ─────────────────────────────────────────────
-  @override
-  Stream<List<Standard>> standardsStream({String? subjectId}) =>
-      _store.standardsStream(subjectId: subjectId);
-  @override
-  Future<void> saveStandard(Standard standard) => _store.saveStandard(standard);
-  @override
-  Future<void> deleteStandard(String id) => _store.deleteStandard(id);
-
   // ── Calificaciones ───────────────────────────────────────────────────────
   @override
   Stream<List<Grade>> gradesStream({
@@ -160,30 +151,41 @@ class FirebaseDataRepository implements DataRepository {
   Future<void> deleteBehaviorAssessment(String id) =>
       _store.deleteBehaviorAssessment(id);
 
-  // ── Indicadores ──────────────────────────────────────────────────────────
-  @override
-  Stream<List<Indicator>> indicatorsStream({String? standardId}) =>
-      _store.indicatorsStream(standardId: standardId);
-  @override
-  Future<void> saveIndicator(Indicator ind) => _store.saveIndicator(ind);
-  @override
-  Future<void> deleteIndicator(String id) => _store.deleteIndicator(id);
-
-  // ── Actividades ──────────────────────────────────────────────────────────
-  @override
-  Stream<List<Activity>> activitiesStream({String? indicatorId}) =>
-      _store.activitiesStream(indicatorId: indicatorId);
-  @override
-  Future<void> saveActivity(Activity act) => _store.saveActivity(act);
-  @override
-  Future<void> deleteActivity(String id) => _store.deleteActivity(id);
-
   // ── Configuración de evaluación ──────────────────────────────────────────
   @override
   Stream<List<EvaluationConfig>> evalConfigsStream() =>
       _store.evalConfigsStream();
   @override
   Future<void> saveEvalConfig(EvaluationConfig ec) => _store.saveEvalConfig(ec);
+
+  // ── Estándar → Competencia → Actividad ───────────────────────────────────
+  @override
+  Stream<List<Estandar>> estandaresStream({String? subjectId}) =>
+      _store.estandaresStream(subjectId: subjectId);
+  @override
+  Future<void> saveEstandar(Estandar estandar) => _store.saveEstandar(estandar);
+  @override
+  Future<void> deleteEstandar(String id) => _store.deleteEstandar(id);
+
+  @override
+  Stream<List<Competencia>> competenciasStream({
+    String? estandarId,
+    String? periodId,
+  }) => _store.competenciasStream(estandarId: estandarId, periodId: periodId);
+  @override
+  Future<void> saveCompetencia(Competencia competencia) =>
+      _store.saveCompetencia(competencia);
+  @override
+  Future<void> deleteCompetencia(String id) => _store.deleteCompetencia(id);
+
+  @override
+  Stream<List<Actividad>> actividadesStream({String? competenciaId}) =>
+      _store.actividadesStream(competenciaId: competenciaId);
+  @override
+  Future<void> saveActividad(Actividad actividad) =>
+      _store.saveActividad(actividad);
+  @override
+  Future<void> deleteActividad(String id) => _store.deleteActividad(id);
 
   // ── Notificaciones ───────────────────────────────────────────────────────
   @override

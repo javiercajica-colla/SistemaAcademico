@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../widgets/stat_card.dart';
 
@@ -14,6 +15,9 @@ class GradesConfigScreen extends StatefulWidget {
 class _GradesConfigScreenState extends State<GradesConfigScreen> {
   String? _selectedSubject;
   String? _selectedPeriod;
+  final Map<String, double> _swOverrides = {};
+  final Map<String, double> _fwOverrides = {};
+  bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -82,25 +86,50 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
     return AppCard(
       title: 'Ponderación por Asignatura',
       titleAction: TextButton.icon(
-        icon: const Icon(Icons.save_rounded, size: 16),
+        icon: _saving
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.save_rounded, size: 16),
         label: const Text('Guardar cambios'),
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Configuración guardada'),
-            backgroundColor: AppColors.secondary,
-          ),
-        ),
+        onPressed: _saving
+            ? null
+            : () => _saveAll(academic, subjects, periodId),
       ),
       child: Column(
         children: [
           _buildTableHeader(),
           ...subjects.map((s) {
             final config = academic.evalConfigFor(s.id, periodId);
-            final sw = config?.standardsWeight ?? 70;
-            final fw = config?.finalExamWeight ?? 30;
-            return _buildSubjectRow(s.name, sw, fw);
+            final sw = _swOverrides[s.id] ?? config?.standardsWeight ?? 70;
+            final fw = _fwOverrides[s.id] ?? config?.finalExamWeight ?? 30;
+            return _buildSubjectRow(s.id, s.name, sw, fw);
           }),
         ],
+      ),
+    );
+  }
+
+  Future<void> _saveAll(
+    AcademicProvider academic,
+    List<Subject> subjects,
+    String periodId,
+  ) async {
+    setState(() => _saving = true);
+    for (final s in subjects) {
+      final config = academic.evalConfigFor(s.id, periodId);
+      final sw = _swOverrides[s.id] ?? config?.standardsWeight ?? 70;
+      final fw = _fwOverrides[s.id] ?? config?.finalExamWeight ?? 30;
+      await academic.saveEvalConfig(s.id, periodId, sw, fw);
+    }
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Configuración guardada'),
+        backgroundColor: AppColors.secondary,
       ),
     );
   }
@@ -162,7 +191,7 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
     );
   }
 
-  Widget _buildSubjectRow(String name, double sw, double fw) {
+  Widget _buildSubjectRow(String subjectId, String name, double sw, double fw) {
     final total = sw + fw;
     final ok = total == 100;
     return Container(
@@ -181,11 +210,19 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
           ),
           Expanded(
             flex: 2,
-            child: _SliderInput(value: sw, color: AppColors.primary),
+            child: _SliderInput(
+              value: sw,
+              color: AppColors.primary,
+              onChanged: (v) => setState(() => _swOverrides[subjectId] = v),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: _SliderInput(value: fw, color: AppColors.secondary),
+            child: _SliderInput(
+              value: fw,
+              color: AppColors.secondary,
+              onChanged: (v) => setState(() => _fwOverrides[subjectId] = v),
+            ),
           ),
           Expanded(
             child: Container(
@@ -269,7 +306,12 @@ class _GradesConfigScreenState extends State<GradesConfigScreen> {
 class _SliderInput extends StatefulWidget {
   final double value;
   final Color color;
-  const _SliderInput({required this.value, required this.color});
+  final ValueChanged<double> onChanged;
+  const _SliderInput({
+    required this.value,
+    required this.color,
+    required this.onChanged,
+  });
 
   @override
   State<_SliderInput> createState() => _SliderInputState();
@@ -285,6 +327,12 @@ class _SliderInputState extends State<_SliderInput> {
   }
 
   @override
+  void didUpdateWidget(covariant _SliderInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) _val = widget.value;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       children: [
@@ -297,7 +345,10 @@ class _SliderInputState extends State<_SliderInput> {
               max: 100,
               divisions: 20,
               activeColor: widget.color,
-              onChanged: (v) => setState(() => _val = v),
+              onChanged: (v) {
+                setState(() => _val = v);
+                widget.onChanged(v);
+              },
             ),
           ),
         ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
@@ -27,6 +26,18 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
 
   @override
   void dispose() {
+    _clearControllers();
+    _hScrollController.dispose();
+    super.dispose();
+  }
+
+  /// Descarta los controladores y focus nodes de la grilla actual. Se debe
+  /// llamar al volver al selector de curso/asignatura/periodo (además de en
+  /// `dispose`): de lo contrario, los controladores quedan indexados solo
+  /// por estudiante+celda y sobreviven al cambio de periodo dentro de la
+  /// misma pantalla, mostrando (y permitiendo guardar) las notas del
+  /// periodo anterior como si fueran del nuevo.
+  void _clearControllers() {
     for (final m in _controllers.values) {
       for (final c in m.values) {
         c.dispose();
@@ -37,8 +48,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         n.dispose();
       }
     }
-    _hScrollController.dispose();
-    super.dispose();
+    _controllers.clear();
+    _focusNodes.clear();
   }
 
   TextEditingController _getController(String studentId, String key) {
@@ -77,23 +88,28 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     return KeyEventResult.handled;
   }
 
-  String _slotKey(String indicatorId, int slot) => '${indicatorId}_$slot';
-
-  double? _indicatorPreview(String studentId, Indicator ind) {
+  double? _competenciaPreview(String studentId, List<Actividad> actividades) {
     final vals = <double>[];
-    for (var slot = 1; slot <= 3; slot++) {
-      final v = double.tryParse(
-        _getController(studentId, _slotKey(ind.id, slot)).text,
-      );
+    for (final act in actividades) {
+      final v = double.tryParse(_getController(studentId, act.id).text);
       if (v != null) vals.add(v);
     }
     if (vals.isEmpty) return null;
     return vals.reduce((a, b) => a + b) / vals.length;
   }
 
-  double? _standardPreview(String studentId, List<Indicator> indicators) {
-    final vals = indicators
-        .map((i) => _indicatorPreview(studentId, i))
+  double? _estandarPreview(
+    String studentId,
+    List<Competencia> competencias,
+    Map<String, List<Actividad>> actividadesByCompetencia,
+  ) {
+    final vals = competencias
+        .map(
+          (c) => _competenciaPreview(
+            studentId,
+            actividadesByCompetencia[c.id] ?? const [],
+          ),
+        )
         .whereType<double>()
         .toList();
     if (vals.isEmpty) return null;
@@ -245,10 +261,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
 
   Widget _buildEntryStep(BuildContext context, AcademicProvider academic) {
     final students = academic.studentsInCourse(_selectedCourse!);
-    final standards = academic.standardsForSubjectAndPeriod(
-      _selectedSubject!,
-      _selectedPeriod!,
-    );
+    final estandares = academic.estandaresForSubject(_selectedSubject!);
     final evalConfig = academic.evalConfigFor(
       _selectedSubject!,
       _selectedPeriod!,
@@ -265,7 +278,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
             IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
               tooltip: 'Cambiar curso, asignatura o periodo',
-              onPressed: () => setState(() => _started = false),
+              onPressed: () => setState(() {
+                _clearControllers();
+                _started = false;
+              }),
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -292,7 +308,23 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        _buildGradeTable(context, students, standards, evalConfig, academic),
+        if (estandares.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Text(
+              'Esta asignatura todavía no tiene Estándares definidos. '
+              'Ve a "Estándares" para crearlos antes de calificar.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          )
+        else
+          _buildGradeTable(context, students, estandares, evalConfig, academic),
       ],
     );
   }
@@ -300,16 +332,20 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   Widget _buildGradeTable(
     BuildContext context,
     List<Student> students,
-    List<Standard> standards,
+    List<Estandar> estandares,
     EvaluationConfig? evalConfig,
     AcademicProvider academic,
   ) {
     final sw = evalConfig?.standardsWeight ?? 70;
     final fw = evalConfig?.finalExamWeight ?? 30;
 
-    final indicatorsByStandard = {
-      for (final std in standards)
-        std.id: academic.indicatorsForStandard(std.id),
+    final competenciasByEstandar = {
+      for (final e in estandares)
+        e.id: academic.competenciasForEstandarAndPeriod(e.id, _selectedPeriod!),
+    };
+    final actividadesByCompetencia = <String, List<Actividad>>{
+      for (final comps in competenciasByEstandar.values)
+        for (final c in comps) c.id: academic.actividadesForCompetencia(c.id),
     };
 
     return AppCard(
@@ -337,7 +373,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           ElevatedButton.icon(
             icon: const Icon(Icons.save_rounded, size: 16),
             label: const Text('Guardar'),
-            onPressed: () => _saveGrades(context, academic),
+            onPressed: () => _saveGrades(context, academic, estandares),
           ),
         ],
       ),
@@ -367,49 +403,56 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                 ),
               ),
-              for (var si = 0; si < standards.length; si++) ...[
-                if ((indicatorsByStandard[standards[si].id] ??
-                        const <Indicator>[])
+              for (var ei = 0; ei < estandares.length; ei++) ...[
+                if ((competenciasByEstandar[estandares[ei].id] ??
+                        const <Competencia>[])
                     .isEmpty)
                   DataColumn(
                     label: _groupHeader(
-                      'EST${si + 1}',
-                      '${standards[si].weight.toStringAsFixed(0)}%',
-                      'Sin competencias',
-                      tooltip: standards[si].name,
+                      'EST${ei + 1}',
+                      '${estandares[ei].weight.toStringAsFixed(0)}%',
+                      'Sin competencias este período',
+                      tooltip: estandares[ei].name,
                     ),
                   )
                 else ...[
-                  for (final ind
-                      in indicatorsByStandard[standards[si].id]!) ...[
-                    for (var slot = 1; slot <= 3; slot++)
+                  for (final comp in competenciasByEstandar[estandares[ei].id]!) ...[
+                    for (final act in actividadesByCompetencia[comp.id]!)
                       DataColumn(
-                        label: _slotHeader(
-                          context,
-                          academic,
-                          standards[si],
-                          si + 1,
-                          ind,
-                          slot,
+                        label: _actividadHeader(estandares[ei], ei + 1, comp, act),
+                      ),
+                    if (actividadesByCompetencia[comp.id]!.isEmpty)
+                      DataColumn(
+                        label: _groupHeader(
+                          'EST${ei + 1}',
+                          'C${comp.order}',
+                          'Sin actividades',
+                          tooltip:
+                              '${estandares[ei].name} — ${comp.name} (definir actividades en Estándares)',
                         ),
                       ),
                     DataColumn(
                       label: _groupHeader(
-                        'EST${si + 1}',
-                        'I${ind.order}',
+                        'EST${ei + 1}',
+                        'C${comp.order}',
                         'Prom.',
                         italic: true,
-                        tooltip: '${standards[si].name} — ${ind.name}',
+                        tipoColor: comp.tipo == CompetenciaTipo.actitudinal
+                            ? AppColors.warning
+                            : AppColors.purple,
+                        tooltip:
+                            '${estandares[ei].name} — ${comp.name}'
+                            '${comp.tipo == CompetenciaTipo.actitudinal ? " (Actitudinal)" : " (Cognitiva)"}',
                       ),
                     ),
                   ],
                   DataColumn(
                     label: _groupHeader(
-                      'EST${si + 1}',
+                      'EST${ei + 1}',
                       'Prom. Estándar',
-                      '${standards[si].weight.toStringAsFixed(0)}%',
+                      '${estandares[ei].weight.toStringAsFixed(0)}%',
                       bold: true,
-                      tooltip: standards[si].name,
+                      tooltip: estandares[ei].name,
                     ),
                   ),
                 ],
@@ -424,13 +467,6 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 11,
-                      ),
-                    ),
-                    Text(
-                      '30%',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -472,18 +508,14 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                 _selectedSubject!,
                 _selectedPeriod!,
               );
-              for (final std in standards) {
-                for (final ind
-                    in indicatorsByStandard[std.id] ?? const <Indicator>[]) {
-                  for (var slot = 1; slot <= 3; slot++) {
-                    final ctrl = _getController(
-                      student.id,
-                      _slotKey(ind.id, slot),
-                    );
+              for (final comps in competenciasByEstandar.values) {
+                for (final comp in comps) {
+                  for (final act in actividadesByCompetencia[comp.id] ?? const <Actividad>[]) {
+                    final ctrl = _getController(student.id, act.id);
                     if (ctrl.text.isEmpty) {
                       try {
                         final g = existingGrades.firstWhere(
-                          (g) => g.indicatorId == ind.id && g.slot == slot,
+                          (g) => g.actividadId == act.id,
                         );
                         ctrl.text = g.value.toString();
                       } catch (_) {}
@@ -495,7 +527,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
               if (finalCtrl.text.isEmpty) {
                 try {
                   final g = existingGrades.firstWhere(
-                    (g) => g.standardId == null,
+                    (g) => g.estandarId == null,
                   );
                   finalCtrl.text = g.value.toString();
                 } catch (_) {}
@@ -503,13 +535,16 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
 
               double weightedSum = 0;
               double totalWeight = 0;
-              for (final std in standards) {
-                final inds =
-                    indicatorsByStandard[std.id] ?? const <Indicator>[];
-                final score = _standardPreview(student.id, inds);
+              for (final e in estandares) {
+                final comps = competenciasByEstandar[e.id] ?? const <Competencia>[];
+                final score = _estandarPreview(
+                  student.id,
+                  comps,
+                  actividadesByCompetencia,
+                );
                 if (score != null) {
-                  weightedSum += score * std.weight;
-                  totalWeight += std.weight;
+                  weightedSum += score * e.weight;
+                  totalWeight += e.weight;
                 }
               }
               // Si falta alguna nota (estándar o evaluación final), esa parte
@@ -559,8 +594,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                       ],
                     ),
                   ),
-                  for (final std in standards) ...[
-                    if ((indicatorsByStandard[std.id] ?? const <Indicator>[])
+                  for (final e in estandares) ...[
+                    if ((competenciasByEstandar[e.id] ?? const <Competencia>[])
                         .isEmpty)
                       const DataCell(
                         Text(
@@ -569,27 +604,33 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                         ),
                       )
                     else ...[
-                      for (final ind in indicatorsByStandard[std.id]!) ...[
-                        for (var slot = 1; slot <= 3; slot++)
+                      for (final comp in competenciasByEstandar[e.id]!) ...[
+                        for (final act in actividadesByCompetencia[comp.id]!)
                           DataCell(
-                            _buildSlotCell(
-                              context,
-                              academic,
-                              students,
-                              rowIndex,
-                              ind,
-                              slot,
+                            _buildActividadCell(students, rowIndex, act),
+                          ),
+                        if (actividadesByCompetencia[comp.id]!.isEmpty)
+                          const DataCell(
+                            Text(
+                              '-',
+                              style: TextStyle(color: AppColors.textTertiary),
                             ),
                           ),
                         DataCell(
-                          _previewChip(_indicatorPreview(student.id, ind)),
+                          _previewChip(
+                            _competenciaPreview(
+                              student.id,
+                              actividadesByCompetencia[comp.id]!,
+                            ),
+                          ),
                         ),
                       ],
                       DataCell(
                         _previewChip(
-                          _standardPreview(
+                          _estandarPreview(
                             student.id,
-                            indicatorsByStandard[std.id]!,
+                            competenciasByEstandar[e.id]!,
+                            actividadesByCompetencia,
                           ),
                           bold: true,
                         ),
@@ -655,6 +696,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     String line3, {
     bool bold = false,
     bool italic = false,
+    Color? tipoColor,
     String? tooltip,
   }) {
     final column = Column(
@@ -674,7 +716,9 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           style: TextStyle(
             fontSize: 10,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
-            color: bold ? AppColors.secondary : AppColors.textPrimary,
+            color: bold
+                ? AppColors.secondary
+                : (tipoColor ?? AppColors.textPrimary),
           ),
         ),
         Text(
@@ -691,94 +735,64 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     return Tooltip(message: tooltip, child: column);
   }
 
-  Widget _slotHeader(
-    BuildContext context,
-    AcademicProvider academic,
-    Standard std,
-    int stdNum,
-    Indicator ind,
-    int slot,
+  Widget _actividadHeader(
+    Estandar estandar,
+    int estNum,
+    Competencia comp,
+    Actividad act,
   ) {
-    final activities = academic.activitiesForIndicator(ind.id);
-    final existing = activities.length >= slot ? activities[slot - 1] : null;
-    final tooltipMsg = existing != null
-        ? '${std.name} — ${ind.name} — ${existing.name}'
-        : '${std.name} — ${ind.name} — (sin definir, clic para registrar)';
-    return InkWell(
-      onTap: () =>
-          _showActivityDialog(context, academic, ind, slot, existing: existing),
-      child: Tooltip(
-        message: tooltipMsg,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'EST$stdNum',
-              style: const TextStyle(
-                fontSize: 9,
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
+    final tipoColor = comp.tipo == CompetenciaTipo.actitudinal
+        ? AppColors.warning
+        : AppColors.purple;
+    return Tooltip(
+      message:
+          '${estandar.name} — ${comp.name} '
+          '(${comp.tipo == CompetenciaTipo.actitudinal ? "Actitudinal" : "Cognitiva"}) — '
+          '${act.name}',
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'EST$estNum',
+            style: const TextStyle(
+              fontSize: 9,
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
             ),
-            Text(
-              'I${ind.order}',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            'C${comp.order}',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: tipoColor,
             ),
-            Text(
-              'Act$slot',
-              style: TextStyle(
-                fontSize: 9,
-                color: existing == null
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-                fontStyle: existing == null
-                    ? FontStyle.italic
-                    : FontStyle.normal,
-              ),
-            ),
-          ],
-        ),
+          ),
+          Text(
+            'Act${act.order}',
+            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSlotCell(
-    BuildContext context,
-    AcademicProvider academic,
+  Widget _buildActividadCell(
     List<Student> students,
     int rowIndex,
-    Indicator ind,
-    int slot,
+    Actividad actividad,
   ) {
-    final activities = academic.activitiesForIndicator(ind.id);
-    final defined = activities.length >= slot;
-    if (!defined) {
-      return SizedBox(
-        width: 64,
-        height: 36,
-        child: InkWell(
-          onTap: () => _showActivityDialog(context, academic, ind, slot),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(6),
-            ),
-          ),
-        ),
-      );
-    }
     final student = students[rowIndex];
-    final colKey = _slotKey(ind.id, slot);
-    final ctrl = _getController(student.id, colKey);
+    final ctrl = _getController(student.id, actividad.id);
     return SizedBox(
       width: 64,
       child: Focus(
         onKeyEvent: (node, event) =>
-            _handleVerticalNav(event, students, rowIndex, colKey),
+            _handleVerticalNav(event, students, rowIndex, actividad.id),
         child: TextField(
           controller: ctrl,
-          focusNode: _getFocusNode(student.id, colKey),
+          focusNode: _getFocusNode(student.id, actividad.id),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
@@ -786,133 +800,6 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           style: const TextStyle(fontSize: 13),
           decoration: _gradeDecoration(ctrl.text),
           onChanged: (_) => setState(() {}),
-        ),
-      ),
-    );
-  }
-
-  void _showActivityDialog(
-    BuildContext context,
-    AcademicProvider academic,
-    Indicator ind,
-    int slot, {
-    Activity? existing,
-  }) {
-    final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final descCtrl = TextEditingController(text: existing?.description ?? '');
-    final formKey = GlobalKey<FormState>();
-    DateTime? date = existing?.date;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Actividad'),
-          content: SizedBox(
-            width: 440,
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Diligencie el formulario para registrar la actividad por forma de evaluación',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: ctx,
-                              initialDate: date ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) {
-                              setDialogState(() => date = picked);
-                            }
-                          },
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Fecha',
-                              border: OutlineInputBorder(),
-                              suffixIcon: Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                              ),
-                            ),
-                            child: Text(
-                              date == null
-                                  ? 'dd/mm/aaaa'
-                                  : DateFormat('dd/MM/yyyy').format(date!),
-                              style: TextStyle(
-                                color: date == null
-                                    ? AppColors.textTertiary
-                                    : AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: nameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Requerido'
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Descripción',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (!formKey.currentState!.validate()) return;
-                academic.addActivity(
-                  Activity(
-                    id: existing?.id ?? const Uuid().v4(),
-                    indicatorId: ind.id,
-                    name: nameCtrl.text.trim(),
-                    description: descCtrl.text.trim(),
-                    order: slot,
-                    date: date,
-                  ),
-                );
-                Navigator.pop(ctx);
-              },
-              child: Text(existing == null ? 'Registrar' : 'Guardar'),
-            ),
-          ],
         ),
       ),
     );
@@ -962,22 +849,23 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     );
   }
 
-  void _saveGrades(BuildContext context, AcademicProvider academic) {
+  void _saveGrades(
+    BuildContext context,
+    AcademicProvider academic,
+    List<Estandar> estandares,
+  ) {
     const uuid = Uuid();
     int saved = 0;
-    final standards = academic.standardsForSubjectAndPeriod(
-      _selectedSubject!,
-      _selectedPeriod!,
-    );
+    final competenciasByEstandar = {
+      for (final e in estandares)
+        e.id: academic.competenciasForEstandarAndPeriod(e.id, _selectedPeriod!),
+    };
     for (final entry in _controllers.entries) {
       final studentId = entry.key;
-      for (final std in standards) {
-        final indicators = academic.indicatorsForStandard(std.id);
-        for (final ind in indicators) {
-          for (var slot = 1; slot <= 3; slot++) {
-            final v = double.tryParse(
-              entry.value[_slotKey(ind.id, slot)]?.text ?? '',
-            );
+      for (final e in estandares) {
+        for (final comp in competenciasByEstandar[e.id] ?? const <Competencia>[]) {
+          for (final act in academic.actividadesForCompetencia(comp.id)) {
+            final v = double.tryParse(entry.value[act.id]?.text ?? '');
             if (v != null && v >= 0 && v <= 5) {
               academic.addGrade(
                 Grade(
@@ -985,9 +873,9 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   studentId: studentId,
                   subjectId: _selectedSubject!,
                   periodId: _selectedPeriod!,
-                  standardId: std.id,
-                  indicatorId: ind.id,
-                  slot: slot,
+                  estandarId: e.id,
+                  competenciaId: comp.id,
+                  actividadId: act.id,
                   value: v,
                   registeredAt: DateTime.now(),
                 ),

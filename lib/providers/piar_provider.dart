@@ -52,14 +52,15 @@ PiarDecisionAjuste sugerirDecisionAjuste(
   return PiarDecisionAjuste.modificar;
 }
 
-/// Una competencia ya registrada (Standard) en una asignatura de la carga
-/// académica del estudiante, para la que se debe crear la tarea pendiente
-/// de ajuste al activar la inscripción. Lo resuelve la pantalla (que tiene
-/// acceso a AcademicProvider) y lo entrega ya armado — PiarProvider no
-/// depende de AcademicProvider, solo persiste y notifica.
+/// Una competencia ya registrada (Competencia) en una asignatura de la
+/// carga académica del estudiante, para la que se debe crear la tarea
+/// pendiente de ajuste al activar la inscripción. Lo resuelve la pantalla
+/// (que tiene acceso a AcademicProvider) y lo entrega ya armado —
+/// PiarProvider no depende de AcademicProvider, solo persiste y notifica.
 typedef PiarCompetenciaPendiente = ({
   String subjectId,
-  String standardId,
+  String estandarId,
+  String competenciaId,
   String competenciaTextoOriginal,
   String docenteResponsableId, // Teacher.id
 });
@@ -245,10 +246,12 @@ class PiarProvider extends ChangeNotifier {
       }).toList()
         ..sort((a, b) => a.creadoEn.compareTo(b.creadoEn));
 
-  /// El ajuste equivalente (misma asignatura y estándar) del período
-  /// inmediatamente anterior dentro de la misma inscripción, si existe —
-  /// para "Copiar del período anterior". Se toma el más reciente por
-  /// `creadoEn` distinto del propio ajuste.
+  /// El ajuste equivalente (misma asignatura y estándar — el Estándar es
+  /// el ancla estable entre períodos, a diferencia de la Competencia que
+  /// es propia de cada período) del período inmediatamente anterior
+  /// dentro de la misma inscripción, si existe — para "Copiar del período
+  /// anterior". Se toma el más reciente por `creadoEn` distinto del
+  /// propio ajuste.
   PiarAjuste? ajusteAnteriorPara(PiarAjuste actual) {
     final candidatos =
         _ajustes.where(
@@ -256,7 +259,7 @@ class PiarProvider extends ChangeNotifier {
               a.id != actual.id &&
               a.inscripcionId == actual.inscripcionId &&
               a.subjectId == actual.subjectId &&
-              a.standardId == actual.standardId &&
+              a.estandarId == actual.estandarId &&
               a.eliminadoEn == null &&
               a.creadoEn.isBefore(actual.creadoEn),
         ).toList()
@@ -396,7 +399,8 @@ class PiarProvider extends ChangeNotifier {
           id: const Uuid().v4(),
           inscripcionId: insc.id,
           subjectId: c.subjectId,
-          standardId: c.standardId,
+          estandarId: c.estandarId,
+          competenciaId: c.competenciaId,
           periodId: periodId,
           competenciaTextoOriginal: c.competenciaTextoOriginal,
           requiereAjuste: null,
@@ -539,7 +543,8 @@ class PiarProvider extends ChangeNotifier {
       id: a.id,
       inscripcionId: a.inscripcionId,
       subjectId: a.subjectId,
-      standardId: a.standardId,
+      estandarId: a.estandarId,
+      competenciaId: a.competenciaId,
       periodId: a.periodId,
       competenciaTextoOriginal: a.competenciaTextoOriginal,
       requiereAjuste: a.requiereAjuste,
@@ -735,12 +740,12 @@ class PiarProvider extends ChangeNotifier {
           .where((d) => d.inscripcionId == inscripcionId && d.eliminadoEn == null)
           .toList();
 
-  PiarDiagnosticoFinal? diagnosticoFinalPara(String inscripcionId, String standardId) {
+  PiarDiagnosticoFinal? diagnosticoFinalPara(String inscripcionId, String estandarId) {
     try {
       return _diagnosticosFinales.firstWhere(
         (d) =>
             d.inscripcionId == inscripcionId &&
-            d.standardId == standardId &&
+            d.estandarId == estandarId &&
             d.eliminadoEn == null,
       );
     } catch (_) {
@@ -773,7 +778,7 @@ class PiarProvider extends ChangeNotifier {
     if (hayPendientesSinResponder) return PiarAccionResultado.noElegible;
     final faltanDiagnosticos = ajustesDeLaInscripcion
         .where((a) => a.requiereAjuste == true)
-        .any((a) => diagnosticoFinalPara(inscripcionId, a.standardId) == null);
+        .any((a) => diagnosticoFinalPara(inscripcionId, a.estandarId) == null);
     if (faltanDiagnosticos) return PiarAccionResultado.noElegible;
 
     final now = DateTime.now();

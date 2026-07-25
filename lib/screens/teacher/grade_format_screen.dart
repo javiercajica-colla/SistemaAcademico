@@ -118,12 +118,7 @@ class _GradeFormatScreenState extends State<GradeFormatScreen> {
 
         final students = academic.studentsInCourse(course.id)
           ..sort((a, b) => a.fullName.compareTo(b.fullName));
-        final standards = _selectedPeriodId != null
-            ? academic.standardsForSubjectAndPeriod(
-                subject.id,
-                _selectedPeriodId!,
-              )
-            : academic.standardsForSubject(subject.id);
+        final estandares = academic.estandaresForSubject(subject.id);
         final period = _selectedPeriodId != null
             ? academic.periodById(_selectedPeriodId!)
             : null;
@@ -136,7 +131,7 @@ class _GradeFormatScreenState extends State<GradeFormatScreen> {
             course: course,
             period: period,
             students: students,
-            standards: standards,
+            estandares: estandares,
           ),
         );
       },
@@ -153,7 +148,7 @@ class _AssignmentCard extends StatelessWidget {
     required this.course,
     required this.period,
     required this.students,
-    required this.standards,
+    required this.estandares,
   });
 
   final Teacher teacher;
@@ -161,7 +156,7 @@ class _AssignmentCard extends StatelessWidget {
   final Course course;
   final AcademicPeriod? period;
   final List<Student> students;
-  final List<Standard> standards;
+  final List<Estandar> estandares;
 
   @override
   Widget build(BuildContext context) {
@@ -211,9 +206,9 @@ class _AssignmentCard extends StatelessWidget {
                     ),
                     _chip(
                       Icons.checklist_rounded,
-                      standards.isEmpty
+                      estandares.isEmpty
                           ? 'Sin estándares (4 columnas gen.)'
-                          : '${standards.length} estándares',
+                          : '${estandares.length} estándares',
                     ),
                   ],
                 ),
@@ -247,8 +242,8 @@ class _AssignmentCard extends StatelessWidget {
   }
 
   void _openPreview(BuildContext context) {
-    final cols = standards.isNotEmpty
-        ? standards.map((s) => s.name).toList()
+    final cols = estandares.isNotEmpty
+        ? estandares.map((e) => e.name).toList()
         : ['Nota 1', 'Nota 2', 'Nota 3', 'Nota 4'];
 
     showDialog(
@@ -259,7 +254,7 @@ class _AssignmentCard extends StatelessWidget {
         course: course,
         period: period,
         students: students,
-        standards: standards,
+        estandares: estandares,
         cols: cols,
       ),
     );
@@ -275,7 +270,7 @@ class _PreviewDialog extends StatelessWidget {
     required this.course,
     required this.period,
     required this.students,
-    required this.standards,
+    required this.estandares,
     required this.cols,
   });
 
@@ -284,7 +279,7 @@ class _PreviewDialog extends StatelessWidget {
   final Course course;
   final AcademicPeriod? period;
   final List<Student> students;
-  final List<Standard> standards;
+  final List<Estandar> estandares;
   final List<String> cols;
 
   @override

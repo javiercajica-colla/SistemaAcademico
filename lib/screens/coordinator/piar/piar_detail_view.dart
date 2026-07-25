@@ -202,12 +202,13 @@ class _PiarDetailViewState extends State<PiarDetailView>
       final teacher = academic.teacherById(asign.teacherId);
       if (teacher == null) continue;
       docentesDeLaCarga.add((teacherId: teacher.id, userId: teacher.userId));
-      for (final std
-          in academic.standardsForSubjectAndPeriod(asign.subjectId, periodId)) {
+      for (final comp
+          in academic.competenciasForSubjectAndPeriod(asign.subjectId, periodId)) {
         competenciasPendientes.add((
           subjectId: asign.subjectId,
-          standardId: std.id,
-          competenciaTextoOriginal: std.description,
+          estandarId: comp.estandarId,
+          competenciaId: comp.id,
+          competenciaTextoOriginal: comp.description,
           docenteResponsableId: teacher.id,
         ));
       }

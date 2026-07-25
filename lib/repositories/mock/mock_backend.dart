@@ -60,15 +60,15 @@ class MockBackend {
       subjects = LiveList(seedSubjects()),
       years = LiveList(seedYears()),
       periods = LiveList(seedPeriods()),
-      standards = LiveList(seedStandards()),
-      indicators = LiveList(seedIndicators()),
-      activities = LiveList(seedActivities()),
       grades = LiveList(seedGrades()),
       attendance = LiveList(seedAttendance()),
       observations = LiveList(seedObservations()),
       behaviorAssessments = LiveList(seedBehaviorAssessments()),
       assignments = LiveList(seedAssignments()),
       evalConfigs = LiveList(seedEvalConfigs()),
+      estandares = LiveList(seedEstandares()),
+      competencias = LiveList(seedCompetencias()),
+      actividades = LiveList(seedActividades()),
       piarInscripciones = LiveList(seedPiarInscripciones()),
       piarSoportesExternos = LiveList(seedPiarSoportesExternos()),
       piarPerfilesApoyo = LiveList(seedPiarPerfilesApoyo()),
@@ -103,15 +103,15 @@ class MockBackend {
   final LiveList<Subject> subjects;
   final LiveList<AcademicYear> years;
   final LiveList<AcademicPeriod> periods;
-  final LiveList<Standard> standards;
-  final LiveList<Indicator> indicators;
-  final LiveList<Activity> activities;
   final LiveList<Grade> grades;
   final LiveList<AttendanceRecord> attendance;
   final LiveList<Observation> observations;
   final LiveList<BehaviorAssessment> behaviorAssessments;
   final LiveList<SubjectAssignment> assignments;
   final LiveList<EvaluationConfig> evalConfigs;
+  final LiveList<Estandar> estandares;
+  final LiveList<Competencia> competencias;
+  final LiveList<Actividad> actividades;
   final LiveList<PiarInscripcion> piarInscripciones;
   final LiveList<PiarSoporteExterno> piarSoportesExternos;
   final LiveList<PiarPerfilApoyo> piarPerfilesApoyo;

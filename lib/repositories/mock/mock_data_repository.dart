@@ -215,27 +215,6 @@ class MockDataRepository implements DataRepository {
     _backend.periods.upsert(period, (p) => p.id == period.id);
   }
 
-  // ── Estándares de evaluación ─────────────────────────────────────────────
-  @override
-  Stream<List<Standard>> standardsStream({String? subjectId}) {
-    if (subjectId == null) return _backend.standards.stream;
-    return _backend.standards.stream.map(
-      (list) => list.where((s) => s.subjectId == subjectId).toList(),
-    );
-  }
-
-  @override
-  Future<void> saveStandard(Standard standard) async {
-    await MockBackend.delay();
-    _backend.standards.upsert(standard, (s) => s.id == standard.id);
-  }
-
-  @override
-  Future<void> deleteStandard(String id) async {
-    await MockBackend.delay();
-    _backend.standards.removeWhere((s) => s.id == id);
-  }
-
   // ── Calificaciones ───────────────────────────────────────────────────────
   @override
   Stream<List<Grade>> gradesStream({
@@ -344,48 +323,6 @@ class MockDataRepository implements DataRepository {
     _backend.behaviorAssessments.removeWhere((b) => b.id == id);
   }
 
-  // ── Indicadores ──────────────────────────────────────────────────────────
-  @override
-  Stream<List<Indicator>> indicatorsStream({String? standardId}) {
-    if (standardId == null) return _backend.indicators.stream;
-    return _backend.indicators.stream.map(
-      (list) => list.where((i) => i.standardId == standardId).toList(),
-    );
-  }
-
-  @override
-  Future<void> saveIndicator(Indicator ind) async {
-    await MockBackend.delay();
-    _backend.indicators.upsert(ind, (i) => i.id == ind.id);
-  }
-
-  @override
-  Future<void> deleteIndicator(String id) async {
-    await MockBackend.delay();
-    _backend.indicators.removeWhere((i) => i.id == id);
-  }
-
-  // ── Actividades ──────────────────────────────────────────────────────────
-  @override
-  Stream<List<Activity>> activitiesStream({String? indicatorId}) {
-    if (indicatorId == null) return _backend.activities.stream;
-    return _backend.activities.stream.map(
-      (list) => list.where((a) => a.indicatorId == indicatorId).toList(),
-    );
-  }
-
-  @override
-  Future<void> saveActivity(Activity act) async {
-    await MockBackend.delay();
-    _backend.activities.upsert(act, (a) => a.id == act.id);
-  }
-
-  @override
-  Future<void> deleteActivity(String id) async {
-    await MockBackend.delay();
-    _backend.activities.removeWhere((a) => a.id == id);
-  }
-
   // ── Configuración de evaluación ──────────────────────────────────────────
   @override
   Stream<List<EvaluationConfig>> evalConfigsStream() =>
@@ -395,6 +332,72 @@ class MockDataRepository implements DataRepository {
   Future<void> saveEvalConfig(EvaluationConfig ec) async {
     await MockBackend.delay();
     _backend.evalConfigs.upsert(ec, (e) => e.id == ec.id);
+  }
+
+  // ── Estándar → Competencia → Actividad ───────────────────────────────────
+  @override
+  Stream<List<Estandar>> estandaresStream({String? subjectId}) {
+    if (subjectId == null) return _backend.estandares.stream;
+    return _backend.estandares.stream.map(
+      (list) => list.where((e) => e.subjectId == subjectId).toList(),
+    );
+  }
+
+  @override
+  Future<void> saveEstandar(Estandar estandar) async {
+    await MockBackend.delay();
+    _backend.estandares.upsert(estandar, (e) => e.id == estandar.id);
+  }
+
+  @override
+  Future<void> deleteEstandar(String id) async {
+    await MockBackend.delay();
+    _backend.estandares.removeWhere((e) => e.id == id);
+  }
+
+  @override
+  Stream<List<Competencia>> competenciasStream({
+    String? estandarId,
+    String? periodId,
+  }) {
+    return _backend.competencias.stream.map(
+      (list) => list
+          .where((c) => estandarId == null || c.estandarId == estandarId)
+          .where((c) => periodId == null || c.periodId == periodId)
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> saveCompetencia(Competencia competencia) async {
+    await MockBackend.delay();
+    _backend.competencias.upsert(competencia, (c) => c.id == competencia.id);
+  }
+
+  @override
+  Future<void> deleteCompetencia(String id) async {
+    await MockBackend.delay();
+    _backend.competencias.removeWhere((c) => c.id == id);
+  }
+
+  @override
+  Stream<List<Actividad>> actividadesStream({String? competenciaId}) {
+    if (competenciaId == null) return _backend.actividades.stream;
+    return _backend.actividades.stream.map(
+      (list) => list.where((a) => a.competenciaId == competenciaId).toList(),
+    );
+  }
+
+  @override
+  Future<void> saveActividad(Actividad actividad) async {
+    await MockBackend.delay();
+    _backend.actividades.upsert(actividad, (a) => a.id == actividad.id);
+  }
+
+  @override
+  Future<void> deleteActividad(String id) async {
+    await MockBackend.delay();
+    _backend.actividades.removeWhere((a) => a.id == id);
   }
 
   // ── Notificaciones ───────────────────────────────────────────────────────

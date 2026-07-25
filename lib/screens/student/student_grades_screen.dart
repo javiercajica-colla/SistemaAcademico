@@ -141,10 +141,7 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
     String subjectName,
     AcademicProvider academic,
   ) {
-    final standards = academic.standardsForSubjectAndPeriod(
-      subjectId,
-      _selectedPeriod,
-    );
+    final estandares = academic.estandaresForSubject(subjectId);
     final gradesList = academic.gradesForStudentSubjectPeriod(
       studentId,
       subjectId,
@@ -220,17 +217,17 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ...standards.map((std) {
-                    final score = academic.standardGradeForStudent(
+                  ...estandares.map((est) {
+                    final score = academic.estandarGradeForStudent(
                       studentId,
                       subjectId,
                       _selectedPeriod,
-                      std.id,
+                      est.id,
                     );
                     return _gradeRow(
-                      std.name,
+                      est.name,
                       score,
-                      '${std.weight.toStringAsFixed(0)}%',
+                      '${est.weight.toStringAsFixed(0)}%',
                     );
                   }),
                   const Divider(),
@@ -238,7 +235,7 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
                     builder: (_) {
                       try {
                         final fg = gradesList.firstWhere(
-                          (g) => g.standardId == null,
+                          (g) => g.estandarId == null,
                         );
                         return _gradeRow(
                           'Evaluación Final',

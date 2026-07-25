@@ -70,58 +70,74 @@ class Subject {
   });
 }
 
-class Standard {
+// ─── Estándar → Competencia → Actividad ──────────────────────────────────
+
+enum CompetenciaTipo { cognitiva, actitudinal }
+
+/// Hasta 5 por asignatura, definidos una vez por año lectivo (no por período).
+class Estandar {
   final String id;
   final String subjectId;
-  final String? periodId;
+  final String academicYearId;
   final String name;
   final String description;
+  final int order;
   final double weight;
 
-  const Standard({
+  const Estandar({
     required this.id,
     required this.subjectId,
-    this.periodId,
+    required this.academicYearId,
     required this.name,
     required this.description,
+    required this.order,
     required this.weight,
   });
 }
 
-class Indicator {
+/// Hasta 5 por Estándar, asignadas por período — no es obligatorio que un
+/// Estándar tenga competencias en todos los períodos. Exactamente una de
+/// las competencias de un mismo (estandarId, periodId) debe ser
+/// `actitudinal`; el resto son `cognitiva`. Se valida en la UI de
+/// creación/edición (`standards_screen.dart`), no aquí — los datos
+/// migrados desde el modelo viejo quedan exentos de esta regla.
+class Competencia {
   final String id;
-  final String standardId;
+  final String estandarId;
+  final String periodId;
+  final CompetenciaTipo tipo;
   final String name;
   final String description;
   final int order;
 
-  const Indicator({
+  const Competencia({
     required this.id,
-    required this.standardId,
+    required this.estandarId,
+    required this.periodId,
+    required this.tipo,
     required this.name,
     required this.description,
     required this.order,
   });
 }
 
-class Activity {
+/// Hasta 6 por Competencia. Es la hoja donde realmente se registra nota
+/// (1.0-5.0, mismo `GradeScale` de siempre) — reemplaza el mecanismo de
+/// hasta 3 "casillas" (`Grade.slot`) por indicador del modelo viejo.
+class Actividad {
   final String id;
-  final String indicatorId;
+  final String competenciaId;
   final String name;
   final String description;
   final int order;
-  bool isProgrammed;
-  double? gradeValue;
-  DateTime? date;
+  final DateTime? date;
 
-  Activity({
+  const Actividad({
     required this.id,
-    required this.indicatorId,
+    required this.competenciaId,
     required this.name,
     required this.description,
     required this.order,
-    this.isProgrammed = false,
-    this.gradeValue,
     this.date,
   });
 }
@@ -219,11 +235,11 @@ class Grade {
   final String studentId;
   final String subjectId;
   final String periodId;
-  final String? standardId;
-  // Indicador dentro del estándar y número de "casilla" (1-3) al que
-  // corresponde la nota. Ambos null = nota de Evaluación Final.
-  final String? indicatorId;
-  final int? slot;
+  // Referencias al modelo Estándar → Competencia → Actividad. Los tres
+  // null = nota de Evaluación Final.
+  final String? estandarId;
+  final String? competenciaId;
+  final String? actividadId;
   final double value;
   final String? note;
   final DateTime registeredAt;
@@ -233,9 +249,9 @@ class Grade {
     required this.studentId,
     required this.subjectId,
     required this.periodId,
-    this.standardId,
-    this.indicatorId,
-    this.slot,
+    this.estandarId,
+    this.competenciaId,
+    this.actividadId,
     required this.value,
     this.note,
     required this.registeredAt,

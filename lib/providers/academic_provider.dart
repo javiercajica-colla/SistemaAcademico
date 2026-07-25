@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../core/utils/grade_scale.dart';
 import '../models/models.dart';
 import '../repositories/repository_provider.dart';
 
@@ -37,7 +38,6 @@ class AcademicProvider extends ChangeNotifier {
   List<AcademicYear> _years = [];
   List<AcademicPeriod> _periods = [];
   List<Subject> _subjects = [];
-  List<Standard> _standards = [];
   List<Course> _courses = [];
   List<Teacher> _teachers = [];
   List<Student> _students = [];
@@ -50,8 +50,9 @@ class AcademicProvider extends ChangeNotifier {
   List<SubjectAssignment> _assignments = [];
   List<EvaluationConfig> _evalConfigs = [];
   List<AppUser> _users = [];
-  List<Indicator> _indicators = [];
-  List<Activity> _activities = [];
+  List<Estandar> _estandares = [];
+  List<Competencia> _competencias = [];
+  List<Actividad> _actividades = [];
   final Map<String, ExtendedProfile> _profiles = {};
 
   AcademicYear? _activeYear;
@@ -71,10 +72,6 @@ class AcademicProvider extends ChangeNotifier {
       }),
       _store.subjectsStream().listen((v) {
         _subjects = v;
-        notifyListeners();
-      }),
-      _store.standardsStream().listen((v) {
-        _standards = v;
         notifyListeners();
       }),
       _store.coursesStream().listen((v) {
@@ -121,12 +118,16 @@ class AcademicProvider extends ChangeNotifier {
         _users = v;
         notifyListeners();
       }),
-      _store.indicatorsStream().listen((v) {
-        _indicators = v;
+      _store.estandaresStream().listen((v) {
+        _estandares = v;
         notifyListeners();
       }),
-      _store.activitiesStream().listen((v) {
-        _activities = v;
+      _store.competenciasStream().listen((v) {
+        _competencias = v;
+        notifyListeners();
+      }),
+      _store.actividadesStream().listen((v) {
+        _actividades = v;
         notifyListeners();
       }),
     ]);
@@ -158,7 +159,6 @@ class AcademicProvider extends ChangeNotifier {
   List<AcademicYear> get years => _years;
   List<AcademicPeriod> get periods => _periods;
   List<Subject> get subjects => _subjects;
-  List<Standard> get standards => _standards;
   List<Course> get courses => _courses;
   List<Teacher> get teachers => _teachers;
   List<Student> get students => _students;
@@ -243,45 +243,50 @@ class AcademicProvider extends ChangeNotifier {
     return _subjects.where((s) => ids.contains(s.id)).toList();
   }
 
-  List<Standard> standardsForSubject(String subjectId) =>
-      _standards.where((s) => s.subjectId == subjectId).toList();
+  // ── Estándar → Competencia → Actividad ───────────────────────────────────
+  // Un Estándar se define una vez por año lectivo
+  // (no por período); sus Competencias sí son por período y no es
+  // obligatorio que un Estándar tenga competencias en todos los períodos.
 
-  List<Standard> standardsForSubjectAndPeriod(
+  List<Estandar> estandaresForSubject(String subjectId) =>
+      _estandares
+          .where(
+            (e) => e.subjectId == subjectId && e.academicYearId == activeYear.id,
+          )
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+
+  List<Competencia> competenciasForEstandarAndPeriod(
+    String estandarId,
+    String periodId,
+  ) =>
+      _competencias
+          .where((c) => c.estandarId == estandarId && c.periodId == periodId)
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+
+  List<Competencia> competenciasForSubjectAndPeriod(
     String subjectId,
     String periodId,
-  ) => _standards
-      .where((s) => s.subjectId == subjectId && s.periodId == periodId)
-      .toList();
-
-  List<Indicator> indicatorsForStandard(String standardId) =>
-      _indicators.where((i) => i.standardId == standardId).toList()
-        ..sort((a, b) => a.order.compareTo(b.order));
-
-  List<Activity> activitiesForIndicator(String indicatorId) =>
-      _activities.where((a) => a.indicatorId == indicatorId).toList()
-        ..sort((a, b) => a.order.compareTo(b.order));
-
-  double? calculateIndicatorGrade(String indicatorId) {
-    final programmed = _activities
-        .where(
-          (a) =>
-              a.indicatorId == indicatorId &&
-              a.isProgrammed &&
-              a.gradeValue != null,
-        )
-        .toList();
-    if (programmed.isEmpty) return null;
-    return programmed.map((a) => a.gradeValue!).reduce((a, b) => a + b) /
-        programmed.length;
+  ) {
+    final estandarIds = estandaresForSubject(subjectId).map((e) => e.id).toSet();
+    return _competencias
+        .where((c) => estandarIds.contains(c.estandarId) && c.periodId == periodId)
+        .toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
   }
 
-  // Promedio de las notas (hasta 3 casillas) que un estudiante tiene
-  // registradas para un indicador, ignorando las casillas no diligenciadas.
-  double? indicatorGradeForStudent(
+  List<Actividad> actividadesForCompetencia(String competenciaId) =>
+      _actividades.where((a) => a.competenciaId == competenciaId).toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+
+  // Promedio de las notas (hasta 6 actividades) que un estudiante tiene
+  // registradas para una competencia, ignorando actividades sin nota.
+  double? competenciaGradeForStudent(
     String studentId,
     String subjectId,
     String periodId,
-    String indicatorId,
+    String competenciaId,
   ) {
     final values = _grades
         .where(
@@ -289,7 +294,7 @@ class AcademicProvider extends ChangeNotifier {
               g.studentId == studentId &&
               g.subjectId == subjectId &&
               g.periodId == periodId &&
-              g.indicatorId == indicatorId,
+              g.competenciaId == competenciaId,
         )
         .map((g) => g.value)
         .toList();
@@ -297,20 +302,39 @@ class AcademicProvider extends ChangeNotifier {
     return values.reduce((a, b) => a + b) / values.length;
   }
 
-  // Promedio simple de los indicadores de un estándar para un estudiante,
-  // ignorando los indicadores que aún no tienen ninguna nota registrada.
-  double? standardGradeForStudent(
+  /// `null` = todavía sin notas suficientes para decidir. La competencia se
+  /// considera alcanzada si su promedio llega al menos a `GradeScale.basico`.
+  bool? competenciaAlcanzada(
     String studentId,
     String subjectId,
     String periodId,
-    String standardId,
+    String competenciaId,
   ) {
-    final indicators = indicatorsForStandard(standardId);
-    if (indicators.isEmpty) return null;
-    final scores = indicators
+    final grade = competenciaGradeForStudent(
+      studentId,
+      subjectId,
+      periodId,
+      competenciaId,
+    );
+    if (grade == null) return null;
+    return grade >= GradeScale.basico;
+  }
+
+  // Promedio simple de las competencias que el docente sí asignó a este
+  // estándar en este período — si no asignó ninguna, `null` (no cuenta
+  // como cero: "no es obligatorio trabajar todos los estándares en todos
+  // los períodos").
+  double? estandarGradeForStudent(
+    String studentId,
+    String subjectId,
+    String periodId,
+    String estandarId,
+  ) {
+    final competencias = competenciasForEstandarAndPeriod(estandarId, periodId);
+    if (competencias.isEmpty) return null;
+    final scores = competencias
         .map(
-          (ind) =>
-              indicatorGradeForStudent(studentId, subjectId, periodId, ind.id),
+          (c) => competenciaGradeForStudent(studentId, subjectId, periodId, c.id),
         )
         .whereType<double>()
         .toList();
@@ -318,52 +342,57 @@ class AcademicProvider extends ChangeNotifier {
     return scores.reduce((a, b) => a + b) / scores.length;
   }
 
-  void addStandard(Standard s) {
-    _store.saveStandard(s);
-  }
+  void addEstandar(Estandar e) => _store.saveEstandar(e);
 
-  void updateStandard(
+  void updateEstandar(
     String id, {
     required String name,
     required String description,
     required double weight,
   }) {
-    final old = _standards.firstWhere(
-      (s) => s.id == id,
-      orElse: () =>
-          Standard(id: id, subjectId: '', name: '', description: '', weight: 0),
-    );
-    _store.saveStandard(
-      Standard(
+    final old = _estandares.firstWhere((e) => e.id == id);
+    _store.saveEstandar(
+      Estandar(
         id: old.id,
         subjectId: old.subjectId,
-        periodId: old.periodId,
+        academicYearId: old.academicYearId,
         name: name,
         description: description,
+        order: old.order,
         weight: weight,
       ),
     );
   }
 
-  void updateIndicator(
+  void deleteEstandar(String id) {
+    final competenciaIds = _competencias
+        .where((c) => c.estandarId == id)
+        .map((c) => c.id)
+        .toList();
+    for (final compId in competenciaIds) {
+      for (final act in _actividades.where((a) => a.competenciaId == compId)) {
+        _store.deleteActividad(act.id);
+      }
+      _store.deleteCompetencia(compId);
+    }
+    _store.deleteEstandar(id);
+  }
+
+  void addCompetencia(Competencia c) => _store.saveCompetencia(c);
+
+  void updateCompetencia(
     String id, {
     required String name,
     required String description,
+    required CompetenciaTipo tipo,
   }) {
-    final old = _indicators.firstWhere(
-      (i) => i.id == id,
-      orElse: () => Indicator(
-        id: id,
-        standardId: '',
-        name: '',
-        description: '',
-        order: 0,
-      ),
-    );
-    _store.saveIndicator(
-      Indicator(
+    final old = _competencias.firstWhere((c) => c.id == id);
+    _store.saveCompetencia(
+      Competencia(
         id: old.id,
-        standardId: old.standardId,
+        estandarId: old.estandarId,
+        periodId: old.periodId,
+        tipo: tipo,
         name: name,
         description: description,
         order: old.order,
@@ -371,69 +400,16 @@ class AcademicProvider extends ChangeNotifier {
     );
   }
 
-  void deleteStandard(String id) {
-    final indicatorIds = _indicators
-        .where((i) => i.standardId == id)
-        .map((i) => i.id)
-        .toList();
-    for (final indId in indicatorIds) {
-      for (final act in _activities.where((a) => a.indicatorId == indId)) {
-        _store.deleteActivity(act.id);
-      }
-      _store.deleteIndicator(indId);
+  void deleteCompetencia(String id) {
+    for (final act in _actividades.where((a) => a.competenciaId == id)) {
+      _store.deleteActividad(act.id);
     }
-    _store.deleteStandard(id);
+    _store.deleteCompetencia(id);
   }
 
-  void addIndicator(Indicator ind) {
-    _store.saveIndicator(ind);
-  }
+  void addActividad(Actividad a) => _store.saveActividad(a);
 
-  void deleteIndicator(String id) {
-    for (final act in _activities.where((a) => a.indicatorId == id)) {
-      _store.deleteActivity(act.id);
-    }
-    _store.deleteIndicator(id);
-  }
-
-  void addActivity(Activity act) {
-    _store.saveActivity(act);
-  }
-
-  void deleteActivity(String id) {
-    _store.deleteActivity(id);
-  }
-
-  void toggleActivityProgrammed(String id) {
-    final act = _activities.firstWhere((a) => a.id == id);
-    final newProgrammed = !act.isProgrammed;
-    _store.saveActivity(
-      Activity(
-        id: act.id,
-        indicatorId: act.indicatorId,
-        name: act.name,
-        description: act.description,
-        order: act.order,
-        isProgrammed: newProgrammed,
-        gradeValue: newProgrammed ? act.gradeValue : null,
-      ),
-    );
-  }
-
-  void setActivityGrade(String id, double? grade) {
-    final act = _activities.firstWhere((a) => a.id == id);
-    _store.saveActivity(
-      Activity(
-        id: act.id,
-        indicatorId: act.indicatorId,
-        name: act.name,
-        description: act.description,
-        order: act.order,
-        isProgrammed: act.isProgrammed,
-        gradeValue: grade,
-      ),
-    );
-  }
+  void deleteActividad(String id) => _store.deleteActividad(id);
 
   EvaluationConfig? evalConfigFor(String subjectId, String periodId) {
     try {
@@ -443,6 +419,26 @@ class AcademicProvider extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  // Crea o actualiza la ponderación Estándares/Evaluación Final de una
+  // asignatura en un período (reutiliza el id existente si ya había config).
+  Future<void> saveEvalConfig(
+    String subjectId,
+    String periodId,
+    double standardsWeight,
+    double finalExamWeight,
+  ) {
+    final existing = evalConfigFor(subjectId, periodId);
+    return _store.saveEvalConfig(
+      EvaluationConfig(
+        id: existing?.id ?? '${subjectId}_$periodId',
+        subjectId: subjectId,
+        periodId: periodId,
+        standardsWeight: standardsWeight,
+        finalExamWeight: finalExamWeight,
+      ),
+    );
   }
 
   Teacher? teacherByUserId(String userId) {
@@ -475,7 +471,7 @@ class AcademicProvider extends ChangeNotifier {
     String periodId,
   ) {
     final config = evalConfigFor(subjectId, periodId);
-    final subjectStandards = standardsForSubjectAndPeriod(subjectId, periodId);
+    final subjectEstandares = estandaresForSubject(subjectId);
     final gradesList = gradesForStudentSubjectPeriod(
       studentId,
       subjectId,
@@ -486,25 +482,25 @@ class AcademicProvider extends ChangeNotifier {
 
     double? finalExamValue;
     try {
-      finalExamValue = gradesList.firstWhere((g) => g.standardId == null).value;
+      finalExamValue = gradesList.firstWhere((g) => g.estandarId == null).value;
     } catch (_) {
       finalExamValue = null;
     }
 
     double? standardsAvg;
-    if (subjectStandards.isNotEmpty) {
+    if (subjectEstandares.isNotEmpty) {
       double weightedSum = 0.0;
       double totalWeight = 0.0;
-      for (final std in subjectStandards) {
-        final score = standardGradeForStudent(
+      for (final e in subjectEstandares) {
+        final score = estandarGradeForStudent(
           studentId,
           subjectId,
           periodId,
-          std.id,
+          e.id,
         );
         if (score != null) {
-          weightedSum += score * std.weight;
-          totalWeight += std.weight;
+          weightedSum += score * e.weight;
+          totalWeight += e.weight;
         }
       }
       if (totalWeight > 0) standardsAvg = weightedSum / totalWeight;
@@ -920,9 +916,9 @@ class AcademicProvider extends ChangeNotifier {
               g.studentId == grade.studentId &&
               g.subjectId == grade.subjectId &&
               g.periodId == grade.periodId &&
-              g.standardId == grade.standardId &&
-              g.indicatorId == grade.indicatorId &&
-              g.slot == grade.slot,
+              g.estandarId == grade.estandarId &&
+              g.competenciaId == grade.competenciaId &&
+              g.actividadId == grade.actividadId,
         )
         .toList();
     for (final g in existing) {
@@ -1001,6 +997,22 @@ class AcademicProvider extends ChangeNotifier {
   AcademicPeriod? periodById(String id) {
     try {
       return _periods.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Estandar? estandarById(String id) {
+    try {
+      return _estandares.firstWhere((e) => e.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Competencia? competenciaById(String id) {
+    try {
+      return _competencias.firstWhere((c) => c.id == id);
     } catch (_) {
       return null;
     }

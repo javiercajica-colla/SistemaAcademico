@@ -39,7 +39,7 @@ class SeedService {
     await _seedCourses();
 
     onProgress('Estándares de evaluación…');
-    await _seedStandards();
+    await _seedEstandaresCompetenciasActividades();
 
     onProgress('Docentes…');
     await _seedTeachers();
@@ -197,15 +197,35 @@ class SeedService {
     await batch.commit();
   }
 
-  Future<void> _seedStandards() async {
+  Future<void> _seedEstandaresCompetenciasActividades() async {
     final batch = _db.batch();
-    for (final s in MockData.standards) {
-      batch.set(_db.collection('standards').doc(s.id), {
-        'subjectId': s.subjectId,
-        'periodId': s.periodId,
-        'name': s.name,
-        'description': s.description,
-        'weight': s.weight,
+    for (final e in MockData.estandares) {
+      batch.set(_db.collection('estandares').doc(e.id), {
+        'subjectId': e.subjectId,
+        'academicYearId': e.academicYearId,
+        'name': e.name,
+        'description': e.description,
+        'order': e.order,
+        'weight': e.weight,
+      });
+    }
+    for (final c in MockData.competencias) {
+      batch.set(_db.collection('competencias').doc(c.id), {
+        'estandarId': c.estandarId,
+        'periodId': c.periodId,
+        'tipo': c.tipo.name,
+        'name': c.name,
+        'description': c.description,
+        'order': c.order,
+      });
+    }
+    for (final a in MockData.actividades) {
+      batch.set(_db.collection('actividades').doc(a.id), {
+        'competenciaId': a.competenciaId,
+        'name': a.name,
+        'description': a.description,
+        'order': a.order,
+        'date': a.date == null ? null : Timestamp.fromDate(a.date!),
       });
     }
     await batch.commit();
@@ -278,7 +298,9 @@ class SeedService {
         'studentId': g.studentId,
         'subjectId': g.subjectId,
         'periodId': g.periodId,
-        'standardId': g.standardId,
+        'estandarId': g.estandarId,
+        'competenciaId': g.competenciaId,
+        'actividadId': g.actividadId,
         'value': g.value,
         'note': g.note,
         'registeredAt': Timestamp.fromDate(g.registeredAt),

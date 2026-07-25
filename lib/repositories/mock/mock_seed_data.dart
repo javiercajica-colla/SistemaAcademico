@@ -29,7 +29,6 @@ List<Subject> seedSubjects() => List.of(MockData.subjects);
 List<Teacher> seedTeachers() => List.of(MockData.teachers);
 List<Student> seedStudents() => List.of(MockData.students);
 List<Parent> seedParents() => List.of(MockData.parents);
-List<Standard> seedStandards() => List.of(MockData.standards);
 List<Grade> seedGrades() => List.of(MockData.grades);
 List<AttendanceRecord> seedAttendance() => List.of(MockData.attendance);
 List<Observation> seedObservations() => List.of(MockData.observations);
@@ -38,11 +37,9 @@ List<SubjectAssignment> seedAssignments() => List.of(MockData.assignments);
 List<EvaluationConfig> seedEvalConfigs() => List.of(MockData.evalConfigs);
 List<AppNotification> seedNotifications() => List.of(MockData.notifications);
 
-List<Indicator> seedIndicators() => List.of(MockData.indicators);
-
-// Actividades son un módulo posterior a mock_data.dart y no tienen datos
-// de ejemplo allí; se dejan vacías (la app las maneja bien sin datos).
-List<Activity> seedActivities() => const [];
+List<Estandar> seedEstandares() => List.of(MockData.estandares);
+List<Competencia> seedCompetencias() => List.of(MockData.competencias);
+List<Actividad> seedActividades() => List.of(MockData.actividades);
 
 // PIAR: el catálogo de apoyos viene precargado, además de un caso de
 // ejemplo ya activo (María González López, ver mock_data.dart) para que la

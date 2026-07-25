@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
-import '../../widgets/stat_card.dart';
 
 class SubjectsScreen extends StatefulWidget {
   const SubjectsScreen({super.key});
@@ -144,9 +143,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   Widget _buildSubjectDetail(BuildContext context, AcademicProvider academic) {
     final subject = academic.subjectById(_selectedSubject!);
     if (subject == null) return _buildEmptyState();
-    final standards = academic.standardsForSubject(subject.id);
     final teacher = academic.teacherById(subject.teacherId ?? '');
-    final totalWeight = standards.fold(0.0, (sum, s) => sum + s.weight);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -219,152 +216,34 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             ),
           ],
           const SizedBox(height: 24),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Estándares Evaluativos',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-              _weightBadge(totalWeight),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Agregar Estándar'),
-                onPressed: () => _showStandardDialog(context, subject.id),
-              ),
-            ],
+          const Text(
+            'Estándares Evaluativos',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          if (standards.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text('No hay estándares configurados'),
-              ),
-            )
-          else
-            ...standards.map(
-              (std) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: AppCard(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${std.weight.toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              std.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              std.description,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        width: 120,
-                        child: LinearProgressIndicator(
-                          value: std.weight / 100,
-                          color: AppColors.primary,
-                          backgroundColor: AppColors.border,
-                          borderRadius: BorderRadius.circular(4),
-                          minHeight: 6,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_rounded,
-                          size: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          size: 16,
-                          color: AppColors.error,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Los Estándares (hasta 5 por año), sus Competencias por '
+                    'período y las Actividades se definen desde el módulo '
+                    '"Estándares" del docente asignado a esta asignatura.',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _weightBadge(double total) {
-    final ok = total == 100;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: ok
-            ? AppColors.secondary.withValues(alpha: 0.1)
-            : AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: ok
-              ? AppColors.secondary.withValues(alpha: 0.3)
-              : AppColors.warning.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            ok
-                ? Icons.check_circle_outline_rounded
-                : Icons.warning_amber_rounded,
-            size: 14,
-            color: ok ? AppColors.secondary : AppColors.warning,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${total.toStringAsFixed(0)}% / 100%',
-            style: TextStyle(
-              fontSize: 12,
-              color: ok ? AppColors.secondary : AppColors.warning,
-              fontWeight: FontWeight.w600,
+              ],
             ),
           ),
         ],
@@ -490,107 +369,4 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     });
   }
 
-  void _showStandardDialog(BuildContext context, String subjectId) {
-    final formKey = GlobalKey<FormState>();
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final weightCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuevo Estándar Evaluativo'),
-        content: Form(
-          key: formKey,
-          child: SizedBox(
-            width: 400,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre del estándar',
-                    ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Campo requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'Descripción'),
-                    maxLines: 2,
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Campo requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: weightCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Porcentaje (%)',
-                      suffixText: '%',
-                    ),
-                    validator: (v) {
-                      final n = double.tryParse(v ?? '');
-                      if (n == null || n <= 0 || n > 100) {
-                        return 'Ingresa un valor entre 1 y 100';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              final academic = context.read<AcademicProvider>();
-              const uuid = Uuid();
-              final newStandard = Standard(
-                id: uuid.v4(),
-                subjectId: subjectId,
-                name: nameCtrl.text.trim(),
-                description: descCtrl.text.trim(),
-                weight: double.parse(weightCtrl.text.trim()),
-              );
-              final standardName = newStandard.name;
-              // 1° Cerrar ANTES de notifyListeners
-              Navigator.pop(ctx);
-              // 2° Diferir la mutación del provider para evitar el assertion
-              // "_dependents.isEmpty" al chocar con el cierre del diálogo.
-              Future.microtask(() {
-                academic.addStandard(newStandard);
-                if (!mounted) return;
-                // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Estándar "$standardName" agregado'),
-                    backgroundColor: AppColors.secondary,
-                  ),
-                );
-              });
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    ).then((_) {
-      nameCtrl.dispose();
-      descCtrl.dispose();
-      weightCtrl.dispose();
-    });
-  }
 }

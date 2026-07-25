@@ -163,7 +163,7 @@ class PiarTeacherAjustesView extends StatelessWidget {
                   _AjusteFormCard(
                     key: ValueKey(ajuste.id),
                     ajuste: ajuste,
-                    standardName: _standardName(academic, ajuste.standardId),
+                    standardName: _estandarName(academic, ajuste.estandarId),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -184,12 +184,8 @@ class PiarTeacherAjustesView extends StatelessWidget {
     }
   }
 
-  String _standardName(AcademicProvider academic, String standardId) {
-    try {
-      return academic.standards.firstWhere((s) => s.id == standardId).name;
-    } catch (_) {
-      return 'Competencia';
-    }
+  String _estandarName(AcademicProvider academic, String estandarId) {
+    return academic.estandarById(estandarId)?.name ?? 'Competencia';
   }
 }
 
@@ -808,7 +804,8 @@ class _AjusteFormCardState extends State<_AjusteFormCard> {
         id: widget.ajuste.id,
         inscripcionId: widget.ajuste.inscripcionId,
         subjectId: widget.ajuste.subjectId,
-        standardId: widget.ajuste.standardId,
+        estandarId: widget.ajuste.estandarId,
+        competenciaId: widget.ajuste.competenciaId,
         periodId: widget.ajuste.periodId,
         competenciaTextoOriginal: widget.ajuste.competenciaTextoOriginal,
         requiereAjuste: _requiereAjuste,

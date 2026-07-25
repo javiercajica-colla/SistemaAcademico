@@ -244,189 +244,142 @@ class MockData {
     ),
   ];
 
-  static final List<Standard> standards = [
-    const Standard(
-      id: 'st1',
+  // Estándar → Competencia → Actividad de ejemplo, para que el boletín y el
+  // módulo PIAR tengan datos reales en modo mock. "Pensamiento matemático"
+  // y "Pensamiento científico" quedan en Período 1 (con actividades ya
+  // calificadas, ver `grades` más abajo); "Pensamiento numérico" y
+  // "Comprensión lectora" quedan en Período 2 (el período abierto en el
+  // seed) para poder probar de extremo a extremo el módulo PIAR.
+  static final List<Estandar> estandares = [
+    const Estandar(
+      id: 'est_demo_mat_p1',
       subjectId: 's1',
-      name: 'Razonamiento lógico',
-      description: 'Capacidad de razonar y argumentar matemáticamente',
-      weight: 30,
-    ),
-    const Standard(
-      id: 'st2',
-      subjectId: 's1',
-      name: 'Resolución de problemas',
-      description: 'Plantear y resolver problemas matemáticos',
-      weight: 25,
-    ),
-    const Standard(
-      id: 'st3',
-      subjectId: 's1',
-      name: 'Pensamiento numérico',
-      description: 'Comprensión y uso de los números',
-      weight: 25,
-    ),
-    const Standard(
-      id: 'st4',
-      subjectId: 's1',
-      name: 'Pensamiento geométrico',
-      description: 'Comprensión del espacio y las figuras',
-      weight: 20,
-    ),
-    const Standard(
-      id: 'st5',
-      subjectId: 's2',
-      name: 'Comprensión lectora',
-      description: 'Capacidad de leer y comprender textos',
-      weight: 35,
-    ),
-    const Standard(
-      id: 'st6',
-      subjectId: 's2',
-      name: 'Producción textual',
-      description: 'Habilidad para escribir y comunicar ideas',
-      weight: 35,
-    ),
-    const Standard(
-      id: 'st7',
-      subjectId: 's2',
-      name: 'Literatura',
-      description: 'Análisis de obras literarias',
-      weight: 30,
-    ),
-    const Standard(
-      id: 'st8',
-      subjectId: 's3',
-      name: 'Indagación científica',
-      description: 'Metodología científica e investigación',
-      weight: 40,
-    ),
-    const Standard(
-      id: 'st9',
-      subjectId: 's3',
-      name: 'Conocimiento del entorno',
-      description: 'Comprensión del mundo natural',
-      weight: 35,
-    ),
-    const Standard(
-      id: 'st10',
-      subjectId: 's3',
-      name: 'Ciencia, tecnología y sociedad',
-      description: 'Relación entre ciencia y sociedad',
-      weight: 25,
-    ),
-    const Standard(
-      id: 'st11',
-      subjectId: 's5',
-      name: 'Listening & Speaking',
-      description: 'Comprensión auditiva y expresión oral',
-      weight: 40,
-    ),
-    const Standard(
-      id: 'st12',
-      subjectId: 's5',
-      name: 'Reading & Writing',
-      description: 'Comprensión lectora y escritura',
-      weight: 35,
-    ),
-    const Standard(
-      id: 'st13',
-      subjectId: 's5',
-      name: 'Grammar & Vocabulary',
-      description: 'Gramática y vocabulario inglés',
-      weight: 25,
-    ),
-    // Estándares de ejemplo ya asociados a un período concreto (ap1), para
-    // que el boletín tenga indicadores que mostrar como bullets. Los
-    // estándares st1-st13 son plantillas de año sin período (periodId
-    // null) y por eso standardsForSubjectAndPeriod() nunca los devuelve.
-    const Standard(
-      id: 'st_demo_mat_p1',
-      subjectId: 's1',
-      periodId: 'ap1',
+      academicYearId: 'ay1',
       name: 'Pensamiento matemático',
       description: 'Aplicación de conceptos y procedimientos matemáticos',
+      order: 1,
       weight: 100,
     ),
-    const Standard(
-      id: 'st_demo_cn_p1',
+    const Estandar(
+      id: 'est_demo_cn_p1',
       subjectId: 's3',
-      periodId: 'ap1',
+      academicYearId: 'ay1',
       name: 'Pensamiento científico',
       description: 'Aplicación del método científico',
+      order: 1,
       weight: 100,
     ),
-    // Mismo propósito, pero en ap2 (el período abierto/activo en el
-    // seed): permite probar de extremo a extremo el módulo PIAR (Fase 4
-    // en adelante), que resuelve competencias del período vigente.
-    const Standard(
-      id: 'st_demo_mat_p2',
+    const Estandar(
+      id: 'est_demo_mat_p2',
       subjectId: 's1',
-      periodId: 'ap2',
+      academicYearId: 'ay1',
       name: 'Pensamiento numérico',
       description:
           'Interpreta y resuelve situaciones problema usando operaciones básicas.',
+      order: 2,
       weight: 100,
     ),
-    const Standard(
-      id: 'st_demo_esp_p2',
+    const Estandar(
+      id: 'est_demo_esp_p2',
       subjectId: 's2',
-      periodId: 'ap2',
+      academicYearId: 'ay1',
       name: 'Comprensión lectora',
       description:
           'Comprende textos narrativos cortos e identifica ideas principales.',
+      order: 1,
       weight: 100,
     ),
   ];
 
-  static final List<Indicator> indicators = [
-    const Indicator(
-      id: 'ind_mat_p1_1',
-      standardId: 'st_demo_mat_p1',
+  static final List<Competencia> competencias = [
+    const Competencia(
+      id: 'comp_demo_mat_p1',
+      estandarId: 'est_demo_mat_p1',
+      periodId: 'ap1',
+      tipo: CompetenciaTipo.cognitiva,
+      name: 'Pensamiento matemático',
+      description: 'Aplicación de conceptos y procedimientos matemáticos',
+      order: 1,
+    ),
+    const Competencia(
+      id: 'comp_demo_cn_p1',
+      estandarId: 'est_demo_cn_p1',
+      periodId: 'ap1',
+      tipo: CompetenciaTipo.cognitiva,
+      name: 'Pensamiento científico',
+      description: 'Aplicación del método científico',
+      order: 1,
+    ),
+    const Competencia(
+      id: 'comp_demo_mat_p2',
+      estandarId: 'est_demo_mat_p2',
+      periodId: 'ap2',
+      tipo: CompetenciaTipo.cognitiva,
+      name: 'Pensamiento numérico',
+      description:
+          'Interpreta y resuelve situaciones problema usando operaciones básicas.',
+      order: 1,
+    ),
+    const Competencia(
+      id: 'comp_demo_esp_p2',
+      estandarId: 'est_demo_esp_p2',
+      periodId: 'ap2',
+      tipo: CompetenciaTipo.cognitiva,
+      name: 'Comprensión lectora',
+      description:
+          'Comprende textos narrativos cortos e identifica ideas principales.',
+      order: 1,
+    ),
+  ];
+
+  static final List<Actividad> actividades = [
+    const Actividad(
+      id: 'act_mat_p1_1',
+      competenciaId: 'comp_demo_mat_p1',
       name: 'Resolución de problemas',
       description:
           'Propone diversas alternativas en los procesos de planteamiento y '
           'resolución de problemas matemáticos y de la vida cotidiana.',
       order: 1,
     ),
-    const Indicator(
-      id: 'ind_mat_p1_2',
-      standardId: 'st_demo_mat_p1',
+    const Actividad(
+      id: 'act_mat_p1_2',
+      competenciaId: 'comp_demo_mat_p1',
       name: 'Comunicación matemática',
       description:
           'Comunica su pensamiento matemático con coherencia y claridad.',
       order: 2,
     ),
-    const Indicator(
-      id: 'ind_mat_p1_3',
-      standardId: 'st_demo_mat_p1',
+    const Actividad(
+      id: 'act_mat_p1_3',
+      competenciaId: 'comp_demo_mat_p1',
       name: 'Procedimientos formales',
       description:
           'Elabora, compara, ejercita y valora procedimientos utilizando '
           'métodos formales.',
       order: 3,
     ),
-    const Indicator(
-      id: 'ind_mat_p1_4',
-      standardId: 'st_demo_mat_p1',
+    const Actividad(
+      id: 'act_mat_p1_4',
+      competenciaId: 'comp_demo_mat_p1',
       name: 'Razonamiento y argumentación',
       description:
           'Reconoce el razonamiento y la argumentación como aspectos '
           'fundamentales de las matemáticas.',
       order: 4,
     ),
-    const Indicator(
-      id: 'ind_cn_p1_1',
-      standardId: 'st_demo_cn_p1',
+    const Actividad(
+      id: 'act_cn_p1_1',
+      competenciaId: 'comp_demo_cn_p1',
       name: 'Argumentación científica',
       description:
           'Muestra capacidad para argumentar y sustentar teorías científicas '
           'con base en leyes y principios universales.',
       order: 1,
     ),
-    const Indicator(
-      id: 'ind_cn_p1_2',
-      standardId: 'st_demo_cn_p1',
+    const Actividad(
+      id: 'act_cn_p1_2',
+      competenciaId: 'comp_demo_cn_p1',
       name: 'Curiosidad científica',
       description:
           'Manifiesta curiosidad científica y deseo de saber, al aplicar sus '
@@ -720,75 +673,12 @@ class MockData {
 
   static final List<Grade> grades = [
     Grade(
-      id: 'g1',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st1',
-      value: 4.2,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g2',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st2',
-      value: 3.8,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g3',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st3',
-      value: 4.5,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g4',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st4',
-      value: 4.0,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
       id: 'g5',
       studentId: 'st1',
       subjectId: 's1',
       periodId: 'ap1',
       value: 4.1,
       registeredAt: DateTime(2026, 3, 25),
-    ),
-    Grade(
-      id: 'g6',
-      studentId: 'st1',
-      subjectId: 's2',
-      periodId: 'ap1',
-      standardId: 'st5',
-      value: 4.8,
-      registeredAt: DateTime(2026, 3, 12),
-    ),
-    Grade(
-      id: 'g7',
-      studentId: 'st1',
-      subjectId: 's2',
-      periodId: 'ap1',
-      standardId: 'st6',
-      value: 4.5,
-      registeredAt: DateTime(2026, 3, 12),
-    ),
-    Grade(
-      id: 'g8',
-      studentId: 'st1',
-      subjectId: 's2',
-      periodId: 'ap1',
-      standardId: 'st7',
-      value: 4.6,
-      registeredAt: DateTime(2026, 3, 12),
     ),
     Grade(
       id: 'g9',
@@ -799,48 +689,12 @@ class MockData {
       registeredAt: DateTime(2026, 3, 26),
     ),
     Grade(
-      id: 'g10',
-      studentId: 'st1',
-      subjectId: 's3',
-      periodId: 'ap1',
-      standardId: 'st8',
-      value: 3.5,
-      registeredAt: DateTime(2026, 3, 15),
-    ),
-    Grade(
-      id: 'g11',
-      studentId: 'st1',
-      subjectId: 's3',
-      periodId: 'ap1',
-      standardId: 'st9',
-      value: 3.8,
-      registeredAt: DateTime(2026, 3, 15),
-    ),
-    Grade(
       id: 'g12',
       studentId: 'st1',
       subjectId: 's3',
       periodId: 'ap1',
       value: 3.6,
       registeredAt: DateTime(2026, 3, 27),
-    ),
-    Grade(
-      id: 'g13',
-      studentId: 'st1',
-      subjectId: 's5',
-      periodId: 'ap1',
-      standardId: 'st11',
-      value: 3.2,
-      registeredAt: DateTime(2026, 3, 18),
-    ),
-    Grade(
-      id: 'g14',
-      studentId: 'st1',
-      subjectId: 's5',
-      periodId: 'ap1',
-      standardId: 'st12',
-      value: 3.5,
-      registeredAt: DateTime(2026, 3, 18),
     ),
     Grade(
       id: 'g15',
@@ -850,89 +704,17 @@ class MockData {
       value: 3.3,
       registeredAt: DateTime(2026, 3, 28),
     ),
-    Grade(
-      id: 'g16',
-      studentId: 'st2',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st1',
-      value: 3.5,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g17',
-      studentId: 'st2',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st2',
-      value: 3.2,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g18',
-      studentId: 'st2',
-      subjectId: 's2',
-      periodId: 'ap1',
-      standardId: 'st5',
-      value: 4.0,
-      registeredAt: DateTime(2026, 3, 12),
-    ),
-    Grade(
-      id: 'g19',
-      studentId: 'st3',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st1',
-      value: 4.8,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g20',
-      studentId: 'st3',
-      subjectId: 's1',
-      periodId: 'ap1',
-      standardId: 'st2',
-      value: 4.6,
-      registeredAt: DateTime(2026, 3, 10),
-    ),
-    Grade(
-      id: 'g21',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap2',
-      standardId: 'st1',
-      value: 4.4,
-      registeredAt: DateTime(2026, 5, 10),
-    ),
-    Grade(
-      id: 'g22',
-      studentId: 'st1',
-      subjectId: 's1',
-      periodId: 'ap2',
-      standardId: 'st2',
-      value: 4.0,
-      registeredAt: DateTime(2026, 5, 10),
-    ),
-    Grade(
-      id: 'g23',
-      studentId: 'st1',
-      subjectId: 's2',
-      periodId: 'ap2',
-      standardId: 'st5',
-      value: 4.9,
-      registeredAt: DateTime(2026, 5, 12),
-    ),
-    // Notas por indicador de ejemplo (ver indicators en este mismo archivo),
-    // para que el boletín muestre estándar + nota además de la evaluación
-    // final ya cargada arriba para st1/s1/ap1 y st1/s3/ap1.
+    // Notas por actividad de ejemplo (ver estandares/competencias/actividades
+    // en este mismo archivo), para que el boletín muestre estándar +
+    // competencia + nota además de la evaluación final ya cargada arriba.
     Grade(
       id: 'g_demo_mat_p1_1',
       studentId: 'st1',
       subjectId: 's1',
       periodId: 'ap1',
-      standardId: 'st_demo_mat_p1',
-      indicatorId: 'ind_mat_p1_1',
-      slot: 1,
+      estandarId: 'est_demo_mat_p1',
+      competenciaId: 'comp_demo_mat_p1',
+      actividadId: 'act_mat_p1_1',
       value: 4.3,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -941,9 +723,9 @@ class MockData {
       studentId: 'st1',
       subjectId: 's1',
       periodId: 'ap1',
-      standardId: 'st_demo_mat_p1',
-      indicatorId: 'ind_mat_p1_2',
-      slot: 1,
+      estandarId: 'est_demo_mat_p1',
+      competenciaId: 'comp_demo_mat_p1',
+      actividadId: 'act_mat_p1_2',
       value: 4.0,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -952,9 +734,9 @@ class MockData {
       studentId: 'st1',
       subjectId: 's1',
       periodId: 'ap1',
-      standardId: 'st_demo_mat_p1',
-      indicatorId: 'ind_mat_p1_3',
-      slot: 1,
+      estandarId: 'est_demo_mat_p1',
+      competenciaId: 'comp_demo_mat_p1',
+      actividadId: 'act_mat_p1_3',
       value: 3.9,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -963,9 +745,9 @@ class MockData {
       studentId: 'st1',
       subjectId: 's1',
       periodId: 'ap1',
-      standardId: 'st_demo_mat_p1',
-      indicatorId: 'ind_mat_p1_4',
-      slot: 1,
+      estandarId: 'est_demo_mat_p1',
+      competenciaId: 'comp_demo_mat_p1',
+      actividadId: 'act_mat_p1_4',
       value: 4.4,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -974,9 +756,9 @@ class MockData {
       studentId: 'st1',
       subjectId: 's3',
       periodId: 'ap1',
-      standardId: 'st_demo_cn_p1',
-      indicatorId: 'ind_cn_p1_1',
-      slot: 1,
+      estandarId: 'est_demo_cn_p1',
+      competenciaId: 'comp_demo_cn_p1',
+      actividadId: 'act_cn_p1_1',
       value: 3.7,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -985,9 +767,9 @@ class MockData {
       studentId: 'st1',
       subjectId: 's3',
       periodId: 'ap1',
-      standardId: 'st_demo_cn_p1',
-      indicatorId: 'ind_cn_p1_2',
-      slot: 1,
+      estandarId: 'est_demo_cn_p1',
+      competenciaId: 'comp_demo_cn_p1',
+      actividadId: 'act_cn_p1_2',
       value: 3.5,
       registeredAt: DateTime(2026, 3, 10),
     ),
@@ -1269,7 +1051,7 @@ class MockData {
   // en cada sesión. Estudiante: María González López (st2, curso c1),
   // asignaturas Matemáticas (s1, Prof. Carlos/t1) y Español (s2, Prof. Ana
   // Martínez/t2), período ap2 — coincide con los estándares de demo
-  // st_demo_mat_p2/st_demo_esp_p2 de arriba.
+  // est_demo_mat_p2/est_demo_esp_p2 de arriba.
   static final DateTime _piarDemoFecha = DateTime(2026, 3, 10);
 
   static final List<PiarInscripcion> piarInscripcionesDemo = [
@@ -1334,7 +1116,8 @@ class MockData {
       id: 'piar_ajuste_demo1',
       inscripcionId: 'piar_insc_demo1',
       subjectId: 's1',
-      standardId: 'st_demo_mat_p2',
+      estandarId: 'est_demo_mat_p2',
+      competenciaId: 'comp_demo_mat_p2',
       periodId: 'ap2',
       competenciaTextoOriginal:
           'Interpreta y resuelve situaciones problema usando operaciones básicas.',
@@ -1352,7 +1135,8 @@ class MockData {
       id: 'piar_ajuste_demo2',
       inscripcionId: 'piar_insc_demo1',
       subjectId: 's2',
-      standardId: 'st_demo_esp_p2',
+      estandarId: 'est_demo_esp_p2',
+      competenciaId: 'comp_demo_esp_p2',
       periodId: 'ap2',
       competenciaTextoOriginal:
           'Comprende textos narrativos cortos e identifica ideas principales.',

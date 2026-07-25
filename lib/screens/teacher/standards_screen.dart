@@ -7,6 +7,16 @@ import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../providers/auth_provider.dart';
 
+const _kMaxEstandaresPorAnio = 5;
+const _kMaxCompetenciasPorPeriodo = 5;
+const _kMaxActividadesPorCompetencia = 6;
+
+/// Estándar (por año) → Competencia (por período, una debe ser
+/// actitudinal) → Actividad (hasta 6, calificadas desde "Calificaciones").
+/// Reemplaza el modelo Standard → Indicator → Activity — ver plan de
+/// rediseño de evaluación. El docente sigue siendo quien define los
+/// Estándares (antes existía además un mecanismo de "plantilla" en la
+/// pantalla del coordinador que no se usaba realmente; se retiró).
 class StandardsScreen extends StatefulWidget {
   const StandardsScreen({super.key});
 
@@ -58,7 +68,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ? const Center(
                   child: Text('Seleccione un periodo y una asignatura.'),
                 )
-              : _buildStandardsList(academic, teacher.id),
+              : _buildEstandaresList(academic),
         ),
       ],
     );
@@ -72,7 +82,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Periodo',
+            'Periodo (para las Competencias — los Estándares son del año completo)',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -127,11 +137,8 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  Widget _buildStandardsList(AcademicProvider academic, String teacherId) {
-    final standards = academic.standardsForSubjectAndPeriod(
-      _selectedSubjectId!,
-      _selectedPeriodId!,
-    );
+  Widget _buildEstandaresList(AcademicProvider academic) {
+    final estandares = academic.estandaresForSubject(_selectedSubjectId!);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -141,7 +148,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
           Row(
             children: [
               Text(
-                'Estándares (${standards.length})',
+                'Estándares del año (${estandares.length}/$_kMaxEstandaresPorAnio)',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -149,14 +156,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => _showAddStandardDialog(academic),
+                onPressed: () => _showAddChooserDialog(academic, estandares),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Agregar Estándar'),
+                label: const Text('Agregar'),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          if (standards.isEmpty)
+          if (estandares.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(40),
@@ -174,7 +181,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'No hay estándares para este periodo y asignatura.',
+                    'Esta asignatura todavía no tiene Estándares definidos para el año.',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                   SizedBox(height: 4),
@@ -189,14 +196,17 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
             )
           else
-            ...standards.map((s) => _buildStandardCard(academic, s)),
+            ...estandares.map((e) => _buildEstandarCard(academic, e)),
         ],
       ),
     );
   }
 
-  Widget _buildStandardCard(AcademicProvider academic, Standard standard) {
-    final indicators = academic.indicatorsForStandard(standard.id);
+  Widget _buildEstandarCard(AcademicProvider academic, Estandar estandar) {
+    final competencias = academic.competenciasForEstandarAndPeriod(
+      estandar.id,
+      _selectedPeriodId!,
+    );
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -221,11 +231,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
           ),
         ),
         title: Text(
-          standard.name,
+          estandar.name,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
         subtitle: Text(
-          standard.description,
+          estandar.description,
           style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
         trailing: Row(
@@ -238,7 +248,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                'Peso: ${standard.weight.toStringAsFixed(0)}%',
+                'Peso: ${estandar.weight.toStringAsFixed(0)}%',
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.secondary,
@@ -253,7 +263,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 size: 18,
                 color: AppColors.primary,
               ),
-              onPressed: () => _showEditStandardDialog(academic, standard),
+              onPressed: () => _showEditEstandarDialog(academic, estandar),
               tooltip: 'Editar estándar',
             ),
             IconButton(
@@ -262,7 +272,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 size: 18,
                 color: AppColors.error,
               ),
-              onPressed: () => _confirmDeleteStandard(academic, standard),
+              onPressed: () => _confirmDeleteEstandar(academic, estandar),
               tooltip: 'Eliminar estándar',
             ),
           ],
@@ -270,33 +280,31 @@ class _StandardsScreenState extends State<StandardsScreen> {
         children: [
           const Divider(height: 1),
           const SizedBox(height: 12),
-          ...indicators.map((ind) => _buildIndicatorCard(academic, ind)),
-          if (indicators.length < 3)
-            TextButton.icon(
-              onPressed: () => _showAddIndicatorDialog(
-                academic,
-                standard.id,
-                indicators.length + 1,
-              ),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Agregar Competencia'),
+          Text(
+            'Competencias de este período (${competencias.length}/$_kMaxCompetenciasPorPeriodo)',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'No es obligatorio trabajar este estándar en todos los períodos — si no agregas competencias aquí, simplemente no aporta nota en este período.',
+            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+          ),
+          const SizedBox(height: 8),
+          ...competencias.map((c) => _buildCompetenciaCard(academic, estandar, c)),
+          if (competencias.isEmpty)
+            const Text(
+              'Usa el botón "Agregar" de arriba para crear una competencia en este estándar.',
+              style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
             ),
-          if (indicators.length >= 3)
+          if (competencias.isNotEmpty &&
+              !competencias.any((c) => c.tipo == CompetenciaTipo.actitudinal))
             const Padding(
               padding: EdgeInsets.only(top: 4),
               child: Text(
-                'Máximo 3 competencias por estándar.',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ),
-          if (indicators.length < 2)
-            const Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Text(
-                'Debe registrar al menos 2 competencias para poder evaluar este estándar.',
+                'Falta marcar una competencia como Actitudinal para este período.',
                 style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.error,
+                  color: AppColors.warning,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -306,13 +314,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  Widget _buildIndicatorCard(AcademicProvider academic, Indicator indicator) {
-    final activities = academic.activitiesForIndicator(indicator.id);
-    final grade = academic.calculateIndicatorGrade(indicator.id);
-    final siblingCount = academic
-        .indicatorsForStandard(indicator.standardId)
-        .length;
-    final canDeleteIndicator = siblingCount > 2;
+  Widget _buildCompetenciaCard(
+    AcademicProvider academic,
+    Estandar estandar,
+    Competencia competencia,
+  ) {
+    final actividades = academic.actividadesForCompetencia(competencia.id);
+    final esActitudinal = competencia.tipo == CompetenciaTipo.actitudinal;
+    final tipoColor = esActitudinal ? AppColors.warning : AppColors.purple;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -326,38 +335,51 @@ class _StandardsScreenState extends State<StandardsScreen> {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         leading: CircleAvatar(
           radius: 14,
-          backgroundColor: AppColors.purple.withValues(alpha: 0.15),
+          backgroundColor: tipoColor.withValues(alpha: 0.15),
           child: Text(
-            '${indicator.order}',
-            style: const TextStyle(
+            '${competencia.order}',
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: AppColors.purple,
+              color: tipoColor,
             ),
           ),
         ),
-        title: Text(
-          indicator.name,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-        ),
-        subtitle: grade != null
-            ? Text(
-                'Promedio: ${grade.toStringAsFixed(1)}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            : const Text(
-                'Sin calificaciones programadas',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                competencia.name,
+                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
               ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: tipoColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                esActitudinal ? 'Actitudinal' : 'Cognitiva',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: tipoColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          competencia.description,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${activities.length}/3 actividades',
+              '${actividades.length}/$_kMaxActividadesPorCompetencia actividades',
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
@@ -365,36 +387,42 @@ class _StandardsScreenState extends State<StandardsScreen> {
             ),
             const SizedBox(width: 4),
             IconButton(
-              icon: Icon(
-                Icons.delete_outline,
-                size: 16,
-                color: canDeleteIndicator
-                    ? AppColors.error
-                    : AppColors.textTertiary,
-              ),
-              onPressed: canDeleteIndicator
-                  ? () => academic.deleteIndicator(indicator.id)
-                  : null,
-              tooltip: canDeleteIndicator
-                  ? 'Eliminar competencia'
-                  : 'Debe mantener al menos 2 competencias',
+              icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+              onPressed: () =>
+                  _showEditCompetenciaDialog(academic, estandar, competencia),
+              tooltip: 'Editar competencia',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+              onPressed: () => academic.deleteCompetencia(competencia.id),
+              tooltip: 'Eliminar competencia',
             ),
           ],
         ),
         children: [
           const Divider(height: 1),
           const SizedBox(height: 8),
-          if (activities.isEmpty)
+          if (actividades.isEmpty)
             const Text(
               'Aún no hay actividades registradas para esta competencia.',
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             )
           else
-            ...activities.map((act) => _buildActivityRow(academic, act)),
+            ...actividades.map((act) => _buildActividadRow(academic, act)),
+          if (actividades.length < _kMaxActividadesPorCompetencia)
+            TextButton.icon(
+              onPressed: () => _showAddActividadDialog(
+                academic,
+                competencia.id,
+                actividades.length + 1,
+              ),
+              icon: const Icon(Icons.add, size: 14),
+              label: const Text('Agregar Actividad'),
+            ),
           const Padding(
-            padding: EdgeInsets.only(top: 8),
+            padding: EdgeInsets.only(top: 4),
             child: Text(
-              'Las actividades (fecha, nombre y descripción) se registran desde el módulo de Calificaciones al momento de evaluarlas.',
+              'Las notas de cada actividad se registran desde el módulo de Calificaciones.',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.textTertiary,
@@ -407,11 +435,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  Widget _buildActivityRow(AcademicProvider academic, Activity activity) {
-    final gradeCtrl = TextEditingController(
-      text: activity.gradeValue?.toStringAsFixed(1) ?? '',
-    );
-
+  Widget _buildActividadRow(AcademicProvider academic, Actividad actividad) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -425,7 +449,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
             ),
             child: Center(
               child: Text(
-                '${activity.order}',
+                '${actividad.order}',
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -440,81 +464,25 @@ class _StandardsScreenState extends State<StandardsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  actividad.name,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
-                if (activity.date != null)
+                if (actividad.date != null)
                   Text(
-                    DateFormat('dd/MM/yyyy').format(activity.date!),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
-                    ),
+                    DateFormat('dd/MM/yyyy').format(actividad.date!),
+                    style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
                   ),
-                if (activity.description.isNotEmpty)
+                if (actividad.description.isNotEmpty)
                   Text(
-                    activity.description,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
+                    actividad.description,
+                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Programada',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-              Switch(
-                value: activity.isProgrammed,
-                onChanged: (_) =>
-                    academic.toggleActivityProgrammed(activity.id),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ],
-          ),
-          if (activity.isProgrammed) ...[
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 80,
-              child: TextField(
-                controller: gradeCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Nota',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  isDense: true,
-                ),
-                style: const TextStyle(fontSize: 13),
-                onSubmitted: (v) {
-                  final parsed = double.tryParse(v.replaceAll(',', '.'));
-                  academic.setActivityGrade(activity.id, parsed);
-                },
-              ),
-            ),
-          ],
-          const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(
-              Icons.delete_outline,
-              size: 16,
-              color: AppColors.error,
-            ),
-            onPressed: () => academic.deleteActivity(activity.id),
+            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+            onPressed: () => academic.deleteActividad(actividad.id),
             tooltip: 'Eliminar actividad',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -524,7 +492,134 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddStandardDialog(AcademicProvider academic) {
+  /// Punto de entrada único para agregar: primero el docente elige si va a
+  /// crear un Estándar o una Competencia; para Competencia, primero debe
+  /// existir al menos un Estándar y elegir a cuál pertenece — no se puede
+  /// crear una Competencia "suelta".
+  void _showAddChooserDialog(AcademicProvider academic, List<Estandar> estandares) {
+    final puedeAgregarEstandar = estandares.length < _kMaxEstandaresPorAnio;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Qué deseas agregar?'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                enabled: puedeAgregarEstandar,
+                leading: const Icon(
+                  Icons.star_outline_rounded,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Estándar'),
+                subtitle: Text(
+                  puedeAgregarEstandar
+                      ? 'Válido para todo el año lectivo de esta asignatura.'
+                      : 'Ya hay $_kMaxEstandaresPorAnio estándares (máximo).',
+                ),
+                onTap: puedeAgregarEstandar
+                    ? () {
+                        Navigator.pop(ctx);
+                        _showAddEstandarDialog(academic, estandares.length);
+                      }
+                    : null,
+              ),
+              const Divider(),
+              ListTile(
+                enabled: estandares.isNotEmpty,
+                leading: const Icon(
+                  Icons.checklist_rtl_rounded,
+                  color: AppColors.purple,
+                ),
+                title: const Text('Competencia'),
+                subtitle: Text(
+                  estandares.isEmpty
+                      ? 'Primero debes crear un Estándar.'
+                      : 'Para el período seleccionado, dentro de un Estándar existente.',
+                ),
+                onTap: estandares.isEmpty
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        _showElegirEstandarParaCompetencia(academic, estandares);
+                      },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showElegirEstandarParaCompetencia(
+    AcademicProvider academic,
+    List<Estandar> estandares,
+  ) {
+    var selectedId = estandares.first.id;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('¿A qué Estándar pertenece?'),
+          content: SizedBox(
+            width: 400,
+            child: DropdownButtonFormField<String>(
+              initialValue: selectedId,
+              decoration: const InputDecoration(
+                labelText: 'Estándar',
+                border: OutlineInputBorder(),
+              ),
+              items: estandares
+                  .map((e) => DropdownMenuItem(value: e.id, child: Text(e.name)))
+                  .toList(),
+              onChanged: (v) => setDialogState(() => selectedId = v!),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                final estandar = estandares.firstWhere((e) => e.id == selectedId);
+                final existentes = academic.competenciasForEstandarAndPeriod(
+                  estandar.id,
+                  _selectedPeriodId!,
+                );
+                if (existentes.length >= _kMaxCompetenciasPorPeriodo) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Este estándar ya tiene el máximo de competencias para este período.',
+                      ),
+                      backgroundColor: AppColors.warning,
+                    ),
+                  );
+                  return;
+                }
+                _showAddCompetenciaDialog(academic, estandar, existentes);
+              },
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddEstandarDialog(AcademicProvider academic, int currentCount) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final weightCtrl = TextEditingController(text: '33');
@@ -547,6 +642,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Válido para todo el año lectivo, no solo un período.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: nameCtrl,
                   decoration: const InputDecoration(
@@ -568,9 +671,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'Peso (%)',
                     border: OutlineInputBorder(),
@@ -578,9 +679,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   ),
                   validator: (v) {
                     final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) {
-                      return 'Valor entre 1 y 100';
-                    }
+                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
                     return null;
                   },
                 ),
@@ -596,13 +695,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
           FilledButton(
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
-              academic.addStandard(
-                Standard(
+              academic.addEstandar(
+                Estandar(
                   id: const Uuid().v4(),
                   subjectId: _selectedSubjectId!,
-                  periodId: _selectedPeriodId!,
+                  academicYearId: academic.activeYear.id,
                   name: nameCtrl.text.trim(),
                   description: descCtrl.text.trim(),
+                  order: currentCount + 1,
                   weight: double.parse(weightCtrl.text),
                 ),
               );
@@ -615,12 +715,10 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showEditStandardDialog(AcademicProvider academic, Standard standard) {
-    final nameCtrl = TextEditingController(text: standard.name);
-    final descCtrl = TextEditingController(text: standard.description);
-    final weightCtrl = TextEditingController(
-      text: standard.weight.toStringAsFixed(0),
-    );
+  void _showEditEstandarDialog(AcademicProvider academic, Estandar estandar) {
+    final nameCtrl = TextEditingController(text: estandar.name);
+    final descCtrl = TextEditingController(text: estandar.description);
+    final weightCtrl = TextEditingController(text: estandar.weight.toStringAsFixed(0));
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -661,9 +759,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: 'Peso (%)',
                     border: OutlineInputBorder(),
@@ -671,9 +767,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   ),
                   validator: (v) {
                     final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) {
-                      return 'Valor entre 1 y 100';
-                    }
+                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
                     return null;
                   },
                 ),
@@ -689,8 +783,8 @@ class _StandardsScreenState extends State<StandardsScreen> {
           FilledButton(
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
-              academic.updateStandard(
-                standard.id,
+              academic.updateEstandar(
+                estandar.id,
                 name: nameCtrl.text.trim(),
                 description: descCtrl.text.trim(),
                 weight: double.parse(weightCtrl.text),
@@ -704,98 +798,13 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddIndicatorDialog(
-    AcademicProvider academic,
-    String standardId,
-    int order,
-  ) {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: AppColors.purple.withValues(alpha: 0.15),
-              child: Text(
-                '$order',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.purple,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text('Competencia $order'),
-          ],
-        ),
-        content: SizedBox(
-          width: 400,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre de la competencia',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: descCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              academic.addIndicator(
-                Indicator(
-                  id: const Uuid().v4(),
-                  standardId: standardId,
-                  name: nameCtrl.text.trim(),
-                  description: descCtrl.text.trim(),
-                  order: order,
-                ),
-              );
-              Navigator.pop(ctx);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDeleteStandard(AcademicProvider academic, Standard standard) {
+  void _confirmDeleteEstandar(AcademicProvider academic, Estandar estandar) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar Estándar'),
         content: Text(
-          '¿Eliminar "${standard.name}"? Se eliminarán también sus competencias y actividades.',
+          '¿Eliminar "${estandar.name}"? Se eliminarán también sus competencias y actividades de todos los períodos.',
         ),
         actions: [
           TextButton(
@@ -805,12 +814,325 @@ class _StandardsScreenState extends State<StandardsScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () {
-              academic.deleteStandard(standard.id);
+              academic.deleteEstandar(estandar.id);
               Navigator.pop(ctx);
             },
             child: const Text('Eliminar'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAddCompetenciaDialog(
+    AcademicProvider academic,
+    Estandar estandar,
+    List<Competencia> existentes,
+  ) {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final yaHayActitudinal =
+        existentes.any((c) => c.tipo == CompetenciaTipo.actitudinal);
+    var tipo = yaHayActitudinal
+        ? CompetenciaTipo.cognitiva
+        : CompetenciaTipo.actitudinal;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Competencia ${existentes.length + 1}'),
+          content: SizedBox(
+            width: 420,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de la competencia',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Cognitiva'),
+                          selected: tipo == CompetenciaTipo.cognitiva,
+                          onSelected: (_) => setDialogState(
+                            () => tipo = CompetenciaTipo.cognitiva,
+                          ),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Actitudinal'),
+                          selected: tipo == CompetenciaTipo.actitudinal,
+                          onSelected: yaHayActitudinal
+                              ? null
+                              : (_) => setDialogState(
+                                  () => tipo = CompetenciaTipo.actitudinal,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (yaHayActitudinal)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Ya existe una competencia actitudinal para este período.',
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                academic.addCompetencia(
+                  Competencia(
+                    id: const Uuid().v4(),
+                    estandarId: estandar.id,
+                    periodId: _selectedPeriodId!,
+                    tipo: tipo,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    order: existentes.length + 1,
+                  ),
+                );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCompetenciaDialog(
+    AcademicProvider academic,
+    Estandar estandar,
+    Competencia competencia,
+  ) {
+    final nameCtrl = TextEditingController(text: competencia.name);
+    final descCtrl = TextEditingController(text: competencia.description);
+    final formKey = GlobalKey<FormState>();
+    final otrasActitudinales = academic
+        .competenciasForEstandarAndPeriod(estandar.id, competencia.periodId)
+        .where((c) => c.id != competencia.id && c.tipo == CompetenciaTipo.actitudinal)
+        .isNotEmpty;
+    var tipo = competencia.tipo;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Editar Competencia'),
+          content: SizedBox(
+            width: 420,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de la competencia',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Cognitiva'),
+                          selected: tipo == CompetenciaTipo.cognitiva,
+                          onSelected: (_) => setDialogState(
+                            () => tipo = CompetenciaTipo.cognitiva,
+                          ),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Actitudinal'),
+                          selected: tipo == CompetenciaTipo.actitudinal,
+                          onSelected: otrasActitudinales
+                              ? null
+                              : (_) => setDialogState(
+                                  () => tipo = CompetenciaTipo.actitudinal,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (otrasActitudinales)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Ya existe otra competencia actitudinal para este período.',
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                academic.updateCompetencia(
+                  competencia.id,
+                  name: nameCtrl.text.trim(),
+                  description: descCtrl.text.trim(),
+                  tipo: tipo,
+                );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddActividadDialog(
+    AcademicProvider academic,
+    String competenciaId,
+    int order,
+  ) {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    DateTime? selectedDate;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Actividad $order'),
+          content: SizedBox(
+            width: 400,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de la actividad',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                    label: Text(
+                      selectedDate == null
+                          ? 'Elegir fecha (opcional)'
+                          : DateFormat('dd/MM/yyyy').format(selectedDate!),
+                    ),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(DateTime.now().year - 1),
+                        lastDate: DateTime(DateTime.now().year + 1),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => selectedDate = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                academic.addActividad(
+                  Actividad(
+                    id: const Uuid().v4(),
+                    competenciaId: competenciaId,
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    order: order,
+                    date: selectedDate,
+                  ),
+                );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }

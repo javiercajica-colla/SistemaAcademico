@@ -3,7 +3,7 @@
 /// tamaño y para mantener el módulo aislado del resto del dominio.
 ///
 /// Todas las entidades referencian datos académicos ya existentes
-/// (Student, Subject, Standard, AcademicPeriod, AcademicYear, Course) por
+/// (Student, Subject, Estandar, AcademicPeriod, AcademicYear, Course) por
 /// id — el módulo no los redefine. Todas llevan auditoría
 /// (creadoPor/creadoEn/actualizadoPor/actualizadoEn) y borrado lógico
 /// (eliminadoEn == null significa "vigente").
@@ -224,16 +224,22 @@ class PiarAjuste {
   final String id;
   final String inscripcionId;
   final String subjectId;
-  /// Estándar/competencia existente que se está ajustando (se referencia,
-  /// no se duplica).
-  final String standardId;
-  /// Período del ajuste. Independiente de si el `Standard` referenciado
-  /// tiene `periodId` asignado o no — el ajuste siempre queda fechado a
+  /// Competencia existente que se está ajustando (se referencia, no se
+  /// duplica). `null` solo en ajustes migrados desde el modelo viejo que
+  /// no alcanzaban ese nivel de detalle — `estandarId` sigue siendo el
+  /// ancla estable en esos casos.
+  final String? competenciaId;
+  /// Estándar al que pertenece la competencia — denormalizado porque es
+  /// el ancla estable entre períodos (la Competencia es por período, el
+  /// Estándar no); `ajusteAnteriorPara` empareja por este campo.
+  final String estandarId;
+  /// Período del ajuste. Independiente de si la `Competencia` referenciada
+  /// fue asignada ese período o no — el ajuste siempre queda fechado a
   /// un período académico concreto.
   final String periodId;
   /// Copia congelada del texto de la competencia en el momento de crear
-  /// el ajuste. No se vuelve a leer de `Standard` — si el estándar cambia
-  /// después, este texto no se altera.
+  /// el ajuste. No se vuelve a leer de `Competencia` — si la competencia
+  /// cambia después, este texto no se altera.
   final String competenciaTextoOriginal;
   /// Sin valor por defecto: el docente debe responder explícitamente.
   /// `null` = tarea pendiente, todavía sin responder (el estado en que el
@@ -269,7 +275,8 @@ class PiarAjuste {
     required this.id,
     required this.inscripcionId,
     required this.subjectId,
-    required this.standardId,
+    this.competenciaId,
+    required this.estandarId,
     required this.periodId,
     required this.competenciaTextoOriginal,
     required this.requiereAjuste,
@@ -427,7 +434,7 @@ class PiarActaAcuerdo {
 class PiarDiagnosticoFinal {
   final String id;
   final String inscripcionId;
-  final String standardId;
+  final String estandarId;
   final PiarValoracion valoracionFinal;
   final bool tuvoAjusteSignificativo;
   final String observacion;
@@ -441,7 +448,7 @@ class PiarDiagnosticoFinal {
   const PiarDiagnosticoFinal({
     required this.id,
     required this.inscripcionId,
-    required this.standardId,
+    required this.estandarId,
     required this.valoracionFinal,
     required this.tuvoAjusteSignificativo,
     required this.observacion,

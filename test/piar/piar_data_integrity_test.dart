@@ -1,7 +1,7 @@
 // Prueba obligatoria del módulo PIAR (caso 6): cambiar el texto de una
 // competencia en el plan de área no debe alterar `competenciaTextoOriginal`
 // de los ajustes ya creados — el campo es una copia congelada, nunca una
-// referencia que se vuelva a leer de `Standard`.
+// referencia que se vuelva a leer de `Competencia`.
 //
 // No requiere Firebase ni el emulador: usa MockDataRepository (repositorio
 // en memoria) tal como ya lo usa el resto de la app en modo desarrollo.
@@ -12,22 +12,35 @@ import 'package:sistema_academico/repositories/mock/mock_data_repository.dart';
 
 void main() {
   test(
-    'editar un Standard no altera competenciaTextoOriginal de ajustes ya creados',
+    'editar una Competencia no altera competenciaTextoOriginal de ajustes ya creados',
     () async {
       final repo = MockDataRepository();
-      const standardId = 'piar_test_standard_1';
+      const estandarId = 'piar_test_estandar_1';
+      const competenciaId = 'piar_test_competencia_1';
       const ajusteId = 'piar_test_ajuste_1';
       const textoOriginal = 'Resuelve problemas de suma con números naturales.';
 
-      // 1. Estándar tal como existe hoy en el plan de área.
-      await repo.saveStandard(
-        const Standard(
-          id: standardId,
+      // 1. Estándar y competencia tal como existen hoy en el plan de área.
+      await repo.saveEstandar(
+        const Estandar(
+          id: estandarId,
           subjectId: 's1',
-          periodId: 'ap1',
+          academicYearId: 'ay1',
           name: 'Pensamiento numérico',
-          description: textoOriginal,
+          description: 'Resuelve problemas usando operaciones básicas.',
+          order: 1,
           weight: 100,
+        ),
+      );
+      await repo.saveCompetencia(
+        const Competencia(
+          id: competenciaId,
+          estandarId: estandarId,
+          periodId: 'ap1',
+          tipo: CompetenciaTipo.cognitiva,
+          name: 'Suma con números naturales',
+          description: textoOriginal,
+          order: 1,
         ),
       );
 
@@ -38,7 +51,8 @@ void main() {
           id: ajusteId,
           inscripcionId: 'ins_test',
           subjectId: 's1',
-          standardId: standardId,
+          estandarId: estandarId,
+          competenciaId: competenciaId,
           periodId: 'ap1',
           competenciaTextoOriginal: textoOriginal,
           requiereAjuste: true,
@@ -56,15 +70,16 @@ void main() {
         ),
       );
 
-      // 3. Coordinación edita el plan de área: cambia el texto del estándar.
-      await repo.saveStandard(
-        const Standard(
-          id: standardId,
-          subjectId: 's1',
+      // 3. Coordinación edita el plan de área: cambia el texto de la competencia.
+      await repo.saveCompetencia(
+        const Competencia(
+          id: competenciaId,
+          estandarId: estandarId,
           periodId: 'ap1',
-          name: 'Pensamiento numérico',
+          tipo: CompetenciaTipo.cognitiva,
+          name: 'Suma con números naturales',
           description: 'Texto completamente distinto tras la edición.',
-          weight: 100,
+          order: 1,
         ),
       );
 
