@@ -92,13 +92,15 @@ service cloud.firestore {
     match /{collection}/{docId} {
       allow read: if isSignedIn() &&
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
-                        'academic_years', 'academic_periods', 'standards',
-                        'indicators', 'activities', 'grades', 'attendance',
+                        'academic_years', 'academic_periods',
+                        'estandares', 'competencias', 'actividades',
+                        'grades', 'attendance',
                         'observations', 'subject_assignments', 'evaluation_configs'];
       allow write: if isStaff() &&
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
-                        'academic_years', 'academic_periods', 'standards',
-                        'indicators', 'activities', 'grades', 'attendance',
+                        'academic_years', 'academic_periods',
+                        'estandares', 'competencias', 'actividades',
+                        'grades', 'attendance',
                         'observations', 'subject_assignments', 'evaluation_configs'];
     }
 
