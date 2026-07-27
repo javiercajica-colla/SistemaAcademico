@@ -7,7 +7,9 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
+import '../../providers/unsaved_changes_provider.dart';
 import '../../widgets/stat_card.dart';
+import '../../widgets/unsaved_changes_guard.dart';
 
 const _kActividadesPorCompetencia = 4;
 
@@ -23,15 +25,40 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   String? _selectedSubject;
   String? _selectedPeriod;
   bool _started = false;
+  bool _hasChanges = false;
   final Map<String, Map<String, TextEditingController>> _controllers = {};
   final Map<String, Map<String, FocusNode>> _focusNodes = {};
   final ScrollController _hScrollController = ScrollController();
+  UnsavedChangesProvider? _unsavedChanges;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _unsavedChanges = context.read<UnsavedChangesProvider>();
+  }
 
   @override
   void dispose() {
     _clearControllers();
     _hScrollController.dispose();
+    _unsavedChanges?.markClean();
     super.dispose();
+  }
+
+  // Se llama en cada tecla dentro de una casilla de nota: marca la
+  // pantalla como "sucia" ante el guard de navegación del sidebar (una
+  // sola vez, no en cada pulsación) para poder advertir antes de perder
+  // notas sin guardar.
+  void _markChanged(AcademicProvider academic, List<Estandar> estandares) {
+    if (_hasChanges) return;
+    _hasChanges = true;
+    _unsavedChanges?.markDirty(
+      message:
+          'Tienes calificaciones sin guardar en esta pantalla. '
+          '¿Deseas guardar las notas registradas antes de salir?',
+      onSave: () => _performSave(academic, estandares),
+      onDiscard: () {},
+    );
   }
 
   /// Descarta los controladores y focus nodes de la grilla actual. Se debe
@@ -301,10 +328,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
             IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
               tooltip: 'Cambiar curso, asignatura o periodo',
-              onPressed: () => setState(() {
+              onPressed: () => guardNavigation(context, () => setState(() {
                 _clearControllers();
                 _started = false;
-              }),
+              })),
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -628,7 +655,13 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                       for (final comp in competenciasByEstandar[e.id]!) ...[
                         for (final act in actividadesByCompetencia[comp.id]!)
                           DataCell(
-                            _buildActividadCell(students, rowIndex, act),
+                            _buildActividadCell(
+                              academic,
+                              estandares,
+                              students,
+                              rowIndex,
+                              act,
+                            ),
                           ),
                         DataCell(
                           _previewChip(
@@ -664,7 +697,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                           ],
                           style: const TextStyle(fontSize: 13),
                           decoration: _gradeDecoration(finalCtrl.text),
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (_) {
+                            _markChanged(academic, estandares);
+                            setState(() {});
+                          },
                         ),
                       ),
                     ),
@@ -808,6 +844,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   }
 
   Widget _buildActividadCell(
+    AcademicProvider academic,
+    List<Estandar> estandares,
     List<Student> students,
     int rowIndex,
     Actividad? actividad,
@@ -840,7 +878,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           ],
           style: const TextStyle(fontSize: 13),
           decoration: _gradeDecoration(ctrl.text),
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) {
+            _markChanged(academic, estandares);
+            setState(() {});
+          },
         ),
       ),
     );
@@ -999,6 +1040,20 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     AcademicProvider academic,
     List<Estandar> estandares,
   ) {
+    final saved = _performSave(academic, estandares);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$saved calificaciones guardadas exitosamente'),
+        backgroundColor: AppColors.secondary,
+      ),
+    );
+  }
+
+  // Lógica de guardado sin dependencia de BuildContext (sin SnackBar), para
+  // poder invocarla también desde el diálogo de "cambios sin guardar" del
+  // sidebar justo antes de navegar fuera de esta pantalla. Devuelve la
+  // cantidad de calificaciones guardadas.
+  int _performSave(AcademicProvider academic, List<Estandar> estandares) {
     const uuid = Uuid();
     int saved = 0;
     final competenciasByEstandar = {
@@ -1045,12 +1100,9 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         saved++;
       }
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$saved calificaciones guardadas exitosamente'),
-        backgroundColor: AppColors.secondary,
-      ),
-    );
-    setState(() {});
+    _hasChanges = false;
+    _unsavedChanges?.markClean();
+    if (mounted) setState(() {});
+    return saved;
   }
 }

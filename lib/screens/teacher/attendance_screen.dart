@@ -6,7 +6,9 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
+import '../../providers/unsaved_changes_provider.dart';
 import '../../widgets/stat_card.dart';
+import '../../widgets/unsaved_changes_guard.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -20,6 +22,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String? _selectedSubject;
   DateTime _selectedDate = DateTime.now();
   final Map<String, AttendanceStatus> _statuses = {};
+  UnsavedChangesProvider? _unsavedChanges;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _unsavedChanges = context.read<UnsavedChangesProvider>();
+  }
+
+  @override
+  void dispose() {
+    _unsavedChanges?.markClean();
+    super.dispose();
+  }
+
+  void _markChanged() {
+    if (_unsavedChanges?.hasUnsavedChanges ?? false) return;
+    _unsavedChanges?.markDirty(
+      message:
+          'Tienes asistencia registrada sin guardar. '
+          '¿Deseas guardarla antes de salir?',
+      onSave: _performSaveAttendance,
+      onDiscard: () {},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,11 +124,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 )
                 .toList(),
-            onChanged: (v) => setState(() {
+            onChanged: (v) => guardNavigation(context, () => setState(() {
               _selectedCourse = v;
               _selectedSubject = null;
               _statuses.clear();
-            }),
+            })),
           ),
         ),
         const SizedBox(width: 12),
@@ -325,7 +351,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
       ],
       selected: {current},
-      onSelectionChanged: (s) => setState(() => _statuses[studentId] = s.first),
+      onSelectionChanged: (s) {
+        setState(() => _statuses[studentId] = s.first);
+        _markChanged();
+      },
     );
   }
 
@@ -347,6 +376,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _saveAttendance(BuildContext context) {
+    final saved = _performSaveAttendance();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Asistencia guardada para $saved estudiantes'),
+        backgroundColor: AppColors.secondary,
+      ),
+    );
+  }
+
+  // Sin dependencia de BuildContext (sin SnackBar), para poder invocarla
+  // también desde el diálogo de "cambios sin guardar" del sidebar justo
+  // antes de navegar fuera de esta pantalla.
+  int _performSaveAttendance() {
     final academic = context.read<AcademicProvider>();
     const uuid = Uuid();
     int saved = 0;
@@ -363,11 +405,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
       saved++;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Asistencia guardada para $saved estudiantes'),
-        backgroundColor: AppColors.secondary,
-      ),
-    );
+    _unsavedChanges?.markClean();
+    return saved;
   }
 }

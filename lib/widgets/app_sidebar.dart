@@ -5,6 +5,7 @@ import '../core/theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/email_provider.dart';
+import 'unsaved_changes_guard.dart';
 import 'user_avatar.dart';
 
 class AppSidebar extends StatelessWidget {
@@ -172,10 +173,10 @@ class AppSidebar extends StatelessWidget {
             'Cerrar Sesión',
             style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
           ),
-          onTap: () {
+          onTap: () => guardNavigation(context, () {
             auth.logout();
             context.go('/login');
-          },
+          }),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           hoverColor: const Color(0xFF1E293B),
         ),
@@ -415,7 +416,7 @@ class _NavTileState extends State<_NavTile> {
       onExit: (_) => setState(() => _hovering = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () => context.go(widget.item.path),
+        onTap: () => guardNavigation(context, () => context.go(widget.item.path)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           margin: const EdgeInsets.symmetric(vertical: 2),

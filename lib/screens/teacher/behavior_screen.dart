@@ -6,6 +6,8 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/unsaved_changes_provider.dart';
+import '../../widgets/unsaved_changes_guard.dart';
 
 const _kPerformanceLevels = ['Bajo', 'Básico', 'Alto', 'Superior'];
 
@@ -57,6 +59,12 @@ class _BehaviorCourseView extends StatefulWidget {
 class _BehaviorCourseViewState extends State<_BehaviorCourseView> {
   String? _selectedCourseId;
   String? _selectedPeriodId;
+  // studentId -> función de guardado de esa fila, mientras tenga cambios
+  // sin guardar. Cada _StudentBehaviorRow reporta aquí su propio _save al
+  // volverse "sucia", y null al guardarse — así el diálogo de "cambios sin
+  // guardar" del sidebar puede guardar todas las filas pendientes de una vez.
+  final Map<String, VoidCallback> _dirtySaves = {};
+  UnsavedChangesProvider? _unsavedChanges;
 
   @override
   void didChangeDependencies() {
@@ -66,6 +74,41 @@ class _BehaviorCourseViewState extends State<_BehaviorCourseView> {
     _selectedPeriodId ??=
         academic.currentOpenPeriod?.id ??
         academic.activePeriods.firstOrNull?.id;
+    _unsavedChanges = context.read<UnsavedChangesProvider>();
+  }
+
+  @override
+  void dispose() {
+    _unsavedChanges?.markClean();
+    super.dispose();
+  }
+
+  void _handleRowDirty(String studentId, VoidCallback? saveFn) {
+    final wasEmpty = _dirtySaves.isEmpty;
+    if (saveFn != null) {
+      _dirtySaves[studentId] = saveFn;
+    } else {
+      _dirtySaves.remove(studentId);
+    }
+    final isEmptyNow = _dirtySaves.isEmpty;
+    if (wasEmpty && !isEmptyNow) {
+      _unsavedChanges?.markDirty(
+        message:
+            'Tienes observaciones de comportamiento sin guardar. '
+            '¿Deseas guardarlas antes de salir?',
+        onSave: _saveAllDirty,
+        onDiscard: () {},
+      );
+    } else if (!wasEmpty && isEmptyNow) {
+      _unsavedChanges?.markClean();
+    }
+  }
+
+  void _saveAllDirty() {
+    for (final save in _dirtySaves.values.toList()) {
+      save();
+    }
+    _dirtySaves.clear();
   }
 
   @override
@@ -96,7 +139,10 @@ class _BehaviorCourseViewState extends State<_BehaviorCourseView> {
                             DropdownMenuItem(value: c.id, child: Text(c.name)),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => _selectedCourseId = v),
+                  onChanged: (v) => guardNavigation(
+                    context,
+                    () => setState(() => _selectedCourseId = v),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -110,7 +156,10 @@ class _BehaviorCourseViewState extends State<_BehaviorCourseView> {
                             DropdownMenuItem(value: p.id, child: Text(p.name)),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => _selectedPeriodId = v),
+                  onChanged: (v) => guardNavigation(
+                    context,
+                    () => setState(() => _selectedPeriodId = v),
+                  ),
                 ),
               ),
             ],
@@ -130,6 +179,8 @@ class _BehaviorCourseViewState extends State<_BehaviorCourseView> {
                       student: students[i],
                       periodId: _selectedPeriodId!,
                       teacher: widget.teacher,
+                      onDirtyChanged: (saveFn) =>
+                          _handleRowDirty(students[i].id, saveFn),
                     ),
                   ),
                 ),
@@ -145,11 +196,16 @@ class _StudentBehaviorRow extends StatefulWidget {
     required this.student,
     required this.periodId,
     required this.teacher,
+    required this.onDirtyChanged,
   });
 
   final Student student;
   final String periodId;
   final Teacher teacher;
+  // Reporta hacia la pantalla padre: la función de guardado de esta fila
+  // mientras tenga cambios sin guardar, o null cuando vuelve a estar
+  // limpia (recién guardada o recién cargada).
+  final void Function(VoidCallback? saveFn) onDirtyChanged;
 
   @override
   State<_StudentBehaviorRow> createState() => _StudentBehaviorRowState();
@@ -177,6 +233,12 @@ class _StudentBehaviorRowState extends State<_StudentBehaviorRow> {
     super.dispose();
   }
 
+  void _markDirty() {
+    if (_dirty) return;
+    setState(() => _dirty = true);
+    widget.onDirtyChanged(_save);
+  }
+
   void _save() {
     final academic = context.read<AcademicProvider>();
     final existing = academic.behaviorFor(widget.student.id, widget.periodId);
@@ -191,13 +253,16 @@ class _StudentBehaviorRowState extends State<_StudentBehaviorRow> {
         registeredAt: DateTime.now(),
       ),
     );
-    setState(() => _dirty = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Comportamiento guardado — ${widget.student.fullName}'),
-        backgroundColor: AppColors.teacher,
-      ),
-    );
+    if (mounted) setState(() => _dirty = false);
+    widget.onDirtyChanged(null);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Comportamiento guardado — ${widget.student.fullName}'),
+          backgroundColor: AppColors.teacher,
+        ),
+      );
+    }
   }
 
   @override
@@ -231,10 +296,10 @@ class _StudentBehaviorRowState extends State<_StudentBehaviorRow> {
               items: _kPerformanceLevels
                   .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                   .toList(),
-              onChanged: (v) => setState(() {
-                _level = v;
-                _dirty = true;
-              }),
+              onChanged: (v) {
+                setState(() => _level = v);
+                _markDirty();
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -246,7 +311,7 @@ class _StudentBehaviorRowState extends State<_StudentBehaviorRow> {
               decoration: const InputDecoration(
                 labelText: 'Observación de comportamiento',
               ),
-              onChanged: (_) => setState(() => _dirty = true),
+              onChanged: (_) => _markDirty(),
             ),
           ),
           const SizedBox(width: 12),
