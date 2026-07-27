@@ -94,13 +94,13 @@ service cloud.firestore {
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
                         'academic_years', 'academic_periods',
                         'estandares', 'competencias', 'actividades',
-                        'grades', 'attendance',
+                        'grades', 'attendance', 'behavior_assessments',
                         'observations', 'subject_assignments', 'evaluation_configs'];
       allow write: if isStaff() &&
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
                         'academic_years', 'academic_periods',
                         'estandares', 'competencias', 'actividades',
-                        'grades', 'attendance',
+                        'grades', 'attendance', 'behavior_assessments',
                         'observations', 'subject_assignments', 'evaluation_configs'];
     }
 
