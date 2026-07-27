@@ -215,6 +215,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
         border: Border.all(color: AppColors.border),
       ),
       child: ExpansionTile(
+        initiallyExpanded: true,
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         leading: Container(
@@ -241,6 +242,22 @@ class _StandardsScreenState extends State<StandardsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${competencias.length}/$_kMaxCompetenciasPorPeriodo competencias',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.purple,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
