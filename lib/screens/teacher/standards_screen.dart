@@ -196,7 +196,8 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
             )
           else
-            ...estandares.map((e) => _buildEstandarCard(academic, e)),
+            for (var i = 0; i < estandares.length; i++)
+              _buildEstandarCard(academic, estandares[i], i + 1),
         ],
       ),
     );
@@ -205,7 +206,11 @@ class _StandardsScreenState extends State<StandardsScreen> {
   /// Iteración simple "ESTÁNDAR N. Título" con sus "COMPETENCIA N.M.
   /// Título" indentadas debajo — así el docente ve de un vistazo lo que ya
   /// registró y evita duplicar.
-  Widget _buildEstandarCard(AcademicProvider academic, Estandar estandar) {
+  Widget _buildEstandarCard(
+    AcademicProvider academic,
+    Estandar estandar,
+    int displayNumber,
+  ) {
     final competencias = academic.competenciasForEstandarAndPeriod(
       estandar.id,
       _selectedPeriodId!,
@@ -226,7 +231,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'ESTÁNDAR ${estandar.order}. ${estandar.name}',
+                  'ESTÁNDAR $displayNumber. ${estandar.name}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 ),
               ),
@@ -264,7 +269,14 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
             ),
           const SizedBox(height: 12),
-          ...competencias.map((c) => _buildCompetenciaRow(academic, estandar, c)),
+          for (var i = 0; i < competencias.length; i++)
+            _buildCompetenciaRow(
+              academic,
+              estandar,
+              competencias[i],
+              displayNumber,
+              i + 1,
+            ),
           if (competencias.isNotEmpty &&
               !competencias.any((c) => c.tipo == CompetenciaTipo.actitudinal))
             const Padding(
@@ -287,6 +299,8 @@ class _StandardsScreenState extends State<StandardsScreen> {
     AcademicProvider academic,
     Estandar estandar,
     Competencia competencia,
+    int estandarDisplayNumber,
+    int competenciaDisplayNumber,
   ) {
     final esActitudinal = competencia.tipo == CompetenciaTipo.actitudinal;
     final tipoColor = esActitudinal ? AppColors.warning : AppColors.purple;
@@ -306,7 +320,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   runSpacing: 2,
                   children: [
                     Text(
-                      'COMPETENCIA ${estandar.order}.${competencia.order}. '
+                      'COMPETENCIA $estandarDisplayNumber.$competenciaDisplayNumber. '
                       '${competencia.name}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w500,
@@ -395,7 +409,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 onTap: puedeAgregarEstandar
                     ? () {
                         Navigator.pop(ctx);
-                        _showAddEstandarDialog(academic, estandares.length);
+                        _showAddEstandarDialog(academic, estandares);
                       }
                     : null,
               ),
@@ -491,10 +505,16 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  void _showAddEstandarDialog(AcademicProvider academic, int currentCount) {
+  void _showAddEstandarDialog(AcademicProvider academic, List<Estandar> estandares) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    // Máximo + 1 en vez de conteo + 1: si se borró un estándar de en medio,
+    // el conteo puede repetir un order ya usado por otro y duplicar el
+    // número mostrado ("ESTÁNDAR 4" dos veces).
+    final nextOrder = estandares.isEmpty
+        ? 1
+        : estandares.map((e) => e.order).reduce((a, b) => a > b ? a : b) + 1;
 
     showDialog(
       context: context,
@@ -558,7 +578,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   academicYearId: academic.activeYear.id,
                   name: nameCtrl.text.trim(),
                   description: descCtrl.text.trim(),
-                  order: currentCount + 1,
+                  order: nextOrder,
                   // El peso ya no lo asigna el docente: se reparte en
                   // partes iguales entre los estándares activos del
                   // período (ver AcademicProvider.equalEstandarWeightPercent).
@@ -679,12 +699,19 @@ class _StandardsScreenState extends State<StandardsScreen> {
     var tipo = yaHayActitudinal
         ? CompetenciaTipo.cognitiva
         : CompetenciaTipo.actitudinal;
+    final estandarDisplayNumber =
+        academic.estandaresForSubject(_selectedSubjectId!).indexOf(estandar) + 1;
+    // Máximo + 1 en vez de conteo + 1 (mismo motivo que en Estándar: evita
+    // duplicar el número mostrado si se borró una competencia de en medio).
+    final nextOrder = existentes.isEmpty
+        ? 1
+        : existentes.map((c) => c.order).reduce((a, b) => a > b ? a : b) + 1;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Competencia ${estandar.order}.${existentes.length + 1}'),
+          title: Text('Competencia $estandarDisplayNumber.${existentes.length + 1}'),
           content: SizedBox(
             width: 420,
             child: Form(
@@ -766,7 +793,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
                     tipo: tipo,
                     name: nameCtrl.text.trim(),
                     description: descCtrl.text.trim(),
-                    order: existentes.length + 1,
+                    order: nextOrder,
                   ),
                 );
                 Navigator.pop(ctx);
