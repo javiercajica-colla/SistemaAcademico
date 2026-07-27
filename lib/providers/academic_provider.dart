@@ -342,13 +342,27 @@ class AcademicProvider extends ChangeNotifier {
     return scores.reduce((a, b) => a + b) / scores.length;
   }
 
+  /// Porcentaje que le corresponde a cada Estándar dentro del bloque de
+  /// "Estándares" de la nota (el reparto entre Estándares y Evaluación
+  /// Final lo define coordinación en EvaluationConfig). El docente ya no
+  /// asigna un peso individual: se reparte en partes iguales entre los
+  /// Estándares que tienen al menos una Competencia en este período. `0`
+  /// si ninguno tiene competencias todavía.
+  double equalEstandarWeightPercent(String subjectId, String periodId) {
+    final activos = estandaresForSubject(subjectId)
+        .where(
+          (e) => competenciasForEstandarAndPeriod(e.id, periodId).isNotEmpty,
+        )
+        .length;
+    return activos == 0 ? 0 : 100 / activos;
+  }
+
   void addEstandar(Estandar e) => _store.saveEstandar(e);
 
   void updateEstandar(
     String id, {
     required String name,
     required String description,
-    required double weight,
   }) {
     final old = _estandares.firstWhere((e) => e.id == id);
     _store.saveEstandar(
@@ -359,7 +373,7 @@ class AcademicProvider extends ChangeNotifier {
         name: name,
         description: description,
         order: old.order,
-        weight: weight,
+        weight: old.weight,
       ),
     );
   }
@@ -506,23 +520,22 @@ class AcademicProvider extends ChangeNotifier {
       finalExamValue = null;
     }
 
+    // El peso de cada Estándar ya no lo asigna el docente: el porcentaje de
+    // Estándares (definido por coordinación en EvaluationConfig) se reparte
+    // en partes iguales entre los estándares que sí tienen nota este
+    // período — si faltan notas de alguno, simplemente no cuenta (no se
+    // asume 0), igual que antes.
     double? standardsAvg;
     if (subjectEstandares.isNotEmpty) {
-      double weightedSum = 0.0;
-      double totalWeight = 0.0;
-      for (final e in subjectEstandares) {
-        final score = estandarGradeForStudent(
-          studentId,
-          subjectId,
-          periodId,
-          e.id,
-        );
-        if (score != null) {
-          weightedSum += score * e.weight;
-          totalWeight += e.weight;
-        }
+      final scores = subjectEstandares
+          .map(
+            (e) => estandarGradeForStudent(studentId, subjectId, periodId, e.id),
+          )
+          .whereType<double>()
+          .toList();
+      if (scores.isNotEmpty) {
+        standardsAvg = scores.reduce((a, b) => a + b) / scores.length;
       }
-      if (totalWeight > 0) standardsAvg = weightedSum / totalWeight;
     }
 
     final sw = config?.standardsWeight ?? 70;

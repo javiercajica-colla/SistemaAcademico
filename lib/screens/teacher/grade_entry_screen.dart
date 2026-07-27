@@ -352,6 +352,12 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   ) {
     final sw = evalConfig?.standardsWeight ?? 70;
     final fw = evalConfig?.finalExamWeight ?? 30;
+    // El docente ya no asigna peso por Estándar: se reparte en partes
+    // iguales entre los que tienen competencias este período.
+    final equalPct = academic.equalEstandarWeightPercent(
+      _selectedSubject!,
+      _selectedPeriod!,
+    );
 
     final competenciasByEstandar = {
       for (final e in estandares)
@@ -427,7 +433,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   DataColumn(
                     label: _groupHeader(
                       'EST${ei + 1}',
-                      '${estandares[ei].weight.toStringAsFixed(0)}%',
+                      '${equalPct.toStringAsFixed(0)}%',
                       'Sin competencias este período',
                       tooltip: estandares[ei].name,
                     ),
@@ -464,7 +470,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                     label: _groupHeader(
                       'EST${ei + 1}',
                       'Prom. Estándar',
-                      '${estandares[ei].weight.toStringAsFixed(0)}%',
+                      '${equalPct.toStringAsFixed(0)}%',
                       bold: true,
                       tooltip: estandares[ei].name,
                     ),
@@ -548,8 +554,11 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                 } catch (_) {}
               }
 
-              double weightedSum = 0;
-              double totalWeight = 0;
+              // Cada Estándar pesa lo mismo (reparto en partes iguales, ver
+              // equalPct arriba); si falta alguna nota (estándar o
+              // evaluación final), esa parte simplemente no se tiene en
+              // cuenta, en vez de contarse como 0.
+              final scores = <double>[];
               for (final e in estandares) {
                 final comps = competenciasByEstandar[e.id] ?? const <Competencia>[];
                 final score = _estandarPreview(
@@ -557,16 +566,11 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   comps,
                   actividadesByCompetencia,
                 );
-                if (score != null) {
-                  weightedSum += score * e.weight;
-                  totalWeight += e.weight;
-                }
+                if (score != null) scores.add(score);
               }
-              // Si falta alguna nota (estándar o evaluación final), esa parte
-              // simplemente no se tiene en cuenta, en vez de contarse como 0.
-              final standardsAvg = totalWeight > 0
-                  ? weightedSum / totalWeight
-                  : null;
+              final standardsAvg = scores.isEmpty
+                  ? null
+                  : scores.reduce((a, b) => a + b) / scores.length;
               final fv = double.tryParse(finalCtrl.text);
               final double avg;
               if (standardsAvg != null && fv != null) {

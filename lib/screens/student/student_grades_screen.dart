@@ -155,6 +155,10 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
     final config = academic.evalConfigFor(subjectId, _selectedPeriod);
     final sw = config?.standardsWeight ?? 70;
     final fw = config?.finalExamWeight ?? 30;
+    final equalPct = academic.equalEstandarWeightPercent(
+      subjectId,
+      _selectedPeriod,
+    );
 
     if (gradesList.isEmpty) return const SizedBox.shrink();
 
@@ -227,7 +231,7 @@ class _StudentGradesScreenState extends State<StudentGradesScreen> {
                     return _gradeRow(
                       est.name,
                       score,
-                      '${est.weight.toStringAsFixed(0)}%',
+                      '${equalPct.toStringAsFixed(0)}%',
                     );
                   }),
                   const Divider(),

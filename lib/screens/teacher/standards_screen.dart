@@ -202,6 +202,9 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
+  /// Iteración simple "ESTÁNDAR N. Título" con sus "COMPETENCIA N.M.
+  /// Título" indentadas debajo — así el docente ve de un vistazo lo que ya
+  /// registró y evita duplicar.
   Widget _buildEstandarCard(AcademicProvider academic, Estandar estandar) {
     final competencias = academic.competenciasForEstandarAndPeriod(
       estandar.id,
@@ -209,110 +212,82 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: ExpansionTile(
-        initiallyExpanded: true,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        leading: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.star_outline_rounded,
-            color: AppColors.primary,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          estandar.name,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        subtitle: Text(
-          estandar.description,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.purple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '${competencias.length}/$_kMaxCompetenciasPorPeriodo competencias',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.purple,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.secondary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Peso: ${estandar.weight.toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              icon: const Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: AppColors.primary,
-              ),
-              onPressed: () => _showEditEstandarDialog(academic, estandar),
-              tooltip: 'Editar estándar',
-            ),
-            IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                size: 18,
-                color: AppColors.error,
-              ),
-              onPressed: () => _confirmDeleteEstandar(academic, estandar),
-              tooltip: 'Eliminar estándar',
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  'ESTÁNDAR ${estandar.order}. ${estandar.name}',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.purple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${competencias.length}/$_kMaxCompetenciasPorPeriodo competencias',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.purple,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                onPressed: () => _showEditEstandarDialog(academic, estandar),
+                tooltip: 'Editar estándar',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: AppColors.error,
+                ),
+                onPressed: () => _confirmDeleteEstandar(academic, estandar),
+                tooltip: 'Eliminar estándar',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+            ],
+          ),
+          if (estandar.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                estandar.description,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
           const SizedBox(height: 12),
-          Text(
-            'Competencias de este período (${competencias.length}/$_kMaxCompetenciasPorPeriodo)',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'No es obligatorio trabajar este estándar en todos los períodos — si no agregas competencias aquí, simplemente no aporta nota en este período.',
-            style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
-          ),
-          const SizedBox(height: 8),
-          ...competencias.map((c) => _buildCompetenciaCard(academic, estandar, c)),
           if (competencias.isEmpty)
             const Text(
-              'Usa el botón "Agregar" de arriba para crear una competencia en este estándar.',
+              'No es obligatorio trabajar este estándar en todos los períodos — '
+              'usa el botón "Agregar" de arriba para crear una competencia aquí.',
               style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
-            ),
+            )
+          else
+            ...competencias.map((c) => _buildCompetenciaRow(academic, estandar, c)),
           if (competencias.isNotEmpty &&
               !competencias.any((c) => c.tipo == CompetenciaTipo.actitudinal))
             const Padding(
@@ -331,7 +306,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
     );
   }
 
-  Widget _buildCompetenciaCard(
+  Widget _buildCompetenciaRow(
     AcademicProvider academic,
     Estandar estandar,
     Competencia competencia,
@@ -339,87 +314,73 @@ class _StandardsScreenState extends State<StandardsScreen> {
     final esActitudinal = competencia.tipo == CompetenciaTipo.actitudinal;
     final tipoColor = esActitudinal ? AppColors.warning : AppColors.purple;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        leading: CircleAvatar(
-          radius: 14,
-          backgroundColor: tipoColor.withValues(alpha: 0.15),
-          child: Text(
-            '${competencia.order}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: tipoColor,
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 2,
+                  children: [
+                    Text(
+                      'COMPETENCIA ${estandar.order}.${competencia.order}. '
+                      '${competencia.name}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tipoColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        esActitudinal ? 'Actitudinal' : 'Cognitiva',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: tipoColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (competencia.description.isNotEmpty)
+                  Text(
+                    competencia.description,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
             ),
           ),
-        ),
-        title: Row(
-          children: [
-            Flexible(
-              child: Text(
-                competencia.name,
-                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: tipoColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                esActitudinal ? 'Actitudinal' : 'Cognitiva',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: tipoColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Text(
-          competencia.description,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
-              onPressed: () =>
-                  _showEditCompetenciaDialog(academic, estandar, competencia),
-              tooltip: 'Editar competencia',
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
-              onPressed: () => academic.deleteCompetencia(competencia.id),
-              tooltip: 'Eliminar competencia',
-            ),
-          ],
-        ),
-        children: const [
-          Divider(height: 1),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'Las actividades (hasta 4) se registran desde el módulo de Calificaciones: '
-              'haz clic en cada casilla para definir su nombre y fecha antes de calificar.',
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textTertiary,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+            onPressed: () =>
+                _showEditCompetenciaDialog(academic, estandar, competencia),
+            tooltip: 'Editar competencia',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+            onPressed: () => academic.deleteCompetencia(competencia.id),
+            tooltip: 'Eliminar competencia',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
           ),
         ],
       ),
@@ -556,7 +517,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
   void _showAddEstandarDialog(AcademicProvider academic, int currentCount) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
-    final weightCtrl = TextEditingController(text: '33');
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -602,21 +562,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Peso (%)',
-                    border: OutlineInputBorder(),
-                    suffixText: '%',
-                  ),
-                  validator: (v) {
-                    final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
-                    return null;
-                  },
-                ),
               ],
             ),
           ),
@@ -637,7 +582,10 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   name: nameCtrl.text.trim(),
                   description: descCtrl.text.trim(),
                   order: currentCount + 1,
-                  weight: double.parse(weightCtrl.text),
+                  // El peso ya no lo asigna el docente: se reparte en
+                  // partes iguales entre los estándares activos del
+                  // período (ver AcademicProvider.equalEstandarWeightPercent).
+                  weight: 0,
                 ),
               );
               Navigator.pop(ctx);
@@ -652,7 +600,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
   void _showEditEstandarDialog(AcademicProvider academic, Estandar estandar) {
     final nameCtrl = TextEditingController(text: estandar.name);
     final descCtrl = TextEditingController(text: estandar.description);
-    final weightCtrl = TextEditingController(text: estandar.weight.toStringAsFixed(0));
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -690,21 +637,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: weightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Peso (%)',
-                    border: OutlineInputBorder(),
-                    suffixText: '%',
-                  ),
-                  validator: (v) {
-                    final d = double.tryParse(v ?? '');
-                    if (d == null || d <= 0 || d > 100) return 'Valor entre 1 y 100';
-                    return null;
-                  },
-                ),
               ],
             ),
           ),
@@ -721,7 +653,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 estandar.id,
                 name: nameCtrl.text.trim(),
                 description: descCtrl.text.trim(),
-                weight: double.parse(weightCtrl.text),
               );
               Navigator.pop(ctx);
             },
@@ -776,7 +707,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Competencia ${existentes.length + 1}'),
+          title: Text('Competencia ${estandar.order}.${existentes.length + 1}'),
           content: SizedBox(
             width: 420,
             child: Form(
