@@ -69,6 +69,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
 
   // Permite moverse a la misma columna del estudiante siguiente/anterior
   // con las flechas arriba/abajo, sin interferir con el cursor de texto.
+  // Enter hace lo mismo que la flecha abajo, pero solo si la nota ya
+  // escrita es válida (0-5) — así se agiliza calificar una columna
+  // completa sin soltar el teclado. Tab conserva el comportamiento
+  // estándar de Flutter (siguiente widget enfocable = siguiente columna).
   KeyEventResult _handleVerticalNav(
     KeyEvent event,
     List<Student> students,
@@ -81,6 +85,11 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
       targetIndex = rowIndex + 1;
     } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
       targetIndex = rowIndex - 1;
+    } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      final v = double.tryParse(_getController(students[rowIndex].id, colKey).text);
+      if (v == null || v < 0 || v > 5) return KeyEventResult.ignored;
+      targetIndex = rowIndex + 1;
     } else {
       return KeyEventResult.ignored;
     }
@@ -412,6 +421,8 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
             headingRowHeight: 56,
+            columnSpacing: 12,
+            horizontalMargin: 12,
             border: TableBorder(
               horizontalInside: const BorderSide(color: AppColors.border),
               verticalInside: const BorderSide(
@@ -466,15 +477,6 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                       ),
                     ),
                   ],
-                  DataColumn(
-                    label: _groupHeader(
-                      'EST${ei + 1}',
-                      'Prom. Estándar',
-                      '${equalPct.toStringAsFixed(0)}%',
-                      bold: true,
-                      tooltip: estandares[ei].name,
-                    ),
-                  ),
                 ],
               ],
               const DataColumn(
@@ -637,16 +639,6 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                           ),
                         ),
                       ],
-                      DataCell(
-                        _previewChip(
-                          _estandarPreview(
-                            student.id,
-                            competenciasByEstandar[e.id]!,
-                            actividadesByCompetencia,
-                          ),
-                          bold: true,
-                        ),
-                      ),
                     ],
                   ],
                   DataCell(
