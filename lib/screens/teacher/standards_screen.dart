@@ -231,22 +231,6 @@ class _StandardsScreenState extends State<StandardsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.purple.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${competencias.length}/$_kMaxCompetenciasPorPeriodo competencias',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.purple,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(
                   Icons.edit_outlined,
@@ -280,14 +264,7 @@ class _StandardsScreenState extends State<StandardsScreen> {
               ),
             ),
           const SizedBox(height: 12),
-          if (competencias.isEmpty)
-            const Text(
-              'No es obligatorio trabajar este estándar en todos los períodos — '
-              'usa el botón "Agregar" de arriba para crear una competencia aquí.',
-              style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
-            )
-          else
-            ...competencias.map((c) => _buildCompetenciaRow(academic, estandar, c)),
+          ...competencias.map((c) => _buildCompetenciaRow(academic, estandar, c)),
           if (competencias.isNotEmpty &&
               !competencias.any((c) => c.tipo == CompetenciaTipo.actitudinal))
             const Padding(
