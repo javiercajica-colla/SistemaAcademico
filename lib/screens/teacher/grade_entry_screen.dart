@@ -28,6 +28,12 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   bool _hasChanges = false;
   final Map<String, Map<String, TextEditingController>> _controllers = {};
   final Map<String, Map<String, FocusNode>> _focusNodes = {};
+  // Valor con el que se precargó cada casilla desde una nota ya guardada
+  // (o ausente, si la casilla arrancó vacía). Guardar solo debe escribir
+  // en Firestore las casillas cuyo texto actual difiera de este valor —
+  // de lo contrario cada "Guardar" reescribe TODAS las notas visibles
+  // (incluidas las que nadie tocó), generando escrituras innecesarias.
+  final Map<String, Map<String, String>> _originalValues = {};
   final ScrollController _hScrollController = ScrollController();
   UnsavedChangesProvider? _unsavedChanges;
 
@@ -80,6 +86,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     }
     _controllers.clear();
     _focusNodes.clear();
+    _originalValues.clear();
   }
 
   TextEditingController _getController(String studentId, String key) {
@@ -568,6 +575,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                           (g) => g.actividadId == act.id,
                         );
                         ctrl.text = g.value.toString();
+                        (_originalValues[student.id] ??= {})[act.id] = ctrl.text;
                       } catch (_) {}
                     }
                   }
@@ -580,6 +588,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                     (g) => g.estandarId == null,
                   );
                   finalCtrl.text = g.value.toString();
+                  (_originalValues[student.id] ??= {})['final'] = finalCtrl.text;
                 } catch (_) {}
               }
 
@@ -1053,6 +1062,18 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   // poder invocarla también desde el diálogo de "cambios sin guardar" del
   // sidebar justo antes de navegar fuera de esta pantalla. Devuelve la
   // cantidad de calificaciones guardadas.
+
+  // Compara numéricamente cuando se puede (para no marcar "cambiado" solo
+  // por formato, ej. "4" vs "4.0"); si no había valor original, cualquier
+  // texto no vacío cuenta como nuevo.
+  bool _valueChanged(String? original, String current) {
+    if (original == null) return current.trim().isNotEmpty;
+    final o = double.tryParse(original);
+    final c = double.tryParse(current);
+    if (o != null && c != null) return o != c;
+    return original != current;
+  }
+
   int _performSave(AcademicProvider academic, List<Estandar> estandares) {
     const uuid = Uuid();
     int saved = 0;
@@ -1062,11 +1083,16 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
     };
     for (final entry in _controllers.entries) {
       final studentId = entry.key;
+      final original = _originalValues.putIfAbsent(studentId, () => {});
       for (final e in estandares) {
         for (final comp in competenciasByEstandar[e.id] ?? const <Competencia>[]) {
           for (final act in academic.actividadesForCompetencia(comp.id)) {
-            final v = double.tryParse(entry.value[act.id]?.text ?? '');
-            if (v != null && v >= 0 && v <= 5) {
+            final text = entry.value[act.id]?.text ?? '';
+            final v = double.tryParse(text);
+            if (v != null &&
+                v >= 0 &&
+                v <= 5 &&
+                _valueChanged(original[act.id], text)) {
               academic.addGrade(
                 Grade(
                   id: uuid.v4(),
@@ -1080,13 +1106,18 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
                   registeredAt: DateTime.now(),
                 ),
               );
+              original[act.id] = text;
               saved++;
             }
           }
         }
       }
-      final fv = double.tryParse(entry.value['final']?.text ?? '');
-      if (fv != null && fv >= 0 && fv <= 5) {
+      final finalText = entry.value['final']?.text ?? '';
+      final fv = double.tryParse(finalText);
+      if (fv != null &&
+          fv >= 0 &&
+          fv <= 5 &&
+          _valueChanged(original['final'], finalText)) {
         academic.addGrade(
           Grade(
             id: uuid.v4(),
@@ -1097,6 +1128,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
             registeredAt: DateTime.now(),
           ),
         );
+        original['final'] = finalText;
         saved++;
       }
     }
