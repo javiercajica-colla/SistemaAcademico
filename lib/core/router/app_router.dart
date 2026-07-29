@@ -12,6 +12,7 @@ import '../../screens/coordinator/reports_screen.dart';
 import '../../screens/coordinator/piar/piar_screen.dart';
 import '../../screens/coordinator/grades_config_screen.dart';
 import '../../screens/coordinator/password_admin_screen.dart';
+import '../../screens/coordinator/grade_autofill_screen.dart';
 import '../../screens/teacher/teacher_dashboard.dart';
 import '../../screens/teacher/my_courses_screen.dart';
 import '../../screens/teacher/grade_entry_screen.dart';
@@ -122,6 +123,10 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(
             path: '/coordinator/password-admin',
             builder: (_, _) => const PasswordAdminScreen(),
+          ),
+          GoRoute(
+            path: '/coordinator/grade-autofill',
+            builder: (_, _) => const GradeAutofillScreen(),
           ),
           // Teacher routes
           GoRoute(

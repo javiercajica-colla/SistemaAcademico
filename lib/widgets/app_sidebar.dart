@@ -268,6 +268,12 @@ class AppSidebar extends StatelessWidget {
               Icons.password_rounded,
               '/coordinator/password-admin',
             ),
+          if (role == UserRole.admin)
+            _NavItem(
+              'Relleno Automático de Notas',
+              Icons.auto_fix_high_rounded,
+              '/coordinator/grade-autofill',
+            ),
           if (role == UserRole.admin) null,
           _NavItem(
             'Correo Interno',

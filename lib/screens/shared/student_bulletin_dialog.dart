@@ -225,7 +225,11 @@ class StudentBulletinDialog extends StatelessWidget {
 
   Widget _buildPage(BuildContext context) {
     return Container(
-      width: _colName + _colIH + _colGrade + _colPerf + 48,
+      // +48 = padding horizontal de _gradesSection (24 c/lado); +16 = padding
+      // horizontal de las filas de la tabla (_tableHeaderRow/_areaBlock/
+      // _subjectBlock, 8px c/lado) — sin ese margen el Row de columnas de
+      // ancho fijo desborda por exactamente 16px.
+      width: _colName + _colIH + _colGrade + _colPerf + 48 + 16,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4),
