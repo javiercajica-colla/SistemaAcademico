@@ -8,6 +8,7 @@ import '../../widgets/stat_card.dart';
 import '../shared/course_definitive_report.dart';
 import '../shared/course_consolidated_report.dart';
 import '../shared/student_bulletin_dialog.dart';
+import '../shared/student_final_report_dialog.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -18,14 +19,17 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen>
     with SingleTickerProviderStateMixin {
+  static const _finalReportValue = '__final__';
+
   late TabController _tabs;
   String? _selectedCourse;
   String? _selectedPeriod;
+  String _teacherSearch = '';
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 5, vsync: this);
+    _tabs = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -48,6 +52,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               Tab(text: 'Estadísticas'),
               Tab(text: 'Notas Definitivas y Puesto'),
               Tab(text: 'Consolidado de Áreas'),
+              Tab(text: 'Carga Docente'),
               Tab(text: 'Exportar'),
             ],
           ),
@@ -60,6 +65,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildStatsTab(academic),
               CourseDefinitiveReportView(courses: academic.courses),
               CourseConsolidatedReportView(courses: academic.courses),
+              _buildTeacherLoadTab(academic),
               _buildExportTab(),
             ],
           ),
@@ -92,12 +98,16 @@ class _ReportsScreenState extends State<ReportsScreen>
               Expanded(
                 child: DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Período'),
-                  items: academic.activePeriods
-                      .map(
-                        (p) =>
-                            DropdownMenuItem(value: p.id, child: Text(p.name)),
-                      )
-                      .toList(),
+                  items: [
+                    ...academic.activePeriods.map(
+                      (p) =>
+                          DropdownMenuItem(value: p.id, child: Text(p.name)),
+                    ),
+                    const DropdownMenuItem(
+                      value: _finalReportValue,
+                      child: Text('Informe Final'),
+                    ),
+                  ],
                   onChanged: (v) => setState(() => _selectedPeriod = v),
                 ),
               ),
@@ -121,14 +131,21 @@ class _ReportsScreenState extends State<ReportsScreen>
                   )
                   .map((s) {
                     final course = academic.courseById(s.courseId ?? '');
-                    final periodId =
-                        _selectedPeriod ??
-                        academic.currentOpenPeriod?.id ??
-                        academic.activePeriods.firstOrNull?.id;
+                    final isFinal = _selectedPeriod == _finalReportValue;
+                    final periodId = isFinal
+                        ? null
+                        : (_selectedPeriod ??
+                              academic.currentOpenPeriod?.id ??
+                              academic.activePeriods.firstOrNull?.id);
                     final period = periodId != null
                         ? academic.periodById(periodId)
                         : null;
-                    final avg = periodId != null
+                    final finalSummary = (isFinal && course != null)
+                        ? computeFinalReportForCourse(academic, course)[s.id]
+                        : null;
+                    final avg = finalSummary != null
+                        ? finalSummary.overallAvg
+                        : periodId != null
                         ? academic.calculateOverallAverage(s.id, periodId)
                         : 0.0;
                     return Container(
@@ -179,7 +196,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                               ? GradeChip(grade: avg, compact: true)
                               : const SizedBox.shrink(),
                           const SizedBox(width: 12),
-                          _buildBtnGroup(context, s, course, period),
+                          _buildBtnGroup(context, s, course, period, isFinal),
                         ],
                       ),
                     );
@@ -197,14 +214,21 @@ class _ReportsScreenState extends State<ReportsScreen>
     Student student,
     Course? course,
     AcademicPeriod? period,
+    bool isFinal,
   ) {
-    final enabled = course != null && period != null;
-    void openBulletin() => StudentBulletinDialog.show(
-      context,
-      student: student,
-      course: course!,
-      period: period!,
-    );
+    final enabled = course != null && (isFinal || period != null);
+    void openBulletin() => isFinal
+        ? StudentFinalReportDialog.show(
+            context,
+            student: student,
+            course: course!,
+          )
+        : StudentBulletinDialog.show(
+            context,
+            student: student,
+            course: course!,
+            period: period!,
+          );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -588,4 +612,212 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
   }
 
+  // ─── Carga Docente ──────────────────────────────────────────────────────
+
+  Widget _buildTeacherLoadTab(AcademicProvider academic) {
+    final query = _teacherSearch.toLowerCase();
+    final teachers = academic.teachers
+        .where((t) => t.fullName.toLowerCase().contains(query))
+        .toList()
+      ..sort((a, b) => a.fullName.compareTo(b.fullName));
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Carga Académica de Docentes',
+            subtitle: 'Cursos y asignaturas a cargo de cada docente',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            onChanged: (v) => setState(() => _teacherSearch = v),
+            decoration: const InputDecoration(
+              hintText: 'Buscar docente...',
+              prefixIcon: Icon(Icons.search_rounded, size: 18),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (teachers.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: Text('No hay docentes registrados.')),
+            )
+          else
+            ...teachers.map(
+              (t) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _teacherLoadCard(academic, t),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _teacherLoadCard(AcademicProvider academic, Teacher teacher) {
+    final assignments = academic.assignmentsForTeacher(teacher.id);
+    final byCourse = <String, List<SubjectAssignment>>{};
+    for (final a in assignments) {
+      byCourse.putIfAbsent(a.courseId, () => []).add(a);
+    }
+    final courseIds = byCourse.keys.toList()
+      ..sort((a, b) {
+        final ca = academic.courseById(a);
+        final cb = academic.courseById(b);
+        return (ca?.name ?? '').compareTo(cb?.name ?? '');
+      });
+
+    final totalHours = assignments.fold<int>(0, (sum, a) {
+      final subj = academic.subjectById(a.subjectId);
+      return sum + (subj?.hoursPerWeek ?? 0);
+    });
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.teacher.withValues(alpha: 0.12),
+                  child: Text(
+                    teacher.firstName.isNotEmpty
+                        ? teacher.firstName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: AppColors.teacher,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        teacher.fullName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        teacher.specialization.isEmpty
+                            ? 'Sin especialización registrada'
+                            : teacher.specialization,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _loadStat(
+                  '${courseIds.length}',
+                  courseIds.length == 1 ? 'Curso' : 'Cursos',
+                ),
+                const SizedBox(width: 16),
+                _loadStat('$totalHours', 'Horas/sem'),
+              ],
+            ),
+          ),
+          if (courseIds.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Sin asignaturas ni cursos asignados todavía.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: courseIds.map((courseId) {
+                  final course = academic.courseById(courseId);
+                  final subjects = byCourse[courseId]!
+                      .map(
+                        (a) => academic.subjectById(a.subjectId)?.name ?? '—',
+                      )
+                      .toList();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: Text(
+                            course?.name ?? 'Curso eliminado',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: subjects
+                                .map(
+                                  (name) => Chip(
+                                    label: Text(
+                                      name,
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                    backgroundColor: AppColors.primary
+                                        .withValues(alpha: 0.08),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loadStat(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: AppColors.primary,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
 }

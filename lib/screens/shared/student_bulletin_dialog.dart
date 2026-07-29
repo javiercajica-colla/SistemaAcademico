@@ -783,23 +783,26 @@ class StudentBulletinDialog extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _sigLine('Firma Director(a) de Grupo', 180),
-          _sigLine('Firma Coordinador(a)', 180),
-          _sigLine('Firma Padre/Madre/Acudiente', 180),
+          Expanded(child: _sigLine('Firma Director(a) de Grupo')),
+          const SizedBox(width: 12),
+          Expanded(child: _sigLine('Firma Coordinador(a)')),
+          const SizedBox(width: 12),
+          Expanded(child: _sigLine('Firma Padre/Madre/Acudiente')),
         ],
       ),
     );
   }
 
-  Widget _sigLine(String label, double width) {
+  Widget _sigLine(String label) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(width: width, height: 1, color: const Color(0xFF94A3B8)),
+        Container(height: 1, color: const Color(0xFF94A3B8)),
         const SizedBox(height: 5),
         Text(
           label,
+          textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
         ),
       ],

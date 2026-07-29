@@ -87,6 +87,10 @@ class CoordinatorDashboard extends StatelessWidget {
 
   Widget _buildPerformanceChart(AcademicProvider academic) {
     final subjects = academic.subjects.take(6).toList();
+    // fl_chart hace assert(barGroups.isNotEmpty) al procesar el hover del
+    // mouse; sin datos (aún cargando desde Firestore, o sin asignaturas)
+    // eso revienta en cada frame mientras el cursor esté sobre el chart.
+    if (subjects.isEmpty) return const SizedBox.shrink();
     return AppCard(
       title: 'Rendimiento por Asignatura',
       titleAction: _periodBadge('Período 1'),

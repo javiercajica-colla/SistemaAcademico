@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../shared/student_bulletin_dialog.dart';
+import '../shared/student_final_report_dialog.dart';
 
 class BulletinScreen extends StatefulWidget {
   const BulletinScreen({super.key});
@@ -17,6 +18,7 @@ class BulletinScreen extends StatefulWidget {
 
 class _BulletinScreenState extends State<BulletinScreen> {
   String? _selectedPeriodId;
+  bool _isFinalReport = false;
 
   @override
   void didChangeDependencies() {
@@ -80,19 +82,34 @@ class _BulletinScreenState extends State<BulletinScreen> {
           const SizedBox(width: 12),
           Wrap(
             spacing: 8,
-            children: periods.map((p) {
-              final sel = p.id == _selectedPeriodId;
-              return ChoiceChip(
-                label: Text(p.name),
-                selected: sel,
-                onSelected: (_) => setState(() => _selectedPeriodId = p.id),
-                selectedColor: AppColors.parent,
+            children: [
+              ...periods.map((p) {
+                final sel = !_isFinalReport && p.id == _selectedPeriodId;
+                return ChoiceChip(
+                  label: Text(p.name),
+                  selected: sel,
+                  onSelected: (_) => setState(() {
+                    _selectedPeriodId = p.id;
+                    _isFinalReport = false;
+                  }),
+                  selectedColor: AppColors.parent,
+                  labelStyle: TextStyle(
+                    color: sel ? Colors.white : AppColors.textPrimary,
+                    fontSize: 13,
+                  ),
+                );
+              }),
+              ChoiceChip(
+                label: const Text('Informe Final'),
+                selected: _isFinalReport,
+                onSelected: (_) => setState(() => _isFinalReport = true),
+                selectedColor: AppColors.primary,
                 labelStyle: TextStyle(
-                  color: sel ? Colors.white : AppColors.textPrimary,
+                  color: _isFinalReport ? Colors.white : AppColors.textPrimary,
                   fontSize: 13,
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           ),
         ],
       ),
@@ -124,7 +141,7 @@ class _BulletinScreenState extends State<BulletinScreen> {
     final course = student.courseId != null
         ? academic.courseById(student.courseId!)
         : null;
-    final period = _selectedPeriodId != null
+    final period = (!_isFinalReport && _selectedPeriodId != null)
         ? academic.periodById(_selectedPeriodId!)
         : null;
 
@@ -132,14 +149,22 @@ class _BulletinScreenState extends State<BulletinScreen> {
         ? academic.subjectsForCourse(course.id)
         : <Subject>[];
 
-    final avg = (course != null && _selectedPeriodId != null)
+    final finalSummary = (_isFinalReport && course != null)
+        ? computeFinalReportForCourse(academic, course)[student.id]
+        : null;
+
+    final avg = finalSummary != null
+        ? finalSummary.overallAvg
+        : (course != null && _selectedPeriodId != null)
         ? academic.overallAverageForPeriod(
             student.id,
             course.id,
             _selectedPeriodId!,
           )
         : 0.0;
-    final rank = (course != null && _selectedPeriodId != null)
+    final rank = finalSummary != null
+        ? finalSummary.rank
+        : (course != null && _selectedPeriodId != null)
         ? academic.rankInCourse(student.id, course.id, _selectedPeriodId!)
         : 0;
     final total = course != null
@@ -192,7 +217,8 @@ class _BulletinScreenState extends State<BulletinScreen> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${course?.name ?? "Sin curso"} · ${period?.name ?? "—"}',
+                        '${course?.name ?? "Sin curso"} · '
+                        '${_isFinalReport ? "Informe Final" : (period?.name ?? "—")}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -214,12 +240,21 @@ class _BulletinScreenState extends State<BulletinScreen> {
                 const SizedBox(width: 12),
                 FilledButton.icon(
                   icon: const Icon(Icons.article_rounded, size: 15),
-                  label: const Text('Ver Boletín'),
+                  label: Text(_isFinalReport ? 'Ver Informe Final' : 'Ver Boletín'),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.parent,
                   ),
-                  onPressed: (course != null && period != null)
-                      ? () => _showBulletin(
+                  onPressed: course == null
+                      ? null
+                      : _isFinalReport
+                      ? () => StudentFinalReportDialog.show(
+                          context,
+                          student: student,
+                          course: course,
+                        )
+                      : period == null
+                      ? null
+                      : () => _showBulletin(
                           context,
                           academic,
                           parent,
@@ -230,14 +265,18 @@ class _BulletinScreenState extends State<BulletinScreen> {
                           avg,
                           rank,
                           total,
-                        )
-                      : null,
+                        ),
                 ),
               ],
             ),
           ),
           // Mini grade table preview
-          if (subjects.isNotEmpty && _selectedPeriodId != null)
+          if (subjects.isNotEmpty && finalSummary != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: _buildFinalMiniTable(subjects, finalSummary),
+            )
+          else if (subjects.isNotEmpty && !_isFinalReport && _selectedPeriodId != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: _buildMiniTable(academic, student, subjects),
@@ -299,6 +338,48 @@ class _BulletinScreenState extends State<BulletinScreen> {
             s.id,
             _selectedPeriodId!,
           );
+          final perf = performanceLabel(g);
+          final col = performanceColor(g);
+          return TableRow(
+            children: [
+              _tCell(s.name, flex: true),
+              _tCell(
+                g > 0 ? g.toStringAsFixed(1) : '—',
+                center: true,
+                color: g > 0 ? col : null,
+              ),
+              _tCell(
+                g > 0 ? perf : '—',
+                center: true,
+                color: g > 0 ? col : null,
+              ),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildFinalMiniTable(
+    List<Subject> subjects,
+    StudentFinalSummary summary,
+  ) {
+    return Table(
+      defaultColumnWidth: const IntrinsicColumnWidth(),
+      border: TableBorder.all(color: AppColors.border, width: 0.5),
+      children: [
+        TableRow(
+          decoration: BoxDecoration(
+            color: AppColors.parent.withValues(alpha: 0.08),
+          ),
+          children: [
+            _tCell('Asignatura', isHeader: true, flex: true),
+            _tCell('Nota Final', isHeader: true, center: true),
+            _tCell('Desempeño', isHeader: true, center: true),
+          ],
+        ),
+        ...subjects.map((s) {
+          final g = summary.subjectYearGrades[s.id] ?? 0.0;
           final perf = performanceLabel(g);
           final col = performanceColor(g);
           return TableRow(
