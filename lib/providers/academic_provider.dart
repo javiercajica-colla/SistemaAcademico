@@ -748,6 +748,10 @@ class AcademicProvider extends ChangeNotifier {
     _store.saveAssignment(assignment);
   }
 
+  void addCourse(Course course) {
+    _store.saveCourse(course);
+  }
+
   void deleteAssignment(String id) {
     _store.deleteAssignment(id);
   }

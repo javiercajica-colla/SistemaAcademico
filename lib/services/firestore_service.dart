@@ -737,7 +737,7 @@ class FirestoreService {
     final d = doc.data()!;
     return SubjectAssignment(
       id: doc.id,
-      teacherId: d['teacherId'] as String,
+      teacherId: d['teacherId'] as String?,
       subjectId: d['subjectId'] as String,
       courseId: d['courseId'] as String,
       academicYearId: d['academicYearId'] as String,

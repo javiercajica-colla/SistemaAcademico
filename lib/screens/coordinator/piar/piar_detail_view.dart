@@ -199,7 +199,9 @@ class _PiarDetailViewState extends State<PiarDetailView>
     final docentesDeLaCarga = <PiarDocenteCarga>[];
     final competenciasPendientes = <PiarCompetenciaPendiente>[];
     for (final asign in asignaciones) {
-      final teacher = academic.teacherById(asign.teacherId);
+      final assignedTeacherId = asign.teacherId;
+      if (assignedTeacherId == null) continue;
+      final teacher = academic.teacherById(assignedTeacherId);
       if (teacher == null) continue;
       docentesDeLaCarga.add((teacherId: teacher.id, userId: teacher.userId));
       for (final comp

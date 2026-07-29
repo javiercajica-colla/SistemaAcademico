@@ -358,14 +358,17 @@ enum NotificationType {
 
 class SubjectAssignment {
   final String id;
-  final String teacherId;
+  // `null` = asignatura del curso todavía sin docente asignado (ej. cuando
+  // se agrega por grado desde Cursos, antes de definir quién la dicta en
+  // cada sección).
+  final String? teacherId;
   final String subjectId;
   final String courseId;
   final String academicYearId;
 
   const SubjectAssignment({
     required this.id,
-    required this.teacherId,
+    this.teacherId,
     required this.subjectId,
     required this.courseId,
     required this.academicYearId,

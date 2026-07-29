@@ -144,6 +144,9 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     final subject = academic.subjectById(_selectedSubject!);
     if (subject == null) return _buildEmptyState();
     final teacher = academic.teacherById(subject.teacherId ?? '');
+    final courseAssignments = academic.assignments
+        .where((a) => a.subjectId == subject.id)
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -171,7 +174,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.edit_rounded, size: 16),
                 label: const Text('Editar'),
-                onPressed: () {},
+                onPressed: () =>
+                    _showEditSubjectDialog(context, academic, subject),
               ),
             ],
           ),
@@ -215,6 +219,98 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               ),
             ),
           ],
+          const SizedBox(height: 24),
+          const Text(
+            'Cursos donde se dicta',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          if (courseAssignments.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Aún no se ha asignado a ningún curso. Usa "Editar" para '
+                'agregarla a uno o varios grados.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: courseAssignments.asMap().entries.map((entry) {
+                  final isLast = entry.key == courseAssignments.length - 1;
+                  final a = entry.value;
+                  final course = academic.courseById(a.courseId);
+                  final assignedTeacherId = a.teacherId;
+                  final assignedTeacher = assignedTeacherId == null
+                      ? null
+                      : academic.teacherById(assignedTeacherId);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      border: isLast
+                          ? null
+                          : const Border(
+                              bottom: BorderSide(color: AppColors.border),
+                            ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            course?.name ?? '—',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        if (assignedTeacher != null)
+                          Chip(
+                            label: Text(
+                              assignedTeacher.fullName,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            backgroundColor: AppColors.teacher.withValues(
+                              alpha: 0.08,
+                            ),
+                          )
+                        else
+                          const Text(
+                            'Sin docente asignado',
+                            style: TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        TextButton(
+                          onPressed: () => _showAssignTeacherDialog(
+                            context,
+                            academic,
+                            a,
+                            course?.name ?? '',
+                          ),
+                          child: Text(
+                            assignedTeacher != null ? 'Cambiar' : 'Asignar',
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           const SizedBox(height: 24),
           const Text(
             'Estándares Evaluativos',
@@ -369,4 +465,299 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     });
   }
 
+  void _showAssignTeacherDialog(
+    BuildContext context,
+    AcademicProvider academic,
+    SubjectAssignment assignment,
+    String courseName,
+  ) {
+    String? selectedTeacherId = assignment.teacherId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Docente — $courseName'),
+          content: SizedBox(
+            width: 360,
+            child: DropdownButtonFormField<String?>(
+              initialValue: selectedTeacherId,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Docente'),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Sin asignar'),
+                ),
+                ...academic.teachers.map(
+                  (t) => DropdownMenuItem<String?>(
+                    value: t.id,
+                    child: Text(t.fullName, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+              ],
+              onChanged: (v) => setDialogState(() => selectedTeacherId = v),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final teacherId = selectedTeacherId;
+                // Cerrar el diálogo ANTES de mutar el provider y diferir la
+                // mutación al siguiente microtask evita el assertion
+                // "_dependents.isEmpty" al chocar con el cierre del diálogo
+                // en el mismo frame.
+                Navigator.pop(ctx);
+                Future.microtask(() {
+                  academic.addAssignment(
+                    SubjectAssignment(
+                      id: assignment.id,
+                      teacherId: teacherId,
+                      subjectId: assignment.subjectId,
+                      courseId: assignment.courseId,
+                      academicYearId: assignment.academicYearId,
+                    ),
+                  );
+                });
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Editar datos básicos de la asignatura y, ya que se abre esta misma
+  // pantalla, dejar agregarla de una vez a otros grados completos (todas sus
+  // secciones) sin tener que repetirlo curso por curso desde Cursos.
+  void _showEditSubjectDialog(
+    BuildContext context,
+    AcademicProvider academic,
+    Subject subject,
+  ) {
+    final formKey = GlobalKey<FormState>();
+    final codeCtrl = TextEditingController(text: subject.code);
+    final nameCtrl = TextEditingController(text: subject.name);
+    final areaCtrl = TextEditingController(text: subject.area);
+    final hoursCtrl = TextEditingController(text: '${subject.hoursPerWeek}');
+    final gradosOrdenados = academic.courses.map((c) => c.grade).toSet().toList()
+      ..sort(
+        (a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0),
+      );
+    final selectedGrados = <String>{};
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final currentAssignments = academic.assignments
+              .where((a) => a.subjectId == subject.id)
+              .toList();
+          return AlertDialog(
+            title: const Text('Editar Asignatura'),
+            content: Form(
+              key: formKey,
+              child: SizedBox(
+                width: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: codeCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Código (ej: MAT)',
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Campo requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: nameCtrl,
+                        decoration: const InputDecoration(labelText: 'Nombre'),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Campo requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: areaCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Área (ej: Ciencias Exactas)',
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Campo requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: hoursCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Horas por semana',
+                          suffixText: 'h',
+                        ),
+                        validator: (v) {
+                          final n = int.tryParse(v ?? '');
+                          if (n == null || n < 1) {
+                            return 'Ingresa un número válido';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Grados donde se dicta',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const Text(
+                        'Marca un grado para agregar la asignatura a todas '
+                        'sus secciones.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (gradosOrdenados.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            'No hay cursos creados todavía.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      else
+                        ...gradosOrdenados.map((grado) {
+                          final sections = academic.courses
+                              .where((c) => c.grade == grado)
+                              .toList();
+                          final assignedSections = sections
+                              .where(
+                                (c) => currentAssignments.any(
+                                  (a) => a.courseId == c.id,
+                                ),
+                              )
+                              .toList();
+                          final fullyAssigned =
+                              sections.isNotEmpty &&
+                              assignedSections.length == sections.length;
+                          final label = fullyAssigned
+                              ? 'Grado $grado° (ya asignada)'
+                              : assignedSections.isEmpty
+                              ? 'Grado $grado°'
+                              : 'Grado $grado° (parcial: '
+                                    '${assignedSections.length}/${sections.length})';
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            title: Text(
+                              label,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            value: fullyAssigned
+                                ? true
+                                : selectedGrados.contains(grado),
+                            onChanged: fullyAssigned
+                                ? null
+                                : (v) => setDialogState(() {
+                                    if (v == true) {
+                                      selectedGrados.add(grado);
+                                    } else {
+                                      selectedGrados.remove(grado);
+                                    }
+                                  }),
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (!formKey.currentState!.validate()) return;
+                  final updatedSubject = Subject(
+                    id: subject.id,
+                    code: codeCtrl.text.trim().toUpperCase(),
+                    name: nameCtrl.text.trim(),
+                    area: areaCtrl.text.trim(),
+                    hoursPerWeek: int.parse(hoursCtrl.text.trim()),
+                    teacherId: subject.teacherId,
+                  );
+                  final gradosToAdd = Set<String>.of(selectedGrados);
+                  // Cerrar el diálogo ANTES de mutar el provider y diferir
+                  // la mutación al siguiente microtask evita el assertion
+                  // "_dependents.isEmpty" al chocar con el cierre del
+                  // diálogo en el mismo frame.
+                  Navigator.pop(ctx);
+                  Future.microtask(() {
+                    academic.addSubject(updatedSubject);
+                    var added = 0;
+                    for (final grado in gradosToAdd) {
+                      for (final c in academic.courses.where(
+                        (c) => c.grade == grado,
+                      )) {
+                        final exists = academic.assignments.any(
+                          (a) =>
+                              a.courseId == c.id && a.subjectId == subject.id,
+                        );
+                        if (exists) continue;
+                        academic.addAssignment(
+                          SubjectAssignment(
+                            id: const Uuid().v4(),
+                            subjectId: subject.id,
+                            courseId: c.id,
+                            academicYearId: c.academicYearId,
+                          ),
+                        );
+                        added++;
+                      }
+                    }
+                    if (!mounted || added == 0) return;
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Asignatura agregada a $added sección(es) nueva(s).',
+                        ),
+                        backgroundColor: AppColors.secondary,
+                      ),
+                    );
+                  });
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).then((_) {
+      codeCtrl.dispose();
+      nameCtrl.dispose();
+      areaCtrl.dispose();
+      hoursCtrl.dispose();
+    });
+  }
 }

@@ -618,8 +618,8 @@ class _UsersScreenState extends State<UsersScreen>
     String username = '';
     String password = UserCredentialGenerator.generatePassword();
     final List<(String subjectId, String courseId)> pendingAssignments = [];
-    String? pendingSubjectId;
-    String? pendingCourseId;
+    final Set<String> selectedSubjectIds = {};
+    final Set<String> selectedCourseIds = {};
     String? selectedDirectorCourseId;
     final List<String> pendingParentStudentIds = [];
     String? pendingStudentId;
@@ -822,78 +822,96 @@ class _UsersScreenState extends State<UsersScreen>
                               }).toList(),
                             ),
                           ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                initialValue: pendingSubjectId,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Asignatura',
-                                  isDense: true,
+                        const Text(
+                          'Asignaturas',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: academic.subjects
+                              .map(
+                                (s) => FilterChip(
+                                  label: Text(
+                                    s.name,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  selected: selectedSubjectIds.contains(s.id),
+                                  onSelected: (v) => setDialogState(() {
+                                    if (v) {
+                                      selectedSubjectIds.add(s.id);
+                                    } else {
+                                      selectedSubjectIds.remove(s.id);
+                                    }
+                                  }),
                                 ),
-                                items: academic.subjects
-                                    .map(
-                                      (s) => DropdownMenuItem(
-                                        value: s.id,
-                                        child: Text(
-                                          s.name,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (v) =>
-                                    setDialogState(() => pendingSubjectId = v),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                initialValue: pendingCourseId,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Curso',
-                                  isDense: true,
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Cursos',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: academic.courses
+                              .map(
+                                (c) => FilterChip(
+                                  label: Text(
+                                    c.name,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  selected: selectedCourseIds.contains(c.id),
+                                  onSelected: (v) => setDialogState(() {
+                                    if (v) {
+                                      selectedCourseIds.add(c.id);
+                                    } else {
+                                      selectedCourseIds.remove(c.id);
+                                    }
+                                  }),
                                 ),
-                                items: academic.courses
-                                    .map(
-                                      (c) => DropdownMenuItem(
-                                        value: c.id,
-                                        child: Text(
-                                          c.name,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (v) =>
-                                    setDialogState(() => pendingCourseId = v),
-                              ),
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            icon: const Icon(
+                              Icons.add_circle_rounded,
+                              size: 18,
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.add_circle_rounded,
-                                color: AppColors.primary,
-                              ),
-                              tooltip: 'Agregar asignación',
-                              onPressed:
-                                  (pendingSubjectId == null ||
-                                      pendingCourseId == null)
-                                  ? null
-                                  : () => setDialogState(() {
-                                      final pair = (
-                                        pendingSubjectId!,
-                                        pendingCourseId!,
-                                      );
-                                      if (!pendingAssignments.contains(pair)) {
-                                        pendingAssignments.add(pair);
+                            label: const Text('Agregar asignaciones'),
+                            onPressed:
+                                (selectedSubjectIds.isEmpty ||
+                                    selectedCourseIds.isEmpty)
+                                ? null
+                                : () => setDialogState(() {
+                                    for (final subjId in selectedSubjectIds) {
+                                      for (final courseId
+                                          in selectedCourseIds) {
+                                        final pair = (subjId, courseId);
+                                        if (!pendingAssignments.contains(
+                                          pair,
+                                        )) {
+                                          pendingAssignments.add(pair);
+                                        }
                                       }
-                                      pendingSubjectId = null;
-                                      pendingCourseId = null;
-                                    }),
-                            ),
-                          ],
+                                    }
+                                    selectedSubjectIds.clear();
+                                    selectedCourseIds.clear();
+                                  }),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String?>(
@@ -1601,8 +1619,8 @@ class _UsersScreenState extends State<UsersScreen>
 
   void _showEditTeacherDialog(BuildContext context, Teacher teacher) {
     final academic = context.read<AcademicProvider>();
-    String? pendingSubjectId;
-    String? pendingCourseId;
+    final Set<String> selectedSubjectIds = {};
+    final Set<String> selectedCourseIds = {};
     final currentDirectorCourse = academic.courses.firstWhere(
       (c) => c.directorTeacherId == teacher.id,
       orElse: () => const Course(
@@ -1681,89 +1699,103 @@ class _UsersScreenState extends State<UsersScreen>
                           }).toList(),
                         ),
                       ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: pendingSubjectId,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Asignatura',
-                              isDense: true,
+                    const Text(
+                      'Asignaturas',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: academic.subjects
+                          .map(
+                            (s) => FilterChip(
+                              label: Text(
+                                s.name,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              selected: selectedSubjectIds.contains(s.id),
+                              onSelected: (v) => setDialogState(() {
+                                if (v) {
+                                  selectedSubjectIds.add(s.id);
+                                } else {
+                                  selectedSubjectIds.remove(s.id);
+                                }
+                              }),
                             ),
-                            items: academic.subjects
-                                .map(
-                                  (s) => DropdownMenuItem(
-                                    value: s.id,
-                                    child: Text(
-                                      s.name,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setDialogState(() => pendingSubjectId = v),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: pendingCourseId,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Curso',
-                              isDense: true,
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Cursos',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: academic.courses
+                          .map(
+                            (c) => FilterChip(
+                              label: Text(
+                                c.name,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              selected: selectedCourseIds.contains(c.id),
+                              onSelected: (v) => setDialogState(() {
+                                if (v) {
+                                  selectedCourseIds.add(c.id);
+                                } else {
+                                  selectedCourseIds.remove(c.id);
+                                }
+                              }),
                             ),
-                            items: academic.courses
-                                .map(
-                                  (c) => DropdownMenuItem(
-                                    value: c.id,
-                                    child: Text(
-                                      c.name,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setDialogState(() => pendingCourseId = v),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.add_circle_rounded,
-                            color: AppColors.primary,
-                          ),
-                          tooltip: 'Agregar asignación',
-                          onPressed:
-                              (pendingSubjectId == null ||
-                                  pendingCourseId == null)
-                              ? null
-                              : () {
-                                  final alreadyExists = assignments.any(
-                                    (a) =>
-                                        a.subjectId == pendingSubjectId &&
-                                        a.courseId == pendingCourseId,
-                                  );
-                                  if (!alreadyExists) {
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.add_circle_rounded, size: 18),
+                        label: const Text('Agregar asignaciones'),
+                        onPressed:
+                            (selectedSubjectIds.isEmpty ||
+                                selectedCourseIds.isEmpty)
+                            ? null
+                            : () {
+                                for (final subjId in selectedSubjectIds) {
+                                  for (final courseId in selectedCourseIds) {
+                                    final alreadyExists = assignments.any(
+                                      (a) =>
+                                          a.subjectId == subjId &&
+                                          a.courseId == courseId,
+                                    );
+                                    if (alreadyExists) continue;
                                     academic.addAssignment(
                                       SubjectAssignment(
                                         id: const Uuid().v4(),
                                         teacherId: teacher.id,
-                                        subjectId: pendingSubjectId!,
-                                        courseId: pendingCourseId!,
+                                        subjectId: subjId,
+                                        courseId: courseId,
                                         academicYearId: academic.activeYear.id,
                                       ),
                                     );
                                   }
-                                  setDialogState(() {
-                                    pendingSubjectId = null;
-                                    pendingCourseId = null;
-                                  });
-                                },
-                        ),
-                      ],
+                                }
+                                setDialogState(() {
+                                  selectedSubjectIds.clear();
+                                  selectedCourseIds.clear();
+                                });
+                              },
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
