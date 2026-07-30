@@ -779,6 +779,16 @@ class _ReportPage extends StatelessWidget {
     );
   }
 
+  // Las áreas no tienen código propio (solo las asignaturas), y el nombre
+  // completo del área no cabe en una columna de 64px — se usa el/los
+  // código(s) de sus asignaturas como etiqueta de columna, igual que en
+  // Notas Definitivas.
+  String _areaCode(String area) {
+    final subjs = areas[area] ?? const [];
+    if (subjs.isEmpty) return area;
+    return subjs.map((s) => s.code).join('/');
+  }
+
   Widget _table() {
     const headerColor = Color(0xFF1E3A8A);
     const headerTextStyle = TextStyle(
@@ -825,8 +835,13 @@ class _ReportPage extends StatelessWidget {
               bg: headerColor,
             ),
             ...areaNames.map(
-              (a) =>
-                  _cell(a, headerTextStyle, 64, bg: headerColor, center: true),
+              (a) => _cell(
+                _areaCode(a),
+                headerTextStyle,
+                64,
+                bg: headerColor,
+                center: true,
+              ),
             ),
             _cell('Apr', headerTextStyle, 34, bg: headerColor, center: true),
             _cell('NApr', headerTextStyle, 38, bg: headerColor, center: true),
@@ -951,7 +966,7 @@ class _ReportPage extends StatelessWidget {
                 ),
                 ...areaNames.map(
                   (a) => _cell(
-                    a,
+                    _areaCode(a),
                     headerTextStyle,
                     64,
                     bg: const Color(0xFF1E3A8A),
@@ -1006,7 +1021,7 @@ class _ReportPage extends StatelessWidget {
   Widget _areaLegend() {
     return Text(
       areas.entries
-          .map((e) => '${e.key}: ${e.value.map((s) => s.name).join(', ')}')
+          .map((e) => '${_areaCode(e.key)}: ${e.key} (${e.value.map((s) => s.name).join(', ')})')
           .join('  -  '),
       style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
     );
