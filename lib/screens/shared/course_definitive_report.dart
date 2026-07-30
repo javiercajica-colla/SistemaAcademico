@@ -228,6 +228,23 @@ class _CourseDefinitiveReportViewState
               }),
             ],
           ),
+          pw.SizedBox(height: 10),
+          pw.Wrap(
+            spacing: 14,
+            runSpacing: 3,
+            children: subjects
+                .map(
+                  (s) => pw.Text(
+                    '${s.code} = ${s.name}',
+                    style: pw.TextStyle(
+                      font: regular,
+                      fontSize: 7.5,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ),
     );
@@ -434,6 +451,23 @@ class _CourseDefinitiveReportViewState
       _xlCell(sheet, row, subjects.length + 3, '${data.rank}', style: rowStyle);
     }
 
+    final legendRow = hr + rows.length + 2;
+    _xlCell(
+      sheet,
+      legendRow,
+      0,
+      'Referencia de asignaturas:',
+      style: labelStyle,
+    );
+    for (int i = 0; i < subjects.length; i++) {
+      _xlCell(
+        sheet,
+        legendRow + 1 + i,
+        0,
+        '${subjects[i].code} = ${subjects[i].name}',
+      );
+    }
+
     final bytes = xls.encode();
     if (bytes != null) {
       downloadBytes(
@@ -505,7 +539,16 @@ class _ReportPage extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFCBD5E1)),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: _table(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _table(),
+                  if (subjects.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _subjectLegend(),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -621,13 +664,24 @@ class _ReportPage extends StatelessWidget {
         TableRow(
           decoration: const BoxDecoration(color: headerColor),
           children: [
-            _cell('#', headerTextStyle, 32, center: true),
-            _cell('Apellidos y Nombres del Estudiante', headerTextStyle, 230),
-            ...subjects.map(
-              (s) => _cell(s.code, headerTextStyle, 60, center: true),
+            _cell('#', headerTextStyle, 32, bg: headerColor, center: true),
+            _cell(
+              'Apellidos y Nombres del Estudiante',
+              headerTextStyle,
+              230,
+              bg: headerColor,
             ),
-            _cell('Promedio', headerTextStyle, 76, center: true),
-            _cell('Puesto', headerTextStyle, 64, center: true),
+            ...subjects.map(
+              (s) => _cell(
+                s.code,
+                headerTextStyle,
+                60,
+                bg: headerColor,
+                center: true,
+              ),
+            ),
+            _cell('Promedio', headerTextStyle, 76, bg: headerColor, center: true),
+            _cell('Puesto', headerTextStyle, 64, bg: headerColor, center: true),
           ],
         ),
         ...rows.asMap().entries.map((e) {
@@ -670,6 +724,16 @@ class _ReportPage extends StatelessWidget {
           );
         }),
       ],
+    );
+  }
+
+  // Referencia visible de código→nombre completo: las columnas de la tabla
+  // solo caben el código (ej. "MAT") por espacio, y sin esto no se puede
+  // saber a qué asignatura corresponde cada columna.
+  Widget _subjectLegend() {
+    return Text(
+      subjects.map((s) => '${s.code}: ${s.name}').join('  -  '),
+      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
     );
   }
 

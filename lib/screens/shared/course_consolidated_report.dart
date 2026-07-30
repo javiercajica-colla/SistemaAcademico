@@ -350,6 +350,23 @@ class _CourseConsolidatedReportViewState
               ],
             ),
           ),
+          pw.SizedBox(height: 10),
+          pw.Wrap(
+            spacing: 14,
+            runSpacing: 3,
+            children: areas.entries
+                .map(
+                  (e) => pw.Text(
+                    '${e.key}: ${e.value.map((s) => s.name).join(', ')}',
+                    style: pw.TextStyle(
+                      font: regular,
+                      fontSize: 7.5,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ),
     );
@@ -578,6 +595,19 @@ class _CourseConsolidatedReportViewState
     _xlCell(sheet, lr + 1, 0, 'Promedio del curso en el período:', style: labelStyle);
     _xlCell(sheet, lr + 1, 1, _courseAverage(rows).toStringAsFixed(2), style: valueStyle);
 
+    final legendRow = lr + 3;
+    _xlCell(sheet, legendRow, 0, 'Referencia de áreas:', style: labelStyle);
+    var i = 0;
+    for (final entry in areas.entries) {
+      _xlCell(
+        sheet,
+        legendRow + 1 + i,
+        0,
+        '${entry.key}: ${entry.value.map((s) => s.name).join(', ')}',
+      );
+      i++;
+    }
+
     final bytes = xls.encode();
     if (bytes != null) {
       downloadBytes(bytes, 'consolidado_${course.name}_${period.name}.xlsx');
@@ -640,7 +670,16 @@ class _ReportPage extends StatelessWidget {
             const Divider(height: 1, color: Color(0xFFCBD5E1)),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: _table(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _table(),
+                  if (areas.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _areaLegend(),
+                  ],
+                ],
+              ),
             ),
             if (period != null && rows.isNotEmpty) ...[
               Padding(
@@ -778,17 +817,25 @@ class _ReportPage extends StatelessWidget {
         TableRow(
           decoration: const BoxDecoration(color: headerColor),
           children: [
-            _cell('#', headerTextStyle, 30, center: true),
-            _cell('Apellidos y Nombres', headerTextStyle, 210),
-            ...areaNames.map((a) => _cell(a, headerTextStyle, 64, center: true)),
-            _cell('Apr', headerTextStyle, 34, center: true),
-            _cell('NApr', headerTextStyle, 38, center: true),
-            _cell('BJ', headerTextStyle, 30, center: true),
-            _cell('BS', headerTextStyle, 30, center: true),
-            _cell('AT', headerTextStyle, 30, center: true),
-            _cell('SP', headerTextStyle, 30, center: true),
-            _cell('Pr', headerTextStyle, 48, center: true),
-            _cell('Pu', headerTextStyle, 34, center: true),
+            _cell('#', headerTextStyle, 30, bg: headerColor, center: true),
+            _cell(
+              'Apellidos y Nombres',
+              headerTextStyle,
+              210,
+              bg: headerColor,
+            ),
+            ...areaNames.map(
+              (a) =>
+                  _cell(a, headerTextStyle, 64, bg: headerColor, center: true),
+            ),
+            _cell('Apr', headerTextStyle, 34, bg: headerColor, center: true),
+            _cell('NApr', headerTextStyle, 38, bg: headerColor, center: true),
+            _cell('BJ', headerTextStyle, 30, bg: headerColor, center: true),
+            _cell('BS', headerTextStyle, 30, bg: headerColor, center: true),
+            _cell('AT', headerTextStyle, 30, bg: headerColor, center: true),
+            _cell('SP', headerTextStyle, 30, bg: headerColor, center: true),
+            _cell('Pr', headerTextStyle, 48, bg: headerColor, center: true),
+            _cell('Pu', headerTextStyle, 34, bg: headerColor, center: true),
           ],
         ),
         ...rows.asMap().entries.map((e) {
@@ -896,8 +943,21 @@ class _ReportPage extends StatelessWidget {
             TableRow(
               decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
               children: [
-                _cell('Nivel', headerTextStyle, 90),
-                ...areaNames.map((a) => _cell(a, headerTextStyle, 64, center: true)),
+                _cell(
+                  'Nivel',
+                  headerTextStyle,
+                  90,
+                  bg: const Color(0xFF1E3A8A),
+                ),
+                ...areaNames.map(
+                  (a) => _cell(
+                    a,
+                    headerTextStyle,
+                    64,
+                    bg: const Color(0xFF1E3A8A),
+                    center: true,
+                  ),
+                ),
               ],
             ),
             for (final entry in levels.entries)
@@ -937,6 +997,18 @@ class _ReportPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // Referencia visible de qué asignaturas conforman cada área: las
+  // columnas de la tabla solo caben el nombre del área (a veces truncado
+  // por espacio), y sin esto no se sabe qué asignaturas incluye.
+  Widget _areaLegend() {
+    return Text(
+      areas.entries
+          .map((e) => '${e.key}: ${e.value.map((s) => s.name).join(', ')}')
+          .join('  -  '),
+      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
     );
   }
 
