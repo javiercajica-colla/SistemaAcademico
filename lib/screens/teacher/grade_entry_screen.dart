@@ -14,7 +14,12 @@ import '../../widgets/unsaved_changes_guard.dart';
 const _kActividadesPorCompetencia = 4;
 
 class GradeEntryScreen extends StatefulWidget {
-  const GradeEntryScreen({super.key});
+  const GradeEntryScreen({super.key, this.initialCourseId});
+
+  // Llega desde "Calificar" en Mis Cursos: precarga el curso (y salta
+  // directo a la grilla si el docente solo dicta una asignatura ahí) en
+  // vez de obligar a re-seleccionar curso/asignatura/periodo desde cero.
+  final String? initialCourseId;
 
   @override
   State<GradeEntryScreen> createState() => _GradeEntryScreenState();
@@ -25,6 +30,7 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   String? _selectedSubject;
   String? _selectedPeriod;
   bool _started = false;
+  bool _appliedInitialCourse = false;
   bool _hasChanges = false;
   final Map<String, Map<String, TextEditingController>> _controllers = {};
   final Map<String, Map<String, FocusNode>> _focusNodes = {};
@@ -41,6 +47,31 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _unsavedChanges = context.read<UnsavedChangesProvider>();
+    if (!_appliedInitialCourse && widget.initialCourseId != null) {
+      _appliedInitialCourse = true;
+      final academic = context.read<AcademicProvider>();
+      final auth = context.read<AuthProvider>();
+      final currentUserId = auth.currentUser?.id;
+      final teacher = currentUserId == null
+          ? null
+          : academic.teacherByUserId(currentUserId);
+      if (teacher != null) {
+        final subjectIds = academic
+            .assignmentsForTeacher(teacher.id)
+            .where((a) => a.courseId == widget.initialCourseId)
+            .map((a) => a.subjectId)
+            .toSet()
+            .toList();
+        _selectedCourse = widget.initialCourseId;
+        _selectedPeriod =
+            academic.currentOpenPeriod?.id ??
+            academic.activePeriods.firstOrNull?.id;
+        if (subjectIds.length == 1) _selectedSubject = subjectIds.first;
+        if (_selectedSubject != null && _selectedPeriod != null) {
+          _started = true;
+        }
+      }
+    }
   }
 
   @override

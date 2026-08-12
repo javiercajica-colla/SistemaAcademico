@@ -416,11 +416,17 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                     : AppColors.warning;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Container(
+                  // El borderRadius va en ClipRRect (no en la BoxDecoration
+                  // del Container) porque Border con colores no uniformes
+                  // por lado (acento izquierdo `c` vs. el resto en
+                  // AppColors.border) no se puede combinar con
+                  // borderRadius: Flutter lo rechaza en paint().
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(10),
                       border: Border(
                         left: BorderSide(color: c, width: 4),
                         top: const BorderSide(color: AppColors.border),
@@ -503,6 +509,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                           ),
                         ],
                       ],
+                    ),
                     ),
                   ),
                 );

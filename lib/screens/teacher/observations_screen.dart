@@ -176,11 +176,16 @@ class _ObservationsScreenState extends State<ObservationsScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
+      // El borderRadius va en ClipRRect (no en la BoxDecoration del
+      // Container) porque Border con colores no uniformes por lado (el
+      // acento izquierdo de typeColor vs. el resto en AppColors.border) no
+      // se puede combinar con borderRadius: Flutter lo rechaza en paint().
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
           border: Border(
             left: BorderSide(color: typeColor, width: 4),
             top: const BorderSide(color: AppColors.border),
@@ -300,6 +305,7 @@ class _ObservationsScreenState extends State<ObservationsScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

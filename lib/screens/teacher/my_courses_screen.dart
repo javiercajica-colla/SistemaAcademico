@@ -177,7 +177,8 @@ class MyCoursesScreen extends StatelessWidget {
                                   vertical: 8,
                                 ),
                               ),
-                              onPressed: () => context.go('/teacher/grades'),
+                              onPressed: () =>
+                                  context.go('/teacher/grades?courseId=${course.id}'),
                               child: const Text(
                                 'Calificar',
                                 style: TextStyle(fontSize: 12),
@@ -192,8 +193,9 @@ class MyCoursesScreen extends StatelessWidget {
                                   vertical: 8,
                                 ),
                               ),
-                              onPressed: () =>
-                                  context.go('/teacher/attendance'),
+                              onPressed: () => context.go(
+                                '/teacher/attendance?courseId=${course.id}',
+                              ),
                               child: const Text(
                                 'Asistencia',
                                 style: TextStyle(fontSize: 12),

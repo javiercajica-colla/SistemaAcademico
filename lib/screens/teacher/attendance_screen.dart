@@ -11,7 +11,12 @@ import '../../widgets/stat_card.dart';
 import '../../widgets/unsaved_changes_guard.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  const AttendanceScreen({super.key, this.initialCourseId});
+
+  // Llega desde "Asistencia" en Mis Cursos: precarga el curso (y la
+  // asignatura, si el docente solo dicta una ahí) en vez de obligar a
+  // re-seleccionar desde cero.
+  final String? initialCourseId;
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -23,11 +28,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime _selectedDate = DateTime.now();
   final Map<String, AttendanceStatus> _statuses = {};
   UnsavedChangesProvider? _unsavedChanges;
+  bool _appliedInitialCourse = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _unsavedChanges = context.read<UnsavedChangesProvider>();
+    if (!_appliedInitialCourse && widget.initialCourseId != null) {
+      _appliedInitialCourse = true;
+      final academic = context.read<AcademicProvider>();
+      final auth = context.read<AuthProvider>();
+      final currentUserId = auth.currentUser?.id;
+      final teacher = currentUserId == null
+          ? null
+          : academic.teacherByUserId(currentUserId);
+      if (teacher != null) {
+        final subjectIds = academic
+            .assignmentsForTeacher(teacher.id)
+            .where((a) => a.courseId == widget.initialCourseId)
+            .map((a) => a.subjectId)
+            .toSet()
+            .toList();
+        _selectedCourse = widget.initialCourseId;
+        if (subjectIds.length == 1) _selectedSubject = subjectIds.first;
+      }
+    }
   }
 
   @override
