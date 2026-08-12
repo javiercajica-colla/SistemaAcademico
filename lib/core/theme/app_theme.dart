@@ -35,6 +35,18 @@ class AppColors {
   static const teacher = Color(0xFF10B981);
   static const student = Color(0xFF8B5CF6);
   static const parent = Color(0xFFF59E0B);
+
+  // Tokens del sistema visual de navegación por rol (RoleScreenScaffold),
+  // ver docs/prompt_diseno_visual_pantallas.md. Nombres propios para no
+  // pisar los tokens de arriba (ya en uso en toda la app) — en particular
+  // `textMuted`/`iconCircleMuted` son intencionalmente distintos de
+  // `textSecondary`/`textTertiary`.
+  static const primaryBlue = Color(0xFF0A2A6B);
+  static const accentRed = Color(0xFFC1272D);
+  static const cardBorder = Color(0xFFE2E2E2);
+  static const iconCircleMuted = Color(0xFF8A8A8A);
+  static const avatarBg = Color(0xFFDFE8F6);
+  static const textMuted = Color(0xFF8A8A8A);
 }
 
 class AppTheme {

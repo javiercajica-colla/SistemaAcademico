@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/academic_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/navigation/nav_grid.dart';
+import '../../widgets/navigation/role_screen_scaffold.dart';
 import '../../widgets/stat_card.dart';
 
 class CoordinatorDashboard extends StatelessWidget {
@@ -12,11 +15,17 @@ class CoordinatorDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicProvider>();
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
+    final role = context.watch<AuthProvider>().currentUser?.role;
+    return RoleScreenScaffold(
+      title: role == UserRole.admin
+          ? 'PANEL DE ADMINISTRACIÓN'
+          : 'PANEL DE COORDINACIÓN',
+      subtitle: 'Gestión académica integral',
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          NavGrid(items: _navItems(role)),
+          const SizedBox(height: 20),
           _buildStats(academic),
           const SizedBox(height: 24),
           Row(
@@ -41,6 +50,73 @@ class CoordinatorDashboard extends StatelessWidget {
     );
   }
 
+  // Mismas herramientas y rutas ya existentes en AppSidebar para este rol —
+  // no se agrega ninguna funcionalidad nueva, solo se muestran como grilla
+  // de íconos en vez de lista lateral.
+  List<NavGridItem> _navItems(UserRole? role) {
+    final isAdmin = role == UserRole.admin;
+    return [
+      const NavGridItem(
+        icon: Icons.people_rounded,
+        label: 'Usuarios',
+        route: '/coordinator/users',
+      ),
+      const NavGridItem(
+        icon: Icons.calendar_month_rounded,
+        label: 'Config. Académica',
+        route: '/coordinator/academic-config',
+      ),
+      const NavGridItem(
+        icon: Icons.book_rounded,
+        label: 'Asignaturas',
+        route: '/coordinator/subjects',
+      ),
+      const NavGridItem(
+        icon: Icons.class_rounded,
+        label: 'Cursos / Grupos',
+        route: '/coordinator/courses',
+      ),
+      const NavGridItem(
+        icon: Icons.assessment_rounded,
+        label: 'Config. Evaluación',
+        route: '/coordinator/grades-config',
+      ),
+      const NavGridItem(
+        icon: Icons.summarize_rounded,
+        label: 'Reportes y Boletines',
+        route: '/coordinator/reports',
+      ),
+      const NavGridItem(
+        icon: Icons.table_view_rounded,
+        label: 'Planilla de Notas',
+        route: '/coordinator/grade-sheet',
+      ),
+      const NavGridItem(
+        icon: Icons.accessibility_new_rounded,
+        label: 'PIAR',
+        route: '/coordinator/piar',
+        isHighlighted: true,
+      ),
+      if (isAdmin)
+        const NavGridItem(
+          icon: Icons.password_rounded,
+          label: 'Administración de Contraseñas',
+          route: '/coordinator/password-admin',
+        ),
+      if (isAdmin)
+        const NavGridItem(
+          icon: Icons.auto_fix_high_rounded,
+          label: 'Relleno Automático de Notas',
+          route: '/coordinator/grade-autofill',
+        ),
+      const NavGridItem(
+        icon: Icons.email_rounded,
+        label: 'Correo Interno',
+        route: '/coordinator/email',
+      ),
+    ];
+  }
+
   Widget _buildStats(AcademicProvider academic) {
     final avg = academic.institutionalAverage;
     return GridView(
@@ -48,36 +124,36 @@ class CoordinatorDashboard extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        mainAxisExtent: 90,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        mainAxisExtent: 72,
       ),
       children: [
         StatCard(
-          title: 'Total Estudiantes',
+          compact: true,
+          title: 'Estudiantes',
           value: '${academic.totalStudents}',
-          subtitle: 'Matriculados 2026',
           icon: Icons.people_rounded,
           color: AppColors.primary,
         ),
         StatCard(
-          title: 'Total Docentes',
+          compact: true,
+          title: 'Docentes',
           value: '${academic.totalTeachers}',
-          subtitle: 'Activos',
           icon: Icons.school_rounded,
           color: AppColors.secondary,
         ),
         StatCard(
-          title: 'Promedio Institucional',
+          compact: true,
+          title: 'Promedio',
           value: avg.toStringAsFixed(1),
-          subtitle: avg >= 3.5 ? 'Rendimiento Bueno' : 'Requiere atención',
           icon: Icons.bar_chart_rounded,
           color: avg >= 3.5 ? AppColors.secondary : AppColors.warning,
         ),
         StatCard(
-          title: 'Cursos Activos',
+          compact: true,
+          title: 'Cursos',
           value: '${academic.totalCourses}',
-          subtitle: 'Año lectivo 2026',
           icon: Icons.class_rounded,
           color: AppColors.purple,
         ),

@@ -8,6 +8,7 @@ class StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback? onTap;
+  final bool compact;
 
   const StatCard({
     super.key,
@@ -17,14 +18,19 @@ class StatCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.onTap,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = compact ? 34.0 : 44.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 16,
+          vertical: compact ? 8 : 14,
+        ),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
@@ -41,15 +47,15 @@ class StatCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: iconSize,
+              height: iconSize,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: Icon(icon, color: color, size: compact ? 16 : 22),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: compact ? 8 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,9 +64,9 @@ class StatCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: compact ? 11 : 12,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -71,7 +77,7 @@ class StatCard extends StatelessWidget {
                     value,
                     style: TextStyle(
                       color: color,
-                      fontSize: 22,
+                      fontSize: compact ? 17 : 22,
                       fontWeight: FontWeight.w700,
                       height: 1.1,
                     ),

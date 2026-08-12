@@ -10,206 +10,116 @@ import '../providers/academic_provider.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/repository_provider.dart';
 import '../services/user_credential_generator.dart';
-import 'app_sidebar.dart';
-import 'user_avatar.dart';
+import 'navigation/curved_header.dart';
+import 'unsaved_changes_guard.dart';
 
+// Navegación por íconos + botón "volver" (sin barra lateral, ver
+// docs/prompt_diseno_visual_pantallas.md §3, nivel 1): la mayoría de rutas
+// de herramienta viven un nivel por debajo del dashboard del rol, así que
+// "volver" apunta ahí por defecto. Las pocas rutas agrupadas bajo un ícono
+// "hub" (ej. Planillas) están dos niveles por debajo — _parentOverrides
+// hace que esas vuelvan al hub en vez de saltarse directo al dashboard.
 class MainLayout extends StatelessWidget {
   final Widget child;
   const MainLayout({super.key, required this.child});
 
+  static const _parentOverrides = {
+    '/teacher/grade-sheet': '/teacher/planillas',
+    '/teacher/grade-format': '/teacher/planillas',
+    '/teacher/definitive-report': '/teacher/planillas',
+    '/teacher/consolidated-report': '/teacher/planillas',
+  };
+
+  static String _dashboardPathFor(UserRole role) {
+    return switch (role) {
+      UserRole.coordinator || UserRole.admin => '/coordinator/dashboard',
+      UserRole.teacher => '/teacher/dashboard',
+      UserRole.student => '/student/dashboard',
+      UserRole.parent => '/parent/dashboard',
+    };
+  }
+
+  static String _backTargetFor(UserRole role, String currentPath) {
+    return _parentOverrides[currentPath] ?? _dashboardPathFor(role);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Sidebar permanente en pantallas anchas (desktop/tablet grande);
-    // Drawer deslizable en angostas (móvil, tanto en la app nativa como en
-    // un navegador móvil visitando la versión web) — el criterio es el
-    // ancho real disponible, no la plataforma.
-    final usePermanentSidebar = MediaQuery.of(context).size.width >= 768;
-
-    if (usePermanentSidebar) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        body: Row(
-          children: [
-            const AppSidebar(),
-            Expanded(
-              child: Column(
-                children: [
-                  _AppHeader(showMenuButton: false),
-                  Expanded(child: child),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Móvil / APK: sidebar como Drawer deslizable
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: Drawer(
-        width: 260,
-        backgroundColor: AppColors.sidebarBg,
-        child: const AppSidebar(),
-      ),
       body: Column(
-        children: [
-          _AppHeader(showMenuButton: true),
-          Expanded(child: child),
-        ],
+        children: [_AppHeader(), Expanded(child: child)],
       ),
     );
   }
 }
 
 class _AppHeader extends StatelessWidget {
-  final bool showMenuButton;
-  const _AppHeader({this.showMenuButton = false});
+  final GlobalKey _avatarKey = GlobalKey();
+  _AppHeader();
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
     final user = auth.currentUser;
-    if (user == null) return const SizedBox(height: 64);
+    if (user == null) return const SizedBox.shrink();
     academic.listenNotificationsFor(user.id);
     final unread = academic.unreadNotificationsCount(user.id);
-    final route = GoRouterState.of(context).matchedLocation;
-    final title = _titleForRoute(route);
 
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          if (showMenuButton)
-            Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(
-                  Icons.menu_rounded,
-                  color: AppColors.textSecondary,
-                ),
-                tooltip: 'Menú',
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const Spacer(),
-          _buildPeriodBadge(academic),
-          const SizedBox(width: 16),
-          _buildNotifButton(context, unread, user.id, academic),
-          const SizedBox(width: 8),
-          _buildProfileChip(context, user, auth),
-        ],
-      ),
+    final dashboardPath = MainLayout._dashboardPathFor(user.role);
+    final currentPath = GoRouterState.of(context).matchedLocation;
+    final isDashboard = currentPath == dashboardPath;
+    final backTarget = MainLayout._backTargetFor(user.role, currentPath);
+
+    return CurvedHeader(
+      leadingIcon: isDashboard ? null : Icons.arrow_back_rounded,
+      onLeadingTap: isDashboard
+          ? null
+          : () => guardNavigation(context, () => context.go(backTarget)),
+      hasNotification: unread > 0,
+      avatarKey: _avatarKey,
+      onAvatarTap: () =>
+          _showAccountMenu(context, user, auth, academic, unread),
     );
   }
 
-  Widget _buildPeriodBadge(AcademicProvider academic) {
-    final period = academic.currentOpenPeriod;
-    if (period == null) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              color: AppColors.secondary,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            period.name,
-            style: const TextStyle(
-              color: AppColors.secondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Text(
-            ' • Abierto',
-            style: TextStyle(color: AppColors.secondary, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotifButton(
-    BuildContext context,
-    int unread,
-    String userId,
-    AcademicProvider academic,
-  ) {
-    return Stack(
-      children: [
-        IconButton(
-          icon: const Icon(
-            Icons.notifications_outlined,
-            color: AppColors.textSecondary,
-          ),
-          onPressed: () => _showNotifications(context, userId, academic),
-          tooltip: 'Notificaciones',
-        ),
-        if (unread > 0)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              width: 18,
-              height: 18,
-              decoration: const BoxDecoration(
-                color: AppColors.error,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '$unread',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildProfileChip(
+  // Consolida notificaciones + perfil + configuración + cerrar sesión en un
+  // solo menú anclado al avatar (antes eran dos elementos separados —
+  // campana de notificaciones y chip de perfil — en el header blanco).
+  Future<void> _showAccountMenu(
     BuildContext context,
     AppUser user,
     AuthProvider auth,
-  ) {
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 52),
+    AcademicProvider academic,
+    int unread,
+  ) async {
+    final box = _avatarKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlayBox == null) return;
+    final offset = box.localToGlobal(Offset.zero);
+    final size = box.size;
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(offset.dx, offset.dy + size.height, size.width, 0),
+        Offset.zero & overlayBox.size,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onSelected: (value) {
-        switch (value) {
-          case 'perfil':
-            _showProfileDialog(context, user, auth);
-          case 'configuracion':
-            _navigateToConfig(context, user);
-          case 'logout':
-            auth.logout();
-        }
-      },
-      itemBuilder: (_) => [
+      items: [
+        PopupMenuItem(
+          value: 'notifications',
+          child: Row(
+            children: [
+              const Icon(Icons.notifications_outlined, size: 18),
+              const SizedBox(width: 10),
+              Text(unread > 0 ? 'Notificaciones ($unread)' : 'Notificaciones'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'perfil',
           child: Row(
@@ -242,41 +152,18 @@ class _AppHeader extends StatelessWidget {
           ),
         ),
       ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            UserAvatar(
-              userId: user.id,
-              name: user.name,
-              radius: 14,
-              backgroundColor: AppColors.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              user.name.split(' ').take(2).join(' '),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 4),
-            const Icon(
-              Icons.arrow_drop_down,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
     );
+    if (!context.mounted) return;
+    switch (selected) {
+      case 'notifications':
+        _showNotifications(context, user.id, academic);
+      case 'perfil':
+        _showProfileDialog(context, user, auth);
+      case 'configuracion':
+        _navigateToConfig(context, user);
+      case 'logout':
+        auth.logout();
+    }
   }
 
   void _showProfileDialog(
@@ -723,26 +610,4 @@ class _AppHeader extends StatelessWidget {
     }
   }
 
-  String _titleForRoute(String route) {
-    if (route.contains('dashboard')) return 'Dashboard';
-    if (route.contains('users')) return 'Gestión de Usuarios';
-    if (route.contains('academic-config')) return 'Configuración Académica';
-    if (route.contains('subjects')) return 'Asignaturas';
-    if (route.contains('courses')) return 'Cursos y Grupos';
-    if (route.contains('grades-config')) return 'Configuración de Evaluación';
-    if (route.contains('reports')) return 'Reportes y Boletines';
-    if (route.contains('teacher/standards')) return 'Estándares y Competencias';
-    if (route.contains('grade-sheet')) return 'Planilla de Notas';
-    if (route.contains('grade-format')) return 'Formato de Notas';
-    if (route.contains('hoja-de-vida')) return 'Hoja de Vida';
-    if (route.contains('teacher/grades')) return 'Registro de Calificaciones';
-    if (route.contains('teacher/courses')) return 'Mis Cursos';
-    if (route.contains('attendance')) return 'Control de Asistencia';
-    if (route.contains('observations')) return 'Observaciones';
-    if (route.contains('student/grades')) return 'Mis Calificaciones';
-    if (route.contains('parent/children')) return 'Información de Mis Hijos';
-    if (route.contains('parent/bulletin')) return 'Boletín de Notas';
-    if (route.contains('/email')) return 'Correo Interno';
-    return 'Sistema Académico';
-  }
 }

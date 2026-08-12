@@ -4,10 +4,63 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
+import '../../widgets/navigation/nav_grid.dart';
+import '../../widgets/navigation/role_screen_scaffold.dart';
 import '../../widgets/stat_card.dart';
 
 class TeacherDashboard extends StatelessWidget {
   const TeacherDashboard({super.key});
+
+  // Mismas herramientas y rutas ya existentes en AppSidebar para docente —
+  // no se agrega ninguna funcionalidad nueva, solo se muestran como grilla
+  // de íconos en vez de lista lateral. Calificaciones/Asistencia no van
+  // aquí a propósito: ya se accede a ellas por curso desde "Mis Cursos".
+  // Planilla de Notas / Formato de Notas / Notas Definitivas / Consolidado
+  // se agrupan bajo el ícono "Planillas" (ver PlanillasScreen) para reducir
+  // la cantidad de íconos en el panel de inicio.
+  static const _navItems = [
+    NavGridItem(
+      icon: Icons.class_rounded,
+      label: 'Mis Cursos',
+      route: '/teacher/courses',
+    ),
+    NavGridItem(
+      icon: Icons.edit_note_rounded,
+      label: 'Observaciones',
+      route: '/teacher/observations',
+    ),
+    NavGridItem(
+      icon: Icons.checklist_rounded,
+      label: 'Estándares',
+      route: '/teacher/standards',
+    ),
+    NavGridItem(
+      icon: Icons.table_chart_rounded,
+      label: 'Planillas',
+      route: '/teacher/planillas',
+    ),
+    NavGridItem(
+      icon: Icons.psychology_alt_rounded,
+      label: 'Comportamiento',
+      route: '/teacher/behavior',
+    ),
+    NavGridItem(
+      icon: Icons.accessibility_new_rounded,
+      label: 'PIAR',
+      route: '/teacher/piar',
+      isHighlighted: true,
+    ),
+    NavGridItem(
+      icon: Icons.badge_rounded,
+      label: 'Hoja de Vida',
+      route: '/teacher/hoja-de-vida',
+    ),
+    NavGridItem(
+      icon: Icons.email_rounded,
+      label: 'Correo Interno',
+      route: '/teacher/email',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +85,16 @@ class TeacherDashboard extends StatelessWidget {
       (sum, c) => sum + academic.studentsInCourse(c.id).length,
     );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
+    return RoleScreenScaffold(
+      title: 'PANEL DEL DOCENTE',
+      subtitle: 'Mis cursos y actividad pedagógica',
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildWelcome(auth.currentUser!.name),
+          const NavGrid(items: _navItems),
           const SizedBox(height: 20),
+          _buildWelcome(auth.currentUser!.name),
+          const SizedBox(height: 12),
           _buildStats(myCourses.length, totalStudents, myAssignments.length),
           const SizedBox(height: 24),
           Row(
@@ -66,7 +122,7 @@ class TeacherDashboard extends StatelessWidget {
 
   Widget _buildWelcome(String name) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.teacher, Color(0xFF059669)],
@@ -77,8 +133,8 @@ class TeacherDashboard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.school_rounded, color: Colors.white, size: 36),
-          const SizedBox(width: 16),
+          const Icon(Icons.school_rounded, color: Colors.white, size: 26),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,14 +143,13 @@ class TeacherDashboard extends StatelessWidget {
                   'Bienvenido, ${name.split(' ').first}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   'Año Lectivo 2026 • ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
@@ -110,25 +165,27 @@ class TeacherDashboard extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        mainAxisExtent: 90,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        mainAxisExtent: 72,
       ),
       children: [
         StatCard(
+          compact: true,
           title: 'Mis Cursos',
           value: '$courses',
           icon: Icons.class_rounded,
           color: AppColors.teacher,
         ),
         StatCard(
-          title: 'Total Estudiantes',
+          compact: true,
+          title: 'Estudiantes',
           value: '$students',
-          subtitle: 'A mi cargo',
           icon: Icons.people_rounded,
           color: AppColors.primary,
         ),
         StatCard(
+          compact: true,
           title: 'Asignaturas',
           value: '$assignments',
           icon: Icons.book_rounded,

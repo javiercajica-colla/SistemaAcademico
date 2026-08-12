@@ -14,6 +14,7 @@ import '../../screens/coordinator/grades_config_screen.dart';
 import '../../screens/coordinator/password_admin_screen.dart';
 import '../../screens/coordinator/grade_autofill_screen.dart';
 import '../../screens/teacher/teacher_dashboard.dart';
+import '../../screens/teacher/planillas_screen.dart';
 import '../../screens/teacher/my_courses_screen.dart';
 import '../../screens/teacher/grade_entry_screen.dart';
 import '../../screens/teacher/attendance_screen.dart';
@@ -134,16 +135,24 @@ GoRouter createRouter(AuthProvider auth) {
             builder: (_, _) => const TeacherDashboard(),
           ),
           GoRoute(
+            path: '/teacher/planillas',
+            builder: (_, _) => const PlanillasScreen(),
+          ),
+          GoRoute(
             path: '/teacher/courses',
             builder: (_, _) => const MyCoursesScreen(),
           ),
           GoRoute(
             path: '/teacher/grades',
-            builder: (_, _) => const GradeEntryScreen(),
+            builder: (_, state) => GradeEntryScreen(
+              initialCourseId: state.uri.queryParameters['courseId'],
+            ),
           ),
           GoRoute(
             path: '/teacher/attendance',
-            builder: (_, _) => const AttendanceScreen(),
+            builder: (_, state) => AttendanceScreen(
+              initialCourseId: state.uri.queryParameters['courseId'],
+            ),
           ),
           GoRoute(
             path: '/teacher/observations',

@@ -4,16 +4,42 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
+import '../../widgets/navigation/nav_grid.dart';
+import '../../widgets/navigation/role_screen_scaffold.dart';
 import '../../widgets/stat_card.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
 
+  // Mismas herramientas y rutas ya existentes en AppSidebar para
+  // acudiente — no se agrega ninguna funcionalidad nueva.
+  static const _navItems = [
+    NavGridItem(
+      icon: Icons.family_restroom_rounded,
+      label: 'Mis Hijos',
+      route: '/parent/children',
+    ),
+    NavGridItem(
+      icon: Icons.article_rounded,
+      label: 'Boletín de Notas',
+      route: '/parent/bulletin',
+    ),
+    NavGridItem(
+      icon: Icons.email_rounded,
+      label: 'Correo Interno',
+      route: '/parent/email',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
-    final parent = academic.parentByUserId(auth.currentUser!.id);
+    final currentUserId = auth.currentUser?.id;
+    if (currentUserId == null) {
+      return const Center(child: Text('Perfil de padre no encontrado'));
+    }
+    final parent = academic.parentByUserId(currentUserId);
     if (parent == null) {
       return const Center(child: Text('Perfil de padre no encontrado'));
     }
@@ -21,16 +47,19 @@ class ParentDashboard extends StatelessWidget {
     final myStudents = academic.students
         .where((s) => parent.studentIds.contains(s.id))
         .toList();
-    final notifications = academic.notificationsForUser(auth.currentUser!.id);
+    final notifications = academic.notificationsForUser(currentUserId);
     final unread = notifications.where((n) => !n.isRead).length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
+    return RoleScreenScaffold(
+      title: 'PANEL DEL ACUDIENTE',
+      subtitle: 'Seguimiento de mis hijos',
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildWelcome(parent.fullName, myStudents.length, unread),
+          const NavGrid(items: _navItems),
           const SizedBox(height: 20),
+          _buildWelcome(parent.fullName, myStudents.length, unread),
+          const SizedBox(height: 16),
           if (myStudents.isEmpty)
             const AppCard(
               child: Center(
@@ -56,7 +85,7 @@ class ParentDashboard extends StatelessWidget {
 
   Widget _buildWelcome(String name, int children, int unread) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFD97706), Color(0xFFF59E0B)],
@@ -70,9 +99,9 @@ class ParentDashboard extends StatelessWidget {
           const Icon(
             Icons.family_restroom_rounded,
             color: Colors.white,
-            size: 36,
+            size: 26,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,21 +110,20 @@ class ParentDashboard extends StatelessWidget {
                   'Bienvenido, ${name.split(' ').first}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   '$children hijo(s) registrado(s) • Año 2026',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
           if (unread > 0)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -105,7 +133,7 @@ class ParentDashboard extends StatelessWidget {
                   const Icon(
                     Icons.notifications_rounded,
                     color: Colors.white,
-                    size: 18,
+                    size: 15,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -113,7 +141,7 @@ class ParentDashboard extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                   ),
                 ],

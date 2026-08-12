@@ -5,16 +5,46 @@ import '../../core/theme/app_theme.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/academic_provider.dart';
+import '../../widgets/navigation/nav_grid.dart';
+import '../../widgets/navigation/role_screen_scaffold.dart';
 import '../../widgets/stat_card.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
 
+  // Mismas herramientas y rutas ya existentes en AppSidebar para
+  // estudiante — no se agrega ninguna funcionalidad nueva.
+  static const _navItems = [
+    NavGridItem(
+      icon: Icons.grade_rounded,
+      label: 'Calificaciones',
+      route: '/student/grades',
+    ),
+    NavGridItem(
+      icon: Icons.fact_check_rounded,
+      label: 'Asistencia',
+      route: '/student/attendance',
+    ),
+    NavGridItem(
+      icon: Icons.badge_rounded,
+      label: 'Hoja de Vida',
+      route: '/student/hoja-de-vida',
+    ),
+    NavGridItem(
+      icon: Icons.email_rounded,
+      label: 'Correo Interno',
+      route: '/student/email',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
-    final student = academic.studentByUserId(auth.currentUser!.id);
+    final currentUserId = auth.currentUser?.id;
+    final student = currentUserId == null
+        ? null
+        : academic.studentByUserId(currentUserId);
 
     if (student == null) {
       return const Center(child: Text('Perfil de estudiante no encontrado'));
@@ -30,17 +60,20 @@ class StudentDashboard extends StatelessWidget {
         .where((a) => a.status == AttendanceStatus.absent)
         .length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
+    return RoleScreenScaffold(
+      title: 'PANEL DEL ESTUDIANTE',
+      subtitle: 'Mis calificaciones y actividad académica',
+      content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const NavGrid(items: _navItems),
+          const SizedBox(height: 20),
           _buildWelcomeCard(
             student.fullName,
             course?.name ?? 'Sin curso',
             avgP1,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           _buildStatCards(avgP1, myGrades.length, myAttendance.length, absents),
           const SizedBox(height: 20),
           Row(
@@ -69,7 +102,7 @@ class StudentDashboard extends StatelessWidget {
 
   Widget _buildWelcomeCard(String name, String course, double avg) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.student, AppColors.student.withValues(alpha: 0.7)],
@@ -88,25 +121,19 @@ class StudentDashboard extends StatelessWidget {
                   'Hola, ${name.split(' ').first}!',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   'Curso: $course • Año lectivo 2026',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  '¡Sigue esforzándote para alcanzar tus metas!',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
@@ -117,13 +144,13 @@ class StudentDashboard extends StatelessWidget {
                   avg > 0 ? avg.toStringAsFixed(1) : '-',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const Text(
                   'Promedio',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                  style: TextStyle(color: Colors.white70, fontSize: 10),
                 ),
               ],
             ),
@@ -140,35 +167,36 @@ class StudentDashboard extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        mainAxisExtent: 90,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        mainAxisExtent: 72,
       ),
       children: [
         StatCard(
-          title: 'Promedio General',
+          compact: true,
+          title: 'Promedio',
           value: avg > 0 ? avg.toStringAsFixed(1) : '-',
           icon: Icons.bar_chart_rounded,
           color: avg >= 4.0 ? AppColors.secondary : AppColors.warning,
         ),
         StatCard(
+          compact: true,
           title: 'Calificaciones',
           value: '$grades',
-          subtitle: 'registradas',
           icon: Icons.grade_rounded,
           color: AppColors.primary,
         ),
         StatCard(
+          compact: true,
           title: 'Asistencia',
           value: '${pct.toStringAsFixed(0)}%',
-          subtitle: '$absents inasistencias',
           icon: Icons.fact_check_rounded,
           color: pct >= 90 ? AppColors.secondary : AppColors.warning,
         ),
         StatCard(
-          title: 'Período Activo',
+          compact: true,
+          title: 'Período',
           value: 'P2',
-          subtitle: 'En curso',
           icon: Icons.calendar_today_rounded,
           color: AppColors.purple,
         ),
