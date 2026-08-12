@@ -199,10 +199,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 32),
             const Text(
-              'Gestión\nAcadémica\nIntegral',
+              'GESTIÓN ACADÉMICA\nA LA MANO',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 30,
+                fontSize: 28,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
               ),
