@@ -787,9 +787,19 @@ class _AjusteFormCardState extends State<_AjusteFormCard> {
       }
     }
 
+    final uid = context.read<AuthProvider>().currentUser?.id;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesión no válida, vuelve a iniciar sesión.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _guardando = true);
     final piar = context.read<PiarProvider>();
-    final uid = context.read<AuthProvider>().currentUser!.id;
     final now = DateTime.now();
     final significativo = _tipos.contains(PiarTipoAjuste.significativo);
 

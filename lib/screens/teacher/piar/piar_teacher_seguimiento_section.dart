@@ -428,9 +428,19 @@ class _SeguimientoFormularioState extends State<_SeguimientoFormulario> {
       return;
     }
 
+    final uid = context.read<AuthProvider>().currentUser?.id;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesión no válida, vuelve a iniciar sesión.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _guardando = true);
     final piar = context.read<PiarProvider>();
-    final uid = context.read<AuthProvider>().currentUser!.id;
     final now = DateTime.now();
     final esRectificacion = widget.rectificaA != null;
     final id = esRectificacion ? const Uuid().v4() : (widget.existente?.id ?? const Uuid().v4());

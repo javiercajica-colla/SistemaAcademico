@@ -266,7 +266,9 @@ class _UsersScreenState extends State<UsersScreen>
   }
 
   Widget _buildAllUsersTab(AcademicProvider academic) {
-    final currentUserId = context.watch<AuthProvider>().currentUser?.id;
+    final currentUser = context.watch<AuthProvider>().currentUser;
+    final currentUserId = currentUser?.id;
+    final isAdmin = currentUser?.role == UserRole.admin;
     final users = academic.users
         .where((u) => u.name.toLowerCase().contains(_search))
         .toList();
@@ -289,8 +291,10 @@ class _UsersScreenState extends State<UsersScreen>
                   ),
                   tooltip: u.id == currentUserId
                       ? 'No puedes eliminar tu propia cuenta'
+                      : !isAdmin
+                      ? 'Solo el administrador puede eliminar usuarios'
                       : 'Eliminar usuario',
-                  onPressed: u.id == currentUserId
+                  onPressed: (u.id == currentUserId || !isAdmin)
                       ? null
                       : () => _confirmDeleteUser(context, u),
                 ),
@@ -1619,6 +1623,8 @@ class _UsersScreenState extends State<UsersScreen>
 
   void _showEditTeacherDialog(BuildContext context, Teacher teacher) {
     final academic = context.read<AcademicProvider>();
+    final isAdmin =
+        context.read<AuthProvider>().currentUser?.role == UserRole.admin;
     final Set<String> selectedSubjectIds = {};
     final Set<String> selectedCourseIds = {};
     final currentDirectorCourse = academic.courses.firstWhere(
@@ -1691,10 +1697,15 @@ class _UsersScreenState extends State<UsersScreen>
                                 '${subj?.name ?? ''} · ${course?.name ?? ''}',
                                 style: const TextStyle(fontSize: 12),
                               ),
-                              onDeleted: () {
-                                academic.deleteAssignment(a.id);
-                                setDialogState(() {});
-                              },
+                              onDeleted: isAdmin
+                                  ? () {
+                                      academic.deleteAssignment(a.id);
+                                      setDialogState(() {});
+                                    }
+                                  : null,
+                              deleteButtonTooltipMessage: isAdmin
+                                  ? 'Quitar asignación'
+                                  : 'Solo el administrador puede quitar asignaciones',
                             );
                           }).toList(),
                         ),

@@ -77,7 +77,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create, update: if isCoordinatorOrAdmin() || (isSignedIn() && request.auth.uid == userId);
-      allow delete: if isCoordinatorOrAdmin();
+      // Eliminar cuentas es exclusivo de administrador — coordinador puede
+      // crear/editar usuarios pero no borrarlos.
+      allow delete: if isAdmin();
     }
 
     // Notificaciones: subcolección privada por usuario.
@@ -88,7 +90,7 @@ service cloud.firestore {
     }
 
     // Datos académicos: lectura abierta a cualquier usuario autenticado,
-    // escritura reservada a coordinador y docentes.
+    // escritura (crear/editar) reservada a coordinador y docentes.
     match /{collection}/{docId} {
       allow read: if isSignedIn() &&
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
@@ -96,12 +98,29 @@ service cloud.firestore {
                         'estandares', 'competencias', 'actividades',
                         'grades', 'attendance', 'behavior_assessments',
                         'observations', 'subject_assignments', 'evaluation_configs'];
-      allow write: if isStaff() &&
+      allow create, update: if isStaff() &&
         collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
                         'academic_years', 'academic_periods',
                         'estandares', 'competencias', 'actividades',
                         'grades', 'attendance', 'behavior_assessments',
                         'observations', 'subject_assignments', 'evaluation_configs'];
+      // Borrar registros administrativos/estructurales (personas, cursos,
+      // asignaturas, asignaciones, configuración de años/períodos) es
+      // exclusivo de administrador. Los registros pedagógicos del día a
+      // día que el propio docente gestiona (estándares/competencias/
+      // actividades que crea para su materia, notas, asistencia,
+      // observaciones, comportamiento) siguen permitiendo borrado por
+      // cualquier `isStaff()`, igual que antes — esta restricción es
+      // sobre la distinción administrador/coordinador, no sobre quitarle
+      // al docente el control de su propia configuración de evaluación.
+      allow delete: if isAdmin() &&
+        collection in ['students', 'teachers', 'parents', 'courses', 'subjects',
+                        'academic_years', 'academic_periods',
+                        'subject_assignments', 'evaluation_configs'];
+      allow delete: if isStaff() &&
+        collection in ['estandares', 'competencias', 'actividades',
+                        'grades', 'attendance', 'behavior_assessments',
+                        'observations'];
     }
 
     // ── PIAR ─────────────────────────────────────────────────────────────

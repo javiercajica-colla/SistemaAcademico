@@ -138,8 +138,10 @@ class AppSidebar extends StatelessWidget {
       itemBuilder: (context, i) {
         final item = items[i];
         if (item == null) return _buildSectionDivider();
-        final isActive = currentPath.startsWith(item.path);
-        return _NavTile(item: item, isActive: isActive);
+        if (item is _NavHeader) return _buildSectionHeader(item.label);
+        final navItem = item as _NavItem;
+        final isActive = currentPath.startsWith(navItem.path);
+        return _NavTile(item: navItem, isActive: isActive);
       },
     );
   }
@@ -149,6 +151,23 @@ class AppSidebar extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       height: 1,
       color: const Color(0xFF1E293B),
+    );
+  }
+
+  // Encabezado de categoría dentro del menú (ej. "PERSONAS", "REPORTES") —
+  // agrupa visualmente los ítems que siguen, sin cambiar rutas ni pantallas.
+  Widget _buildSectionHeader(String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: Color(0xFF64748B),
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 
@@ -214,7 +233,7 @@ class AppSidebar extends StatelessWidget {
     }
   }
 
-  List<_NavItem?> _navItems(UserRole role, int emailUnread) {
+  List<Object?> _navItems(UserRole role, int emailUnread) {
     switch (role) {
       case UserRole.coordinator:
       case UserRole.admin:
@@ -224,10 +243,10 @@ class AppSidebar extends StatelessWidget {
             Icons.dashboard_rounded,
             '/coordinator/dashboard',
           ),
-          null,
+          const _NavHeader('Personas'),
           _NavItem('Usuarios', Icons.people_rounded, '/coordinator/users'),
           _NavItem('Docentes', Icons.person_rounded, '/coordinator/users'),
-          null,
+          const _NavHeader('Gestión Académica'),
           _NavItem(
             'Config. Académica',
             Icons.calendar_month_rounded,
@@ -244,7 +263,7 @@ class AppSidebar extends StatelessWidget {
             Icons.assessment_rounded,
             '/coordinator/grades-config',
           ),
-          null,
+          const _NavHeader('Reportes'),
           _NavItem(
             'Reportes y Boletines',
             Icons.summarize_rounded,
@@ -255,13 +274,14 @@ class AppSidebar extends StatelessWidget {
             Icons.table_view_rounded,
             '/coordinator/grade-sheet',
           ),
-          null,
+          const _NavHeader('PIAR'),
           _NavItem(
             'PIAR',
             Icons.accessibility_new_rounded,
             '/coordinator/piar',
           ),
-          null,
+          if (role == UserRole.admin)
+            const _NavHeader('Herramientas de Administrador'),
           if (role == UserRole.admin)
             _NavItem(
               'Administración de Contraseñas',
@@ -274,7 +294,7 @@ class AppSidebar extends StatelessWidget {
               Icons.auto_fix_high_rounded,
               '/coordinator/grade-autofill',
             ),
-          if (role == UserRole.admin) null,
+          null,
           _NavItem(
             'Correo Interno',
             Icons.email_rounded,
@@ -392,6 +412,14 @@ class AppSidebar extends StatelessWidget {
         ];
     }
   }
+}
+
+// Encabezado de categoría (ej. "PERSONAS") dentro de la lista de
+// navegación — no es clickeable, solo agrupa visualmente los _NavItem
+// siguientes. Ver _buildSectionHeader.
+class _NavHeader {
+  final String label;
+  const _NavHeader(this.label);
 }
 
 class _NavItem {

@@ -177,7 +177,10 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final academic = context.watch<AcademicProvider>();
-    final teacher = academic.teacherByUserId(auth.currentUser!.id);
+    final currentUserId = auth.currentUser?.id;
+    final teacher = currentUserId == null
+        ? null
+        : academic.teacherByUserId(currentUserId);
 
     if (teacher == null) {
       return const Center(child: Text('Perfil no encontrado'));

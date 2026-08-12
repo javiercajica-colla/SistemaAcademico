@@ -75,10 +75,12 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
     super.didChangeDependencies();
     final academic = context.read<AcademicProvider>();
     final auth = context.read<AuthProvider>();
-    _teacher ??= academic.teacherByUserId(auth.currentUser!.id);
+    final currentUserId = auth.currentUser?.id;
+    if (currentUserId == null) return;
+    _teacher ??= academic.teacherByUserId(currentUserId);
     if (_teacher == null) return;
     _profile = academic.profileFor(_teacher!.id);
-    _photoBytes ??= auth.getAvatarBytes(auth.currentUser!.id);
+    _photoBytes ??= auth.getAvatarBytes(currentUserId);
     _initControllers();
   }
 
@@ -243,8 +245,9 @@ class _HojaDeVidaTeacherScreenState extends State<HojaDeVidaTeacherScreen> {
     academic.saveProfile(_teacher!.id, updated);
     _profile = updated;
 
-    if (_photoBytes != null) {
-      auth.updateAvatar(auth.currentUser!.id, _photoBytes!);
+    final currentUserId = auth.currentUser?.id;
+    if (_photoBytes != null && currentUserId != null) {
+      auth.updateAvatar(currentUserId, _photoBytes!);
     }
 
     setState(() => _dirty = false);
