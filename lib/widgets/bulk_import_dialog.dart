@@ -499,6 +499,11 @@ class _BulkImportDialogState extends State<BulkImportDialog> {
                 label: const Text('Exportar Excel'),
                 onPressed: () => exportCredentialsExcel(_createdEntries),
               ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.badge_rounded, size: 16),
+                label: const Text('Imprimir tarjetas'),
+                onPressed: () => printCredentialCards(_createdEntries),
+              ),
             ],
           ),
         ],

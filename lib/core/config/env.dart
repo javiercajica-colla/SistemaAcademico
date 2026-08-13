@@ -57,11 +57,14 @@ class Env {
     defaultValue: true,
   );
 
-  // Origen del backend propio (server/, ver AdminCredentialsService). Vacío
-  // por defecto: en producción el backend sirve el mismo build de Flutter
-  // Web, así que las llamadas van al mismo origen (Uri.base). Solo hace
-  // falta pasar esto en desarrollo local, cuando la app corre en el puerto
-  // del dev server de Flutter pero el backend está en otro (p. ej.
-  // http://localhost:8080).
-  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  // Origen del backend propio (server/, ver AdminCredentialsService). En Web,
+  // Uri.base ya resuelve al mismo origen del backend, así que este default
+  // solo importa para builds nativos (APK/iOS), donde no existe un "origen
+  // de página" y las llamadas irían a un URI inválido sin esto. Pásalo por
+  // --dart-define=API_BASE_URL=... si necesitas apuntar a otro backend (p.
+  // ej. http://localhost:8080 en desarrollo local).
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://sistemaacademico-production-2979.up.railway.app',
+  );
 }

@@ -87,6 +87,8 @@ class _UsersScreenState extends State<UsersScreen>
                   _exportCredentialsPdf(context);
                 case 'excel':
                   _exportCredentialsExcel(context);
+                case 'cards':
+                  _printCredentialCards(context);
                 case 'clear':
                   _confirmClearCredentialLog(context);
               }
@@ -109,6 +111,16 @@ class _UsersScreenState extends State<UsersScreen>
                     Icon(Icons.grid_on_rounded, size: 18),
                     SizedBox(width: 8),
                     Text('Exportar credenciales (Excel)'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'cards',
+                child: Row(
+                  children: [
+                    Icon(Icons.badge_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Imprimir tarjetas de acceso'),
                   ],
                 ),
               ),
@@ -527,6 +539,19 @@ class _UsersScreenState extends State<UsersScreen>
       return;
     }
     await exportCredentialsExcel(entries);
+  }
+
+  Future<void> _printCredentialCards(
+    BuildContext context, {
+    List<CredentialLogEntry>? entriesOverride,
+  }) async {
+    final entries = entriesOverride ?? await CredentialLogService().getAll();
+    if (entries.isEmpty) {
+      // ignore: use_build_context_synchronously
+      if (mounted) _showEmptyLogMessage(context);
+      return;
+    }
+    await printCredentialCards(entries);
   }
 
   void _showEmptyLogMessage(BuildContext context) {

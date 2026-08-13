@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Requerido para todas las llamadas de red de la app: Firebase
+         (Auth/Firestore) y el backend propio en Railway (ver
+         lib/services/admin_credentials_service.dart). Sin esto, un APK de
+         release no tiene acceso a internet aunque debug/profile sí lo
+         declaren (esos manifests solo cubren las herramientas de Flutter). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="sistema_academico"
         android:name="${applicationName}"

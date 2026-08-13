@@ -36,6 +36,7 @@ ARG FIREBASE_AUTH_DOMAIN=sistema-academico-81c58.firebaseapp.com
 ARG FIREBASE_STORAGE_BUCKET=sistema-academico-81c58.firebasestorage.app
 ARG FIREBASE_MEASUREMENT_ID=G-31LRRFE2PS
 ARG USE_MOCK_DATA=false
+ARG API_BASE_URL=https://sistemaacademico-production-2979.up.railway.app
 
 RUN flutter build web --release \
     --dart-define=FIREBASE_API_KEY=${FIREBASE_API_KEY} \
@@ -45,7 +46,8 @@ RUN flutter build web --release \
     --dart-define=FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN} \
     --dart-define=FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET} \
     --dart-define=FIREBASE_MEASUREMENT_ID=${FIREBASE_MEASUREMENT_ID} \
-    --dart-define=USE_MOCK_DATA=${USE_MOCK_DATA}
+    --dart-define=USE_MOCK_DATA=${USE_MOCK_DATA} \
+    --dart-define=API_BASE_URL=${API_BASE_URL}
 
 # ─────────────────────────────────────────────────────────────────────────
 # Etapa 2: sirve el build estático y la API administrativa con Node/Express

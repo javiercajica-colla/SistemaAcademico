@@ -1,6 +1,8 @@
 import 'package:excel/excel.dart' hide Border;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'download_helper.dart';
 import '../../services/credential_log_service.dart';
 
@@ -103,6 +105,97 @@ Future<void> exportCredentialsPdf(List<CredentialLogEntry> entries) async {
   downloadBytes(
     bytes,
     'credenciales_usuarios_${DateTime.now().millisecondsSinceEpoch}.pdf',
+  );
+}
+
+// Genera una tarjeta imprimible por usuario (logo + datos de acceso) y la
+// comparte/imprime con Printing.sharePdf, igual que el resto de reportes PDF
+// del proyecto (ver grade_format_screen.dart, grade_sheet_screen.dart, etc.).
+// No usa downloadBytes: ese helper es un no-op en plataformas nativas (ver
+// download_helper_stub.dart), mientras que Printing sí funciona en Web,
+// Android e iOS.
+Future<void> printCredentialCards(List<CredentialLogEntry> entries) async {
+  final doc = pw.Document();
+  final bold = pw.Font.helveticaBold();
+  final regular = pw.Font.helvetica();
+  final logoBytes = (await rootBundle.load(
+    'assets/images/logo.png',
+  )).buffer.asUint8List();
+  final logo = pw.MemoryImage(logoBytes);
+
+  doc.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(16),
+      build: (ctx) => [
+        pw.Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: entries
+              .map((e) => _credentialCard(e, logo, bold, regular))
+              .toList(),
+        ),
+      ],
+    ),
+  );
+
+  await Printing.sharePdf(
+    bytes: await doc.save(),
+    filename: 'tarjetas_acceso_${DateTime.now().millisecondsSinceEpoch}.pdf',
+  );
+}
+
+pw.Widget _credentialCard(
+  CredentialLogEntry e,
+  pw.ImageProvider logo,
+  pw.Font bold,
+  pw.Font regular,
+) {
+  return pw.Container(
+    width: 270,
+    height: 220,
+    padding: const pw.EdgeInsets.all(12),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+      borderRadius: pw.BorderRadius.circular(8),
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      children: [
+        pw.Center(child: pw.Image(logo, height: 42)),
+        pw.SizedBox(height: 6),
+        pw.Center(
+          child: pw.Text(
+            'Datos de Acceso Al Sistema Académico',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(font: bold, fontSize: 9),
+          ),
+        ),
+        pw.SizedBox(height: 10),
+        _credentialCardField('NOMBRE', e.firstName, bold, regular),
+        _credentialCardField('APELLIDO', e.lastName, bold, regular),
+        _credentialCardField('USUARIO', e.username, bold, regular),
+        _credentialCardField('CONTRASEÑA', e.password, bold, regular),
+      ],
+    ),
+  );
+}
+
+pw.Widget _credentialCardField(
+  String label,
+  String value,
+  pw.Font bold,
+  pw.Font regular,
+) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.only(bottom: 6),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('$label:', style: pw.TextStyle(font: bold, fontSize: 8)),
+        pw.Text(value, style: pw.TextStyle(font: regular, fontSize: 12)),
+      ],
+    ),
   );
 }
 
