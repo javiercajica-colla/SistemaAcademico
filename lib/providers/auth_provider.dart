@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import '../core/config/app_config.dart';
 import '../models/models.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/repository_provider.dart';
+import '../services/avatar_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AppUser? _currentUser;
@@ -11,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthRepository _authService = authRepository;
   final _store = dataRepository;
+  final _avatarStorage = AvatarStorageService();
 
   AppUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -98,9 +101,31 @@ class AuthProvider extends ChangeNotifier {
 
   Uint8List? getAvatarBytes(String userId) => _avatarMap[userId];
 
-  void updateAvatar(String userId, Uint8List bytes) {
+  // Cachea los bytes localmente para que el avatar se actualice en el acto
+  // (sin esperar la subida), y en paralelo lo sube a Cloud Storage y
+  // persiste la URL en Firestore para que sobreviva a recargas/otras
+  // sesiones. En modo mock no hay Firebase inicializado (ver main.dart), así
+  // que ahí el cambio queda solo en memoria, igual que antes.
+  Future<void> updateAvatar(String userId, Uint8List bytes) async {
     _avatarMap[userId] = bytes;
     notifyListeners();
+
+    if (useMockData) return;
+
+    final url = await _avatarStorage.uploadAvatar(userId, bytes);
+    await _store.updateUserAvatar(userId, url);
+    if (_currentUser?.id == userId) {
+      _currentUser = AppUser(
+        id: _currentUser!.id,
+        name: _currentUser!.name,
+        email: _currentUser!.email,
+        password: '',
+        role: _currentUser!.role,
+        avatar: url,
+        isActive: _currentUser!.isActive,
+      );
+      notifyListeners();
+    }
   }
 
   String get roleDisplayName {

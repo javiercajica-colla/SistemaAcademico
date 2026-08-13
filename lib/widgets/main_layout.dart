@@ -79,6 +79,8 @@ class _AppHeader extends StatelessWidget {
           : () => guardNavigation(context, () => context.go(backTarget)),
       hasNotification: unread > 0,
       avatarKey: _avatarKey,
+      avatarBytes: auth.getAvatarBytes(user.id),
+      avatarUrl: user.avatar,
       onAvatarTap: () =>
           _showAccountMenu(context, user, auth, academic, unread),
     );
@@ -214,8 +216,13 @@ class _AppHeader extends StatelessWidget {
                             backgroundColor: AppColors.primary,
                             backgroundImage: previewBytes != null
                                 ? MemoryImage(previewBytes!)
+                                : (user.avatar != null &&
+                                      user.avatar!.isNotEmpty)
+                                ? NetworkImage(user.avatar!)
                                 : null,
-                            child: previewBytes == null
+                            child:
+                                (previewBytes == null &&
+                                    (user.avatar?.isEmpty ?? true))
                                 ? Text(
                                     user.name.substring(0, 1).toUpperCase(),
                                     style: const TextStyle(

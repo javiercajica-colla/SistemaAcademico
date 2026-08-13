@@ -62,6 +62,9 @@ class FirestoreService {
   Future<void> updateUserStatus(String uid, {required bool isActive}) =>
       _db.collection(_kUsers).doc(uid).update({'isActive': isActive});
 
+  Future<void> updateUserAvatar(String uid, String avatarUrl) =>
+      _db.collection(_kUsers).doc(uid).update({'avatar': avatarUrl});
+
   // Elimina el perfil del usuario en Firestore (bloquea su acceso a la app).
   // No elimina la cuenta en Firebase Auth — eso requiere el Admin SDK desde
   // una Cloud Function, no disponible desde el cliente.

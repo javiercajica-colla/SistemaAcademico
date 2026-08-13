@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -16,11 +18,21 @@ class CurvedHeader extends StatelessWidget {
     this.hasNotification = false,
     this.onAvatarTap,
     this.avatarKey,
+    this.avatarBytes,
+    this.avatarUrl,
   });
 
   final IconData? leadingIcon;
   final VoidCallback? onLeadingTap;
   final bool hasNotification;
+  // Foto de perfil recién elegida en esta sesión, aún no subida o ya
+  // cacheada localmente (ver AuthProvider.getAvatarBytes) — tiene
+  // prioridad sobre avatarUrl porque no depende de red.
+  final Uint8List? avatarBytes;
+  // Foto de perfil persistida en Cloud Storage (AppUser.avatar). Se usa
+  // cuando no hay avatarBytes en memoria, p. ej. justo después de recargar
+  // la página. Si ambos son null se muestra el ícono de persona.
+  final String? avatarUrl;
   // Callback opcional para que el llamador (MainLayout) abra un menú de
   // cuenta/notificaciones al tocar el avatar; `avatarKey` permite ubicar
   // ese menú justo debajo del avatar con showMenu().
@@ -68,14 +80,21 @@ class CurvedHeader extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 18,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: AppColors.primaryBlue,
-                      size: 20,
-                    ),
+                    backgroundImage: avatarBytes != null
+                        ? MemoryImage(avatarBytes!)
+                        : (avatarUrl != null && avatarUrl!.isNotEmpty)
+                        ? NetworkImage(avatarUrl!)
+                        : null,
+                    child: (avatarBytes == null && (avatarUrl?.isEmpty ?? true))
+                        ? const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.primaryBlue,
+                            size: 20,
+                          )
+                        : null,
                   ),
                   if (hasNotification)
                     Positioned(

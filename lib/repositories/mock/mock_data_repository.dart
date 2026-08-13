@@ -48,6 +48,24 @@ class MockDataRepository implements DataRepository {
   }
 
   @override
+  Future<void> updateUserAvatar(String uid, String avatarUrl) async {
+    await MockBackend.delay();
+    final old = _backend.users.value.firstWhere((u) => u.id == uid);
+    _backend.users.upsert(
+      AppUser(
+        id: old.id,
+        name: old.name,
+        email: old.email,
+        password: '',
+        role: old.role,
+        avatar: avatarUrl,
+        isActive: old.isActive,
+      ),
+      (u) => u.id == uid,
+    );
+  }
+
+  @override
   Future<void> deleteUser(String uid) async {
     await MockBackend.delay();
     _backend.users.removeWhere((u) => u.id == uid);

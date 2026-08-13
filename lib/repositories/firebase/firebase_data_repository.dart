@@ -21,6 +21,9 @@ class FirebaseDataRepository implements DataRepository {
   Future<void> updateUserStatus(String uid, {required bool isActive}) =>
       _store.updateUserStatus(uid, isActive: isActive);
   @override
+  Future<void> updateUserAvatar(String uid, String avatarUrl) =>
+      _store.updateUserAvatar(uid, avatarUrl);
+  @override
   Future<void> deleteUser(String uid) => _store.deleteUser(uid);
 
   // ── Estudiantes ──────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ abstract class DataRepository {
   Future<AppUser?> getUser(String uid);
   Future<void> saveUser(String uid, AppUser user);
   Future<void> updateUserStatus(String uid, {required bool isActive});
+  Future<void> updateUserAvatar(String uid, String avatarUrl);
   Future<void> deleteUser(String uid);
 
   // ── Estudiantes ──────────────────────────────────────────────────────────
